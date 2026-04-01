@@ -205,6 +205,17 @@ $invitedClubs = $competition->clubs->filter(function($club) {
                             </div>
                         </div>
 
+                        <div class="form-row">
+                            <div class="form-group col-md-6 col-sm-12">
+                                <label for="status">Status</label>
+                                <select class="form-control" id="status" name="status" required>
+                                    <option value="ACTIVE" {{ old('status', $competition->status ?? 'ACTIVE') === 'ACTIVE' ? 'selected' : '' }}>Active</option>
+                                    <option value="INACTIVE" {{ old('status', $competition->status ?? 'ACTIVE') === 'INACTIVE' ? 'selected' : '' }}>Inactive</option>
+                                </select>
+                                <small class="form-text text-muted">Inactive competitions can be hidden from selection/lists.</small>
+                            </div>
+                        </div>
+
                         <div class="mt-4">
                             <button type="submit" class="btn btn-primary pr-4 pl-4">
                                 <i class="fa fa-save"></i> Save Competition

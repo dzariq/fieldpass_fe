@@ -100,6 +100,16 @@ $adminObj = App\Models\Admin::find($usr->id);
                             </div>
                         </div>
 
+                        <div class="form-row">
+                            <div class="form-group col-md-6 col-sm-12">
+                                <label for="status">Status</label>
+                                <select class="form-control" id="status" name="status" required>
+                                    <option value="ACTIVE" {{ old('status', 'ACTIVE') === 'ACTIVE' ? 'selected' : '' }}>Active</option>
+                                    <option value="INACTIVE" {{ old('status', 'ACTIVE') === 'INACTIVE' ? 'selected' : '' }}>Inactive</option>
+                                </select>
+                            </div>
+                        </div>
+
                         @if ($usr->can('association.create'))
                         <div class="form-row">
                             <div class="form-group col-md-6 col-sm-12">

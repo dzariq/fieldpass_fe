@@ -179,6 +179,7 @@ class CompetitionController extends Controller
         $competition = new Competition();
         $competition->name = $request->name;
         $competition->price = $request->price;
+        $competition->status = $request->input('status', 'ACTIVE');
         $competition->start = strtotime($request->start);
         $competition->end = strtotime($request->end);
         $competition->type = $request->type;
@@ -236,6 +237,7 @@ class CompetitionController extends Controller
         $competition->max_participants = $request->max_participants;
         $competition->description = $request->description;
         $competition->price = $request->price;
+        $competition->status = $request->input('status', $competition->status ?? 'ACTIVE');
 
         // Handle Banner Upload
         if ($request->hasFile('banner')) {
