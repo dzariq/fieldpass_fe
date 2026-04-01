@@ -34,33 +34,68 @@ class MatchesController extends Controller
         $perPage = (int) min(max($request->get('per_page', 25), 10), 100);
         $baseQuery = Matches::query()->with(['home_club', 'away_club', 'competition']);
 
-        // Scope association admins to their association competitions (super admin can see all).
         $admin_obj = Admin::find(auth()->user()->id);
         $associationIds = $admin_obj ? $admin_obj->associations()->pluck('association.id') : collect();
-        if ($associationIds->count() > 0 && !auth()->user()->can('association.create')) {
-            $competitionIds = Competition::whereIn('association_id', $associationIds)->pluck('id');
-            $baseQuery->whereIn('competition_id', $competitionIds);
+        // Qualify column: admin_club and club both have `id` — unqualified `id` causes SQL ambiguity (500).
+        $clubIds = $admin_obj ? $admin_obj->clubs()->pluck('club.id')->map(fn ($v) => (int) $v)->values()->all() : [];
+        $isSuperAdmin = auth()->user()->can('association.create');
+
+        // Scope competitions:
+        // - Super admin: no filter.
+        // - Admin with assigned club(s): only competitions those clubs have joined (ACTIVE in competition_club).
+        // - Association-only admin (no clubs): competitions under their association(s).
+        $scopedCompetitionIds = null;
+        if (!$isSuperAdmin) {
+            if (count($clubIds) > 0) {
+                $scopedCompetitionIds = DB::table('competition_club')
+                    ->whereIn('club_id', $clubIds)
+                    ->where('status', 'ACTIVE')
+                    ->distinct()
+                    ->pluck('competition_id');
+            } elseif ($associationIds->count() > 0) {
+                $scopedCompetitionIds = Competition::whereIn('association_id', $associationIds)->pluck('id');
+            }
+        }
+
+        if ($scopedCompetitionIds !== null) {
+            if ($scopedCompetitionIds->isEmpty()) {
+                $baseQuery->whereRaw('0=1');
+            } else {
+                $baseQuery->whereIn('competition_id', $scopedCompetitionIds);
+            }
         }
 
         if ($request->filled('matchweek')) {
             $baseQuery->where('matchweek', $request->matchweek);
         }
         if ($request->filled('competition_id')) {
-            $baseQuery->where('competition_id', $request->competition_id);
+            $cid = (int) $request->competition_id;
+            if ($scopedCompetitionIds !== null && !$scopedCompetitionIds->contains($cid)) {
+                $baseQuery->whereRaw('0=1');
+            } else {
+                $baseQuery->where('competition_id', $cid);
+            }
         }
 
         $matches = $baseQuery->orderBy('date', 'desc')->paginate($perPage)->withQueryString();
 
         $filterMatchweeks = Matches::query()
-            ->when($associationIds->count() > 0 && !auth()->user()->can('association.create'), function ($q) use ($associationIds) {
-                $competitionIds = Competition::whereIn('association_id', $associationIds)->pluck('id');
-                $q->whereIn('competition_id', $competitionIds);
+            ->when($scopedCompetitionIds !== null, function ($q) use ($scopedCompetitionIds) {
+                if ($scopedCompetitionIds->isEmpty()) {
+                    $q->whereRaw('0=1');
+                } else {
+                    $q->whereIn('competition_id', $scopedCompetitionIds);
+                }
             })
             ->distinct()->orderBy('matchweek')->pluck('matchweek');
 
         $filterCompetitions = Competition::query()
-            ->when($associationIds->count() > 0 && !auth()->user()->can('association.create'), function ($q) use ($associationIds) {
-                $q->whereIn('association_id', $associationIds);
+            ->when($scopedCompetitionIds !== null, function ($q) use ($scopedCompetitionIds) {
+                if ($scopedCompetitionIds->isEmpty()) {
+                    $q->whereRaw('0=1');
+                } else {
+                    $q->whereIn('id', $scopedCompetitionIds);
+                }
             })
             ->orderBy('name')->get(['id', 'name']);
 
