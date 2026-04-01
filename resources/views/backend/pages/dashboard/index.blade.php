@@ -35,6 +35,8 @@ Dashboard Page - Admin Panel
     </div>
     @endif
 
+    @include('backend.layouts.partials.messages')
+
     @if(Auth::guard('admin')->user() && Auth::guard('admin')->user()->can('association.create'))
     <div class="row">
         <div class="col-12 mt-3">

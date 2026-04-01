@@ -18,6 +18,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http as FacadesHttp;
+use Illuminate\Validation\Rule;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Log;
 use League\Uri\Http;
@@ -216,7 +217,21 @@ class CompetitionController extends Controller
         $this->checkAuthorization(auth()->user(), ['competition.edit']);
         $competition = Competition::findOrFail($id);
 
-        $clubs =  Club::where('association_id', $competition->association_id)->get();
+        // Association admins can only manage competitions within their association(s)
+        $admin = Admin::find(auth()->user()->id);
+        $associationIds = $admin ? $admin->associations->pluck('id')->map(fn ($v) => (int) $v)->all() : [];
+        if (count($associationIds) > 0 && !auth()->user()->can('association.create')) {
+            if (!in_array((int) $competition->association_id, $associationIds, true)) {
+                abort(403, 'Sorry !! You are unauthorized to perform this action.');
+            }
+        }
+
+        // Only list clubs that belong to this competition's association (and within admin scope)
+        $clubsQuery = Club::query()->where('association_id', $competition->association_id);
+        if (count($associationIds) > 0 && !auth()->user()->can('association.create')) {
+            $clubsQuery->whereIn('association_id', $associationIds);
+        }
+        $clubs = $clubsQuery->orderBy('name')->get();
 
         return view('backend.pages.competitions.edit', [
             'competition' => $competition,
@@ -230,6 +245,30 @@ class CompetitionController extends Controller
         $this->checkAuthorization(auth()->user(), ['competition.edit']);
 
         $competition = Competition::findOrFail($id);
+
+        // Association admins can only manage competitions within their association(s)
+        $admin = Admin::find(auth()->user()->id);
+        $associationIds = $admin ? $admin->associations->pluck('id')->map(fn ($v) => (int) $v)->all() : [];
+        if (count($associationIds) > 0 && !auth()->user()->can('association.create')) {
+            if (!in_array((int) $competition->association_id, $associationIds, true)) {
+                abort(403, 'Sorry !! You are unauthorized to perform this action.');
+            }
+        }
+
+        // Only allow inviting clubs that belong to this competition's association (and within admin scope)
+        $allowedClubIdsQuery = Club::query()->where('association_id', $competition->association_id);
+        if (count($associationIds) > 0 && !auth()->user()->can('association.create')) {
+            $allowedClubIdsQuery->whereIn('association_id', $associationIds);
+        }
+        $allowedClubIds = $allowedClubIdsQuery->pluck('id')->map(fn ($v) => (int) $v)->all();
+
+        if ($request->has('club_ids')) {
+            $request->validate([
+                'club_ids' => ['array'],
+                'club_ids.*' => ['integer', Rule::in($allowedClubIds)],
+            ]);
+        }
+
         $competition->name = $request->name;
         $competition->association_id = $request->association_id;
         $competition->start = strtotime($request->start);

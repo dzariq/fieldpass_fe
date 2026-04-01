@@ -39,24 +39,35 @@ class DemoDataController extends Controller
             ]);
 
             $clubsToCreate = [
-                'Kelab Puteri Melur',
-                'Kelab Srikandi Jaya',
-                'Kelab Bunga Raya FC',
-                'Kelab Mawar Selatan',
-                'Kelab Seri Wangi United',
-                'Kelab Anggun Muda',
+                ['code' => 'KPM', 'long_name' => 'Kelab Puteri Melur'],
+                ['code' => 'SKJ', 'long_name' => 'Kelab Srikandi Jaya'],
+                ['code' => 'BRF', 'long_name' => 'Kelab Bunga Raya FC'],
+                ['code' => 'KMS', 'long_name' => 'Kelab Mawar Selatan'],
+                ['code' => 'SWU', 'long_name' => 'Kelab Seri Wangi United'],
+                ['code' => 'KAM', 'long_name' => 'Kelab Anggun Muda'],
             ];
 
             $clubIds = [];
-            foreach ($clubsToCreate as $clubName) {
-                $clubId = DB::table('club')->insertGetId([
-                    'name' => $clubName,
+            $hasLongName = DB::table('information_schema.columns')
+                ->where('table_schema', DB::getDatabaseName())
+                ->where('table_name', 'club')
+                ->where('column_name', 'long_name')
+                ->exists();
+
+            foreach ($clubsToCreate as $club) {
+                $clubInsert = [
+                    'name' => $club['code'], // 3-char code
                     'association_id' => 1,
                     'status' => 'ACTIVE',
                     'created_at' => now(),
                     'updated_at' => now(),
-                ]);
-                $clubIds[$clubName] = $clubId;
+                ];
+                if ($hasLongName) {
+                    $clubInsert['long_name'] = $club['long_name'];
+                }
+
+                $clubId = DB::table('club')->insertGetId($clubInsert);
+                $clubIds[$club['code']] = $clubId;
 
                 DB::table('demo_data_items')->insert([
                     'run_id' => $runId,
@@ -96,7 +107,7 @@ class DemoDataController extends Controller
             $passwordHash = Hash::make('password');
             $playerCounter = 1;
 
-            foreach ($clubIds as $clubName => $clubId) {
+            foreach ($clubIds as $clubCode => $clubId) {
                 for ($i = 1; $i <= 10; $i++) {
                     $name = $malayWomenNames[($playerCounter - 1) % count($malayWomenNames)];
                     $identity = sprintf('DEMO-%d-%03d', $runId, $playerCounter);

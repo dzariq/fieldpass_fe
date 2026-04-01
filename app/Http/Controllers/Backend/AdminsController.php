@@ -14,6 +14,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 
 
 class AdminsController extends Controller
@@ -306,11 +307,18 @@ class AdminsController extends Controller
         $associations = Association::whereIn('id', $associationIds)->get();
 
         $admin = Admin::findOrFail($id);
+
+        // Only list clubs within the editor's association scope (unless superadmin).
+        $clubsQuery = Club::query();
+        if (!auth()->user()->can('association.create')) {
+            $clubsQuery->whereIn('association_id', $associationIds);
+        }
+
         return view('backend.pages.admins.edit', [
             'admin' => $admin,
             'roles' => Role::all(),
             'associations' => $associations,
-            'clubs' => Club::all(),
+            'clubs' => $clubsQuery->orderBy('name')->get(),
         ]);
     }
 
@@ -380,6 +388,23 @@ class AdminsController extends Controller
     public function update(AdminRequest $request, int $id): RedirectResponse
     {
         $this->checkAuthorization(auth()->user(), ['admin.edit']);
+
+        $editor = Admin::find(auth()->user()->id);
+        $associationIds = auth()->user()->can('association.create')
+            ? Association::all()->pluck('id')->map(fn ($v) => (int) $v)->all()
+            : ($editor ? $editor->associations->pluck('id')->map(fn ($v) => (int) $v)->all() : []);
+
+        // Harden: association admins can only assign clubs within their association(s)
+        if ($request->has('club_ids')) {
+            $allowedClubIds = auth()->user()->can('association.create')
+                ? Club::query()->pluck('id')->map(fn ($v) => (int) $v)->all()
+                : Club::query()->whereIn('association_id', $associationIds)->pluck('id')->map(fn ($v) => (int) $v)->all();
+
+            $request->validate([
+                'club_ids' => ['array'],
+                'club_ids.*' => ['integer', Rule::in($allowedClubIds)],
+            ]);
+        }
 
 
 
