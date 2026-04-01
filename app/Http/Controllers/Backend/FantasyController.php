@@ -432,9 +432,10 @@ public function deleteMatchweek($competitionId, $matchweek)
             'matchweeks.*.credit' => 'required|numeric|min:0',
         ]);
 
-        // Check if competition already has fantasy timeline
-        $existingTimeline = FantasyTimeline::where('competition_id', $request->competition_id)->first();
+        $competitionId = (int) $request->competition_id;
 
+        // Check if competition already has fantasy timeline
+        $existingTimeline = FantasyTimeline::where('competition_id', $competitionId)->first();
         if ($existingTimeline) {
             return redirect()->back()
                 ->withInput()
@@ -445,55 +446,96 @@ public function deleteMatchweek($competitionId, $matchweek)
             if (empty($data['cutoff_time'])) {
                 return redirect()->back()
                     ->withInput()
-                    ->withErrors(['competition_id' => 'Matchweek '.$matchweek.' cutoff time is required.']);
+                    ->withErrors(['competition_id' => 'Matchweek ' . $matchweek . ' cutoff time is required.']);
             }
         }
 
-        // // Alternative: You can also check using FantasyRules
-        // $existingRules = FantasyRules::where('competition_id', $request->competition_id)->first();
+        try {
+            DB::beginTransaction();
 
-        // if ($existingRules) {
-        //     return redirect()->back()
-        //         ->withInput()
-        //         ->withErrors(['competition_id' => 'Fantasy rules already exist for this competition. Please edit the existing rules or choose a different competition.']);
-        // }
+            // 1) Create Fantasy Rules (defaults) if missing
+            $existingRules = FantasyRules::where('competition_id', $competitionId)->first();
+            if (!$existingRules) {
+                $mw1 = $request->matchweeks[1] ?? null;
 
-        // Create or update fantasy rules
-        // FantasyRules::create([
-        //     'competition_id' => $request->competition_id,
-        //     'matchweeks' => $request->total_matchweeks,
-        //     'matchweek' => 1,
-        //     'season' => date('Y'),
-        //     // Add other default values from first matchweek
-        //     'transfer' => $request->matchweeks[1]['transfer'] ?? 1,
-        //     'max_same_club' => $request->matchweeks[1]['max_same_club'] ?? 3,
-        //     'credit' => $request->matchweeks[1]['credit'] ?? 100,
-        //     'benchboost' => $request->matchweeks[1]['benchboost'] ?? 1,
-        //     'wildcard' => $request->matchweeks[1]['wildcard'] ?? 1,
-        //     'triple' => $request->matchweeks[1]['triple'] ?? 1,
-        //     'GK' => 2,
-        //     'DF' => 5,
-        //     'MF' => 5,
-        //     'ST' => 3,
-        // ]);
+                FantasyRules::create([
+                    'competition_id' => $competitionId,
+                    'matchweeks' => (int) $request->total_matchweeks,
+                    'matchweek' => 1,
+                    'season' => (string) date('Y'),
+                    'transfer' => (int) ($mw1['transfer'] ?? 2),
+                    'max_same_club' => (int) ($mw1['max_same_club'] ?? 3),
+                    'credit' => (float) ($mw1['credit'] ?? 1000),
+                    'benchboost' => (int) ($mw1['benchboost'] ?? 6),
+                    'wildcard' => (int) ($mw1['wildcard'] ?? 2),
+                    'triple' => (int) ($mw1['triple'] ?? 4),
+                    'GK' => 2,
+                    'DF' => 5,
+                    'MF' => 5,
+                    'ST' => 3,
+                ]);
+            }
 
-        // Create fantasy timeline for each matchweek
-        foreach ($request->matchweeks as $matchweek => $data) {
-            FantasyTimeline::create([
-                'competition_id' => $request->competition_id,
-                'matchweek' => $matchweek,
-                'transfer' => $data['transfer'],
-                'max_same_club' => $data['max_same_club'],
-                'benchboost' => $data['benchboost'],
-                'wildcard' => $data['wildcard'],
-                'triple' => $data['triple'],
-                'credit' => $data['credit'],
-                'cutoff_time' => !empty($data['cutoff_time']) ? strtotime($data['cutoff_time']) : null,
-            ]);
+            // 2) Create Fantasy Points (defaults) if missing
+            $pointsExists = DB::table('fantasy_points')->where('competition_id', $competitionId)->exists();
+            if (!$pointsExists) {
+                $now = now();
+                $defaultsByPos = [
+                    'GK' => ['goal' => 6, 'assist' => 3, 'clean_sheet' => 4, 'concede' => -1],
+                    'DF' => ['goal' => 6, 'assist' => 3, 'clean_sheet' => 4, 'concede' => -1],
+                    'MF' => ['goal' => 5, 'assist' => 3, 'clean_sheet' => 1, 'concede' => 0],
+                    'ST' => ['goal' => 4, 'assist' => 3, 'clean_sheet' => 0, 'concede' => 0],
+                ];
+
+                foreach ($defaultsByPos as $pos => $cfg) {
+                    DB::table('fantasy_points')->insert([
+                        'competition_id' => $competitionId,
+                        'position' => $pos,
+                        'score' => $cfg['goal'],
+                        'assist' => $cfg['assist'],
+                        'clean_sheet' => $cfg['clean_sheet'],
+                        'pen_saved' => 5,
+                        'played_60' => 2,
+                        'win_bonus' => 4,
+                        'yellow' => -1,
+                        'red' => -3,
+                        'owngoal' => -2,
+                        'pen_missed' => -2,
+                        'concede' => $cfg['concede'],
+                        'played_less_60' => 1,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ]);
+                }
+            }
+
+            // 3) Create fantasy timeline for each matchweek
+            foreach ($request->matchweeks as $matchweek => $data) {
+                FantasyTimeline::create([
+                    'competition_id' => $competitionId,
+                    'matchweek' => (int) $matchweek,
+                    'transfer' => (int) $data['transfer'],
+                    'max_same_club' => (int) $data['max_same_club'],
+                    'benchboost' => (int) $data['benchboost'],
+                    'wildcard' => (int) $data['wildcard'],
+                    'triple' => (int) $data['triple'],
+                    'credit' => (float) $data['credit'],
+                    'cutoff_time' => !empty($data['cutoff_time']) ? strtotime($data['cutoff_time']) : null,
+                    'status' => 'ACTIVE',
+                ]);
+            }
+
+            DB::commit();
+
+            session()->flash('success', 'Fantasy created successfully (rules + points + timeline).');
+            return redirect()->route('admin.fantasy.index');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Fantasy create failed: ' . $e->getMessage());
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['error' => 'Failed to create fantasy setup: ' . $e->getMessage()]);
         }
-
-        session()->flash('success', 'Fantasy timeline created successfully!');
-        return redirect()->route('admin.fantasy.index');
     }
     public function edit($competition_id): Renderable
     {

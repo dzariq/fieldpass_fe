@@ -11,6 +11,7 @@ class FantasyTimeline extends Model
     protected $fillable = [
         'competition_id',
         'matchweek',
+        'status',
         'cutoff_time',
         'max_same_club',
         'transfer',
