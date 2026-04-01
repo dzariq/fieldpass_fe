@@ -224,6 +224,28 @@ $invitedClubs = $competition->clubs->filter(function($club) {
                                 @endforeach
                             </small>
                         </div>
+
+                        <div class="reinvite-section mt-3">
+                            <h5><i class="fa fa-check-circle"></i> Force Join Pending Clubs</h5>
+                            <small class="form-text text-muted mb-2">
+                                This will immediately activate the selected pending clubs (INVITED → ACTIVE) without waiting for club acceptance.
+                            </small>
+
+                            <form action="{{ route('admin.competition.forceJoin', $competition->id) }}" method="POST" class="border rounded p-3">
+                                @csrf
+                                <div class="mb-2">
+                                    @foreach($invitedClubs as $club)
+                                        <label class="mr-3 mb-2" style="display:inline-block;">
+                                            <input type="checkbox" name="club_ids[]" value="{{ $club->id }}"> {{ $club->name }}
+                                        </label>
+                                    @endforeach
+                                </div>
+
+                                <button type="submit" class="btn btn-warning">
+                                    <i class="fa fa-bolt"></i> Force Join Selected
+                                </button>
+                            </form>
+                        </div>
                         @endif
 
                         <div class="mt-4">

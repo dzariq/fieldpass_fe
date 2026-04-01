@@ -124,6 +124,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.'], function () {
   Route::get('/competition/invites', [CompetitionController::class, 'invites'])->name('competition.invites.index');
   Route::get('/competition/approve/{id}', [CompetitionController::class, 'approve'])->name('competition.invites.approve');
   Route::get('/competition/reject/{id}', [CompetitionController::class, 'reject'])->name('competition.invites.reject');
+  Route::post('/competition/{id}/force-join', [CompetitionController::class, 'forceJoin'])->name('competition.forceJoin');
   Route::get('/competition/details/{id}', [CompetitionController::class, 'details'])->name('competition.details');
 
   Route::get('/notification', [NotificationController::class, 'index'])->name('notifications');

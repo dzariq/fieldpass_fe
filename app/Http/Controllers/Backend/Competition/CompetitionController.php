@@ -24,6 +24,43 @@ use League\Uri\Http;
 
 class CompetitionController extends Controller
 {
+    public function forceJoin(Request $request, int $id): RedirectResponse
+    {
+        $this->checkAuthorization(auth()->user(), ['competition.edit']);
+
+        $request->validate([
+            'club_ids' => 'required|array|min:1',
+            'club_ids.*' => 'integer',
+        ], [
+            'club_ids.required' => 'Please select at least one pending club to force join.',
+        ]);
+
+        $competition = Competition::findOrFail($id);
+
+        // Association admins can only act within their association(s).
+        $admin = Admin::find(auth()->user()->id);
+        $associationIds = $admin ? $admin->associations->pluck('id')->map(fn ($v) => (int) $v)->all() : [];
+        if (count($associationIds) > 0 && !auth()->user()->can('association.create')) {
+            if (!in_array((int) $competition->association_id, $associationIds, true)) {
+                return back()->with('error', 'You can only force join clubs for competitions in your association.');
+            }
+        }
+
+        $clubIds = array_map('intval', $request->input('club_ids', []));
+
+        // Only update pending invites for this competition.
+        $updated = CompetitionClub::where('competition_id', $competition->id)
+            ->where('status', 'INVITED')
+            ->whereIn('club_id', $clubIds)
+            ->update(['status' => 'ACTIVE']);
+
+        if ($updated > 0) {
+            return back()->with('success', "Force join successful. Activated {$updated} club(s).");
+        }
+
+        return back()->with('error', 'No pending clubs were activated. They may already be active/rejected.');
+    }
+
     public function index(): Renderable
     {
         $this->checkAuthorization(auth()->user(), ['competition.view']);
