@@ -1,0 +1,24 @@
+SELECT 
+    COALESCE(e2.points, 0) AS points,
+    COALESCE(e2.minutes_played, 0) AS minutes_played,
+    CASE 
+        WHEN COUNT(e.event_type) = 0 THEN JSON_ARRAY()
+        ELSE JSON_ARRAYAGG(
+            JSON_OBJECT(
+                'event_type', e.event_type,
+                'minute_in_match', e.minute_in_match
+            )
+        )
+    END AS actions
+FROM fantasy_player_match_events e2
+LEFT JOIN match_events e 
+    ON e.player_id = e2.player_id 
+    AND e.match_id = e2.match_id
+    AND e.club_id = e2.club_id
+WHERE e2.player_id = {{ $json.id }} and e2.matchweek = {{ $('get picks of prev mw').first().json.mw }}
+GROUP BY 
+    e2.player_id, 
+    e2.club_id, 
+    e2.matchweek,
+    e2.points,
+    e2.minutes_played;

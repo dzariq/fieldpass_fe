@@ -1,0 +1,36 @@
+version: "3.7"
+services:
+  board:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: dzariq/board
+    container_name: dashboard
+    restart: unless-stopped
+    tty: true
+    expose:
+      - "9000"
+    networks:
+      - shared-network
+    volumes:
+      - laravel_backend:/var/www/dashboard/public/backend
+      - laravel_css:/var/www/dashboard/public/css
+      - laravel_js:/var/www/dashboard/public/js
+      - laravel_avatars:/var/www/dashboard/public/avatars 
+      - .:/var/www/dashboard
+# command: tail -f /dev/null  # Prevents Nginx from starting
+networks:
+  shared-network:
+    external: true  
+volumes:
+  db_data:
+  laravel_backend:  # Declare the shared volume for the /public directory
+    external: true  # This makes it an external volume that can be used by both repos
+  laravel_css:  # Declare the shared volume for the /public directory
+    external: true  # 
+  laravel_js:  # Declare the shared volume for the /public directory
+    external: true  #
+  laravel_avatars:  # Declare the shared volume for the /public directory
+    external: true  # This makes it an external volume that can be used by both repos
+
+    

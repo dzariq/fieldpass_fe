@@ -1,0 +1,52 @@
+stages:
+  - build
+  - deploy
+
+variables:
+  DOCKER_IMAGE: dzariq/board
+  DOCKER_TAG: latest  # or use a specific tag based on CI_COMMIT_SHA
+  DROPLET_IP: 178.128.49.171
+  CONTAINER_NAME: fieldpass
+  DROPLET_USER: root
+  DB_CONNECTION: mysql
+  DB_HOST: mysql
+  DB_PORT: 3306
+  DB_DATABASE: fieldpass_app
+  DB_USERNAME: root
+  DB_PASSWORD: "#1Sampai9"
+  GITLAB_USER: "dzariq"
+  GITLAB_TOKEN: $CI_JOB_TOKEN
+
+build_image:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - docker login -u dzariq -p Dzariq123
+    - docker build -t dzariq/board .
+    - docker-compose push
+  only:
+    - main  # or the branch you want to build from
+
+deploy_to_droplet:
+  stage: deploy
+  image: docker:latest
+  before_script:
+    - eval $(ssh-agent -s)
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n" > ~/.ssh/config;
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+    - echo "$SSH_PUBLIC_KEY" | tr -d '\r' > ~/.ssh/id_rsa.pub
+    - chmod 600 ~/.ssh/id_rsa;
+    - chmod 764 ~/.ssh/id_rsa.pub;
+    - ssh-keyscan -H gitlab.com >> ~/.ssh/known_hosts
+    - git config --global url."https://${GITLAB_USER}:${GITLAB_TOKEN}@gitlab.com".insteadOf "https://gitlab.com"
+    - git clone git@gitlab.com:dzariq/fieldpass-frontend.git
+  script:
+    - docker-compose -H "ssh://$DROPLET_USER@$DROPLET_IP" down
+    - docker-compose -H "ssh://$DROPLET_USER@$DROPLET_IP" pull
+    - docker-compose -H "ssh://$DROPLET_USER@$DROPLET_IP" up -d --force-recreate --renew-anon-volumes --build
+  only:
+    - main  # or the branch you want to deploy from

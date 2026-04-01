@@ -1,0 +1,263 @@
+
+DROP PROCEDURE IF EXISTS calculate_player_minutes_and_points 
+
+CREATE PROCEDURE calculate_player_minutes_and_points(
+    IN p_match_id INT
+)
+BEGIN
+    DECLARE match_duration INT DEFAULT 90;
+    DECLARE competition_id_var INT;
+    DECLARE matchweek_var INT;
+    
+    -- Get competition_id from match table
+    SELECT competition_id, matchweek INTO competition_id_var, matchweek_var
+    FROM `match`
+    WHERE id = p_match_id
+    LIMIT 1;
+    
+    -- Exit if match not found
+    IF competition_id_var IS NULL THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Match not found';
+    END IF;
+    
+    DROP TEMPORARY TABLE IF EXISTS temp_player_minutes;
+    
+    CREATE TEMPORARY TABLE temp_player_minutes (
+        player_id BIGINT UNSIGNED,
+        club_id BIGINT UNSIGNED,
+        minutes_played INT DEFAULT 0,
+        started BOOLEAN DEFAULT FALSE,
+        subbed_in_minute INT DEFAULT NULL,
+        subbed_out_minute INT DEFAULT NULL,
+        PRIMARY KEY (player_id, club_id)
+    );
+
+    -- Insert ALL players from BOTH teams (Home and Away)
+    INSERT INTO temp_player_minutes (player_id, club_id, started, minutes_played)
+    SELECT player_id, club_id, TRUE, match_duration
+    FROM (
+        -- Home Team Players
+        SELECT gk as player_id, club_id FROM match_players WHERE match_id = p_match_id AND gk IS NOT NULL
+        UNION ALL
+        SELECT player1, club_id FROM match_players WHERE match_id = p_match_id AND player1 IS NOT NULL
+        UNION ALL
+        SELECT player2, club_id FROM match_players WHERE match_id = p_match_id AND player2 IS NOT NULL
+        UNION ALL
+        SELECT player3, club_id FROM match_players WHERE match_id = p_match_id AND player3 IS NOT NULL
+        UNION ALL
+        SELECT player4, club_id FROM match_players WHERE match_id = p_match_id AND player4 IS NOT NULL
+        UNION ALL
+        SELECT player5, club_id FROM match_players WHERE match_id = p_match_id AND player5 IS NOT NULL
+        UNION ALL
+        SELECT player6, club_id FROM match_players WHERE match_id = p_match_id AND player6 IS NOT NULL
+        UNION ALL
+        SELECT player7, club_id FROM match_players WHERE match_id = p_match_id AND player7 IS NOT NULL
+        UNION ALL
+        SELECT player8, club_id FROM match_players WHERE match_id = p_match_id AND player8 IS NOT NULL
+        UNION ALL
+        SELECT player9, club_id FROM match_players WHERE match_id = p_match_id AND player9 IS NOT NULL
+        UNION ALL
+        SELECT player10, club_id FROM match_players WHERE match_id = p_match_id AND player10 IS NOT NULL
+    ) all_starters;
+
+    -- Update for players who were subbed out
+    UPDATE temp_player_minutes tpm
+    INNER JOIN match_events me ON me.player_id = tpm.player_id AND me.club_id = tpm.club_id
+    SET 
+        tpm.subbed_out_minute = me.minute_in_match,
+        tpm.minutes_played = me.minute_in_match
+    WHERE me.match_id = p_match_id
+        AND me.event_type = 'sub_out';
+
+    -- Insert players who were subbed in (from BOTH teams)
+    INSERT INTO temp_player_minutes (player_id, club_id, started, subbed_in_minute, minutes_played)
+    SELECT 
+        me.player_id,
+        me.club_id,
+        FALSE,
+        me.minute_in_match,
+        match_duration - me.minute_in_match
+    FROM match_events me
+    WHERE me.match_id = p_match_id
+        AND me.event_type = 'sub_in'
+    ON DUPLICATE KEY UPDATE
+        subbed_in_minute = VALUES(subbed_in_minute),
+        minutes_played = VALUES(minutes_played);
+
+    -- Delete existing records for this match
+    DELETE FROM fantasy_player_match_events 
+    WHERE match_id = p_match_id 
+        AND competition_id = competition_id_var;
+
+    -- Insert calculated points for ALL players from BOTH teams
+    INSERT INTO fantasy_player_match_events (player_id, match_id, competition_id, club_id, matchweek, points, minutes_played)
+    SELECT 
+        tpm.player_id,
+        p_match_id,
+        competition_id_var,
+        tpm.club_id,
+        matchweek_var,
+        (
+            -- Minutes played points (based on players position)
+            CASE 
+                WHEN tpm.minutes_played >= 60 THEN 
+                    COALESCE((
+                        SELECT fp.played_60
+                        FROM players p
+                        LEFT JOIN fantasy_points fp ON fp.competition_id = competition_id_var 
+                            AND fp.position = CASE 
+                                WHEN p.position = 'Goalkeeper' THEN 'GK'
+                                WHEN p.position = 'Defender' THEN 'DF'
+                                WHEN p.position = 'Midfielder' THEN 'MF'
+                                WHEN p.position = 'Forward' THEN 'ST'
+                                ELSE 'MF'
+                            END
+                        WHERE p.id = tpm.player_id
+                        LIMIT 1
+                    ), 0)
+                WHEN tpm.minutes_played > 0 THEN 
+                    COALESCE((
+                        SELECT fp.played_less_60
+                        FROM players p
+                        LEFT JOIN fantasy_points fp ON fp.competition_id = competition_id_var 
+                            AND fp.position = CASE 
+                                WHEN p.position = 'Goalkeeper' THEN 'GK'
+                                WHEN p.position = 'Defender' THEN 'DF'
+                                WHEN p.position = 'Midfielder' THEN 'MF'
+                                WHEN p.position = 'Forward' THEN 'ST'
+                                ELSE 'MF'
+                            END
+                        WHERE p.id = tpm.player_id
+                        LIMIT 1
+                    ), 0)
+                ELSE 0
+            END
+            +
+            -- Clean sheet bonus (if player played >= 60 minutes AND no goals conceded during their playing time)
+            CASE 
+                WHEN tpm.minutes_played >= 60 THEN
+                    CASE 
+                        WHEN (
+                            -- Check if ANY goal was conceded during this player's playing time
+                            SELECT COUNT(*)
+                            FROM match_events me
+                            INNER JOIN player_club pc ON pc.player_id = me.player_id
+                            WHERE me.match_id = p_match_id
+                                AND (
+                                    -- Opponent goals (goals by players from opposing club)
+                                    (me.event_type = 'goal' AND pc.club_id != tpm.club_id)
+                                    OR
+                                    -- Our own goals (own goals by players from our club)
+                                    (me.event_type = 'own_goal' AND pc.club_id = tpm.club_id)
+                                )
+                                AND (
+                                    -- Check if goal happened during player's playing time
+                                    (tpm.started = TRUE AND tpm.subbed_out_minute IS NULL) -- Player started and played full match
+                                    OR
+                                    (tpm.started = TRUE AND me.minute_in_match <= tpm.subbed_out_minute) -- Player started and goal before subbed out
+                                    OR
+                                    (tpm.started = FALSE AND me.minute_in_match >= tpm.subbed_in_minute) -- Player subbed in and goal after sub in
+                                )
+                        ) = 0 THEN
+                            -- No goals conceded during playing time - give clean sheet bonus
+                            COALESCE((
+                                SELECT fp.clean_sheet
+                                FROM players p
+                                LEFT JOIN fantasy_points fp ON fp.competition_id = competition_id_var 
+                                    AND fp.position = CASE 
+                                        WHEN p.position = 'Goalkeeper' THEN 'GK'
+                                        WHEN p.position = 'Defender' THEN 'DF'
+                                        WHEN p.position = 'Midfielder' THEN 'MF'
+                                        WHEN p.position = 'Forward' THEN 'ST'
+                                        ELSE 'MF'
+                                    END
+                                WHERE p.id = tpm.player_id
+                                LIMIT 1
+                            ), 0)
+                        ELSE 0
+                    END
+                ELSE 0
+            END
+            +
+            -- Concede points (for GK and DF only, for every 2 goals conceded)
+            CASE 
+                WHEN (SELECT position FROM players WHERE id = tpm.player_id) IN ('Goalkeeper', 'Defender') THEN
+                    (
+                        -- Count goals conceded during player's playing time, divide by 2 (rounded down), multiply by concede points
+                        FLOOR(
+                            (
+                                SELECT COUNT(*)
+                                FROM match_events me
+                                INNER JOIN player_club pc ON pc.player_id = me.player_id
+                                WHERE me.match_id = p_match_id
+                                    AND (
+                                        -- Opponent goals
+                                        (me.event_type = 'goal' AND pc.club_id != tpm.club_id)
+                                        OR
+                                        -- Our own goals
+                                        (me.event_type = 'own_goal' AND pc.club_id = tpm.club_id)
+                                    )
+                                    AND (
+                                        -- Check if goal happened during player's playing time
+                                        (tpm.started = TRUE AND tpm.subbed_out_minute IS NULL) -- Player started and played full match
+                                        OR
+                                        (tpm.started = TRUE AND me.minute_in_match <= tpm.subbed_out_minute) -- Player started and goal before subbed out
+                                        OR
+                                        (tpm.started = FALSE AND me.minute_in_match >= tpm.subbed_in_minute) -- Player subbed in and goal after sub in
+                                    )
+                            ) / 2
+                        )
+                        * 
+                        COALESCE((
+                            SELECT fp.concede
+                            FROM fantasy_points fp
+                            WHERE fp.competition_id = competition_id_var
+                                AND fp.position = CASE 
+                                    WHEN (SELECT position FROM players WHERE id = tpm.player_id) = 'Goalkeeper' THEN 'GK'
+                                    WHEN (SELECT position FROM players WHERE id = tpm.player_id) = 'Defender' THEN 'DF'
+                                END
+                            LIMIT 1
+                        ), 0)
+                    )
+                ELSE 0
+            END
+            +
+            -- Action points (based on players position)
+            COALESCE(
+                (
+                    SELECT SUM(
+                        CASE 
+                            WHEN me.event_type = 'goal' THEN fp.score
+                            WHEN me.event_type = 'assist' THEN fp.assist
+                            WHEN me.event_type = 'yellow_card' THEN fp.yellow
+                            WHEN me.event_type = 'red_card' THEN fp.red
+                            WHEN me.event_type = 'penalty_missed' THEN fp.pen_missed
+                            WHEN me.event_type = 'penalty_saved' THEN fp.pen_saved
+                            WHEN me.event_type = 'own_goal' THEN fp.owngoal
+                            ELSE 0
+                        END
+                    )
+                    FROM match_events me
+                    INNER JOIN players p ON p.id = me.player_id
+                    LEFT JOIN fantasy_points fp ON fp.competition_id = competition_id_var 
+                        AND fp.position = CASE 
+                            WHEN p.position = 'Goalkeeper' THEN 'GK'
+                            WHEN p.position = 'Defender' THEN 'DF'
+                            WHEN p.position = 'Midfielder' THEN 'MF'
+                            WHEN p.position = 'Forward' THEN 'ST'
+                            ELSE 'MF'
+                        END
+                    WHERE me.player_id = tpm.player_id 
+                        AND me.match_id = p_match_id
+                        AND me.club_id = tpm.club_id
+                        AND me.event_type NOT IN ('sub_in', 'sub_out')
+                ),
+                0
+            )
+        ) as total_points,
+        tpm.minutes_played
+    FROM temp_player_minutes tpm;
+
+    DROP TEMPORARY TABLE IF EXISTS temp_player_minutes;
+    
+END
