@@ -8,11 +8,34 @@ if($association){
 }else if($club){
     $competitions = collect();
 
-    foreach ($usr->clubs as $club) {
-        $competitions = $competitions->merge($club->competitions);
+    foreach ($usr->clubs as $userClub) {
+        $competitions = $competitions->merge($userClub->competitions);
     }
 
     $competitions = $competitions->unique('id');
+}
+
+$defaultAvatar = asset('backend/assets/images/default-avatar.png');
+if ($club) {
+    if (!empty($club->avatar)) {
+        $headerAvatarSrc = asset($club->avatar);
+    } elseif (!empty($usr->avatar)) {
+        $headerAvatarSrc = asset($usr->avatar);
+    } else {
+        $headerAvatarSrc = $defaultAvatar;
+    }
+} elseif ($association) {
+    if (!empty($association->avatar)) {
+        $headerAvatarSrc = asset($association->avatar);
+    } elseif (!empty($usr->avatar)) {
+        $headerAvatarSrc = asset($usr->avatar);
+    } else {
+        $headerAvatarSrc = $defaultAvatar;
+    }
+} elseif (!empty($usr->avatar)) {
+    $headerAvatarSrc = asset($usr->avatar);
+} else {
+    $headerAvatarSrc = $defaultAvatar;
 }
 @endphp
 
@@ -58,13 +81,7 @@ if($association){
                 <button class="profile-trigger" type="button" data-toggle="dropdown" aria-expanded="false">
                     <div class="profile-info">
                         <div class="profile-avatar">
-                            @if($club)
-                            <img src="{{ $club->avatar ? asset($club->avatar) : asset('backend/assets/images/default-avatar.png') }}" alt="{{ $club->name }}" class="avatar-img" />
-                            @elseif($association)
-                            <img src="{{ $association->avatar ? asset($association->avatar) : asset('backend/assets/images/default-avatar.png') }}" alt="{{ $association->name }}" class="avatar-img" />
-                            @else
-                            <img src="{{ $usr->avatar ? asset(Auth::guard('admin')->user()->avatar) : asset('backend/assets/images/default-avatar.png') }}" alt="{{ $usr->name }}" class="avatar-img" />
-                            @endif
+                            <img src="{{ $headerAvatarSrc }}" alt="{{ $usr->name }}" class="avatar-img" />
                         </div>
                         <div class="profile-details">
                             @if($club)
@@ -82,13 +99,7 @@ if($association){
                 <div class="dropdown-menu profile-menu">
                     <div class="dropdown-header">
                         <div class="header-avatar">
-                            @if($club)
-                            <img src="{{ $club->avatar ? asset($club->avatar) : asset('backend/assets/images/default-avatar.png') }}" alt="{{ $club->name }}" class="header-avatar-img" />
-                            @elseif($association)
-                            <img src="{{ $association->avatar ? asset($association->avatar) : asset('backend/assets/images/default-avatar.png') }}" alt="{{ $association->name }}" class="header-avatar-img" />
-                            @else
-                            <img src="{{ $usr->avatar ? asset(Auth::guard('admin')->user()->avatar) : asset('backend/assets/images/default-avatar.png') }}" alt="{{ $usr->name }}" class="header-avatar-img" />
-                            @endif
+                            <img src="{{ $headerAvatarSrc }}" alt="{{ $usr->name }}" class="header-avatar-img" />
                         </div>
                         <div class="header-info">
                             <h6>{{ Auth::guard('admin')->user()->name }}</h6>

@@ -138,9 +138,11 @@ Bulk Upload Players - Admin Panel
                         <h5><i class="fa fa-info-circle"></i> Instructions</h5>
                         <ul>
                             <li><strong>Download the template</strong> first and fill in your player data</li>
+                            <li><strong style="color: #dc3545;">Before upload:</strong> select the <strong>club</strong> (from your association) that all players in this file will be assigned to.</li>
                             <li>
                                 <strong style="color: #dc3545;">Compulsory fields (Required):</strong>
                                 <ul style="margin-top: 5px;">
+                                    <li>Club (dropdown on this page)</li>
                                     <li>Name</li>
                                     <li>Identity Number (IC/Passport)</li>
                                     <li>Position (Goalkeeper, Defender, Midfielder, Forward)</li>
@@ -167,9 +169,26 @@ Bulk Upload Players - Admin Panel
 
                     <hr class="my-4">
 
+                    @if($clubs->isEmpty())
+                    <div class="alert alert-warning">
+                        <strong>No clubs available.</strong> You need at least one club under your association (or assigned to your account) before you can bulk upload players.
+                    </div>
+                    @endif
+
                     <!-- Upload Form -->
                     <form action="{{ route('admin.players.bulk.store') }}" method="POST" enctype="multipart/form-data" id="uploadForm">
                         @csrf
+
+                        <div class="form-group mb-4">
+                            <label for="club_id"><strong>Club</strong> <span class="text-danger">*</span></label>
+                            <select name="club_id" id="club_id" class="form-control form-control-lg" required {{ $clubs->isEmpty() ? 'disabled' : '' }}>
+                                <option value="">— Select a club —</option>
+                                @foreach($clubs as $c)
+                                <option value="{{ $c->id }}" {{ old('club_id') == $c->id ? 'selected' : '' }}>{{ $c->name }}</option>
+                                @endforeach
+                            </select>
+                            <small class="form-text text-muted">All players in this upload will be linked to this club and given an active contract (start today, one year).</small>
+                        </div>
 
                         <label for="fileInput" class="upload-area" id="uploadArea">
                             <i class="fa fa-cloud-upload-alt upload-icon"></i>
@@ -180,7 +199,7 @@ Bulk Upload Players - Admin Panel
                         </label>
 
                         <div class="text-center mt-4">
-                            <button type="submit" class="btn btn-primary btn-lg" id="uploadBtn" disabled>
+                            <button type="submit" class="btn btn-primary btn-lg" id="uploadBtn" disabled {{ $clubs->isEmpty() ? 'disabled' : '' }}>
                                 <i class="fa fa-upload"></i> Upload Players
                             </button>
                             <a href="{{ route('admin.players.index') }}" class="btn btn-secondary btn-lg">
@@ -205,6 +224,17 @@ Bulk Upload Players - Admin Panel
             var fileInput = document.getElementById('fileInput');
             var fileName = document.getElementById('fileName');
             var uploadBtn = document.getElementById('uploadBtn');
+            var clubSelect = document.getElementById('club_id');
+
+            function updateUploadButtonState() {
+                var hasFile = fileInput.files && fileInput.files.length > 0;
+                var hasClub = clubSelect && clubSelect.value !== '';
+                uploadBtn.disabled = !hasFile || !hasClub || clubSelect.disabled;
+            }
+
+            if (clubSelect) {
+                clubSelect.addEventListener('change', updateUploadButtonState);
+            }
 
             // File selected event
             fileInput.addEventListener('change', function() {
@@ -214,20 +244,26 @@ Bulk Upload Players - Admin Panel
                         alert('Please select a CSV file only.');
                         this.value = '';
                         fileName.style.display = 'none';
-                        uploadBtn.disabled = true;
+                        updateUploadButtonState();
                         return;
                     }
                     fileName.textContent = 'Selected: ' + file.name;
                     fileName.style.display = 'block';
-                    uploadBtn.disabled = false;
+                    updateUploadButtonState();
                 } else {
                     fileName.style.display = 'none';
-                    uploadBtn.disabled = true;
+                    updateUploadButtonState();
                 }
             });
 
+            updateUploadButtonState();
+
             // Form submission
             document.getElementById('uploadForm').addEventListener('submit', function() {
+                if (!clubSelect.value) {
+                    alert('Please select a club.');
+                    return false;
+                }
                 if (!fileInput.files || fileInput.files.length === 0) {
                     alert('Please select a CSV file to upload.');
                     return false;

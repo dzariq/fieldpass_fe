@@ -19,12 +19,56 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Collection;
+use Illuminate\Validation\Rule;
 use Maatwebsite\Excel\Facades\Excel;
 
 
 
 class PlayersController extends Controller
 {
+    /**
+     * Clubs the current admin may assign when bulk-uploading players (association scope or direct club assignment).
+     */
+    private function clubsForBulkUpload(Admin $admin): Collection
+    {
+        $associationIds = $admin->associations->pluck('id')->toArray();
+        if (count($associationIds) > 0) {
+            return Club::whereIn('association_id', $associationIds)->orderBy('name')->get();
+        }
+
+        $clubIds = $admin->clubs()->pluck('club.id')->toArray();
+        if (count($clubIds) > 0) {
+            return Club::whereIn('id', $clubIds)->orderBy('name')->get();
+        }
+
+        return Club::orderBy('name')->get();
+    }
+
+    /**
+     * Club IDs used to scope the admin players list (association clubs, else assigned clubs; null = no restriction).
+     *
+     * @return array<int>|null
+     */
+    private function allowedClubIdsForPlayersList(Admin $admin): ?array
+    {
+        $associationIds = $admin->associations->pluck('id')->toArray();
+        if (count($associationIds) > 0) {
+            return Club::whereIn('association_id', $associationIds)
+                ->pluck('id')
+                ->map(fn ($id) => (int) $id)
+                ->values()
+                ->all();
+        }
+
+        $clubIds = $admin->clubs()->pluck('club.id')->map(fn ($id) => (int) $id)->values()->all();
+        if (count($clubIds) > 0) {
+            return $clubIds;
+        }
+
+        return null;
+    }
+
     public function index(): Renderable
     {
         // $this->checkAuthorization(auth()->user(), ['players.view']);
@@ -512,7 +556,10 @@ class PlayersController extends Controller
     {
         $this->checkAuthorization(auth()->user(), ['admin.create']);
 
-        return view('backend.pages.players.bulk-upload');
+        $admin = Admin::findOrFail(auth()->user()->id);
+        $clubs = $this->clubsForBulkUpload($admin);
+
+        return view('backend.pages.players.bulk-upload', compact('clubs'));
     }
 
     public function downloadTemplate()
@@ -585,9 +632,24 @@ class PlayersController extends Controller
     {
         $this->checkAuthorization(auth()->user(), ['admin.create']);
 
+        $admin = Admin::findOrFail(auth()->user()->id);
+        $allowedClubIds = $this->clubsForBulkUpload($admin)->pluck('id')->map(fn ($id) => (int) $id)->all();
+
+        if (count($allowedClubIds) === 0) {
+            session()->flash('error', 'No clubs are available for your account. You cannot bulk upload players until a club is available.');
+            return back();
+        }
+
         $request->validate([
+            'club_id' => ['required', 'integer', Rule::in($allowedClubIds)],
             'file' => 'required|file|mimes:csv,txt|max:2048',
+        ], [
+            'club_id.required' => 'Please select a club before uploading.',
+            'club_id.in' => 'The selected club is not valid for your account.',
         ]);
+
+        $clubId = (int) $request->input('club_id');
+        $clubObj = Club::findOrFail($clubId);
 
         $file = $request->file('file');
         $fileData = array_map('str_getcsv', file($file->getRealPath()));
@@ -691,6 +753,24 @@ class PlayersController extends Controller
                 $player->status = 'INVITED';
                 $player->save();
 
+                $player->clubs()->sync([$clubId]);
+
+                $salaryValue = $data['salary'] !== '' && is_numeric($data['salary'])
+                    ? (float) $data['salary']
+                    : 0.0;
+
+                $contractStart = date('Y-m-d');
+                $contractEnd = date('Y-m-d', strtotime($contractStart . ' +1 year'));
+
+                $contract = new PlayerContract();
+                $contract->player_id = $player->id;
+                $contract->club_id = $clubObj->id;
+                $contract->start_date = $contractStart;
+                $contract->end_date = $contractEnd;
+                $contract->salary = $salaryValue;
+                $contract->status = 'active';
+                $contract->save();
+
                 // Add to notification queue instead of sending immediately
                 if (!empty($player->phone)) {
                     $playersToNotify[] = [
@@ -701,9 +781,9 @@ class PlayersController extends Controller
                         'username' => $player->username,
                         'domain' => env('APP_URL'),
                         'country_code' => $player->country_code,
-                        'club_name' => '',
-                        'start' => '',
-                        'end' => '',
+                        'club_name' => $clubObj->name,
+                        'start' => date('F j, Y', strtotime($contractStart)),
+                        'end' => date('F j, Y', strtotime($contractEnd)),
                         'name' => $player->name
                     ];
                 }
@@ -784,18 +864,41 @@ class PlayersController extends Controller
     {
         $this->checkAuthorization(auth()->user(), ['admin.create']);
 
-        $clubs = Club::orderBy('name')->get();
+        $admin = Admin::findOrFail(auth()->user()->id);
+        $allowedClubIds = $this->allowedClubIdsForPlayersList($admin);
+
+        $clubs = $allowedClubIds === null
+            ? Club::orderBy('name')->get()
+            : Club::whereIn('id', $allowedClubIds)->orderBy('name')->get();
+
         $selectedClubId = $request->input('club_id');
+        if ($selectedClubId !== null && $selectedClubId !== '' && $allowedClubIds !== null) {
+            if (! in_array((int) $selectedClubId, $allowedClubIds, true)) {
+                $selectedClubId = null;
+            }
+        }
 
         // Query players
         $query = Player::with(['clubs', 'contracts' => function ($q) {
             $q->where('status', 'active')->latest();
         }]);
 
-        // Filter by club if selected
-        if ($selectedClubId) {
+        // Only players linked to clubs this admin may see (association / assigned clubs); super admin => no base filter
+        if ($allowedClubIds !== null) {
+            $scopeClubIds = $selectedClubId
+                ? [(int) $selectedClubId]
+                : $allowedClubIds;
+            if (count($scopeClubIds) === 0) {
+                $query->whereRaw('0 = 1');
+            } else {
+                $query->whereHas('clubs', function ($q) use ($scopeClubIds) {
+                    // Qualify to avoid ambiguity with player_club.id
+                    $q->whereIn('club.id', $scopeClubIds);
+                });
+            }
+        } elseif ($selectedClubId) {
             $query->whereHas('clubs', function ($q) use ($selectedClubId) {
-                $q->where('club.id', $selectedClubId);
+                $q->where('club.id', (int) $selectedClubId);
             });
         }
 

@@ -314,7 +314,10 @@ All Players - Admin Panel
                         <h4 class="header-title mb-0">
                             Players List 
                             @if($selectedClubId)
-                                - {{ $clubs->find($selectedClubId)->name }}
+                                @php $filterClub = $clubs->firstWhere('id', (int) $selectedClubId); @endphp
+                                @if($filterClub)
+                                    - {{ $filterClub->name }}
+                                @endif
                             @endif
                         </h4>
                         <div>

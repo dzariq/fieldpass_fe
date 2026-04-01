@@ -34,9 +34,10 @@ class MatchesController extends Controller
         $perPage = (int) min(max($request->get('per_page', 25), 10), 100);
         $baseQuery = Matches::query()->with(['home_club', 'away_club', 'competition']);
 
-        if (!auth()->user()->can('competition.create')) {
-            $admin_obj = Admin::find(auth()->user()->id);
-            $associationIds = $admin_obj->associations()->pluck('id');
+        // Scope association admins to their association competitions (super admin can see all).
+        $admin_obj = Admin::find(auth()->user()->id);
+        $associationIds = $admin_obj ? $admin_obj->associations()->pluck('association.id') : collect();
+        if ($associationIds->count() > 0 && !auth()->user()->can('association.create')) {
             $competitionIds = Competition::whereIn('association_id', $associationIds)->pluck('id');
             $baseQuery->whereIn('competition_id', $competitionIds);
         }
@@ -51,18 +52,14 @@ class MatchesController extends Controller
         $matches = $baseQuery->orderBy('date', 'desc')->paginate($perPage)->withQueryString();
 
         $filterMatchweeks = Matches::query()
-            ->when(!auth()->user()->can('competition.create'), function ($q) {
-                $admin_obj = Admin::find(auth()->user()->id);
-                $associationIds = $admin_obj->associations()->pluck('id');
+            ->when($associationIds->count() > 0 && !auth()->user()->can('association.create'), function ($q) use ($associationIds) {
                 $competitionIds = Competition::whereIn('association_id', $associationIds)->pluck('id');
                 $q->whereIn('competition_id', $competitionIds);
             })
             ->distinct()->orderBy('matchweek')->pluck('matchweek');
 
         $filterCompetitions = Competition::query()
-            ->when(!auth()->user()->can('competition.create'), function ($q) {
-                $admin_obj = Admin::find(auth()->user()->id);
-                $associationIds = $admin_obj->associations()->pluck('id');
+            ->when($associationIds->count() > 0 && !auth()->user()->can('association.create'), function ($q) use ($associationIds) {
                 $q->whereIn('association_id', $associationIds);
             })
             ->orderBy('name')->get(['id', 'name']);
