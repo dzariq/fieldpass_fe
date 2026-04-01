@@ -33,7 +33,9 @@ class AjaxController extends Controller
 
         // Only active clubs in this competition
         $clubs = Club::whereHas('competitions', function ($query) use ($competitionId) {
-            $query->where('competition_id', $competitionId)->where('status', 'ACTIVE');
+            // Be explicit: filter by competition table + pivot status
+            $query->where('competition.id', $competitionId)
+                ->where('competition_club.status', 'ACTIVE');
         })
             ->orderBy('name')
             ->get(['id', 'name']);

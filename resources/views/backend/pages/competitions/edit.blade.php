@@ -78,7 +78,7 @@ $invitedClubs = $competition->clubs->filter(function($club) {
                     <h4 class="header-title">Edit Competition - {{ $competition->name }}</h4>
                     @include('backend.layouts.partials.messages')
 
-                    <form action="{{ route('admin.competitions.update', $competition->id) }}" method="POST" enctype="multipart/form-data">
+                    <form id="{{ $competition->id }}-competition-update-form" action="{{ route('admin.competitions.update', $competition->id) }}" method="POST" enctype="multipart/form-data">
                         @method('PUT')
                         @csrf
 
@@ -205,49 +205,6 @@ $invitedClubs = $competition->clubs->filter(function($club) {
                             </div>
                         </div>
 
-                        @if($invitedClubs->count() > 0)
-                        <!-- Re-invite Section -->
-                        <div class="reinvite-section">
-                            <h5><i class="fa fa-envelope"></i> Re-send Invitations</h5>
-                            <div class="custom-control custom-checkbox">
-                                <input type="checkbox" class="custom-control-input custom-checkbox-large" id="reinvite_pending" name="reinvite_pending" value="1">
-                                <label class="custom-control-label" for="reinvite_pending">
-                                    <strong>Re-invite all pending clubs ({{ $invitedClubs->count() }} clubs)</strong>
-                                </label>
-                            </div>
-                            <small class="form-text text-muted mt-2">
-                                <i class="fa fa-info-circle"></i> This will resend WhatsApp invitations to all clubs that haven't accepted or rejected the invitation yet.
-                                <br>
-                                Pending clubs: 
-                                @foreach($invitedClubs as $club)
-                                    <span class="badge badge-warning">{{ $club->name }}</span>
-                                @endforeach
-                            </small>
-                        </div>
-
-                        <div class="reinvite-section mt-3">
-                            <h5><i class="fa fa-check-circle"></i> Force Join Pending Clubs</h5>
-                            <small class="form-text text-muted mb-2">
-                                This will immediately activate the selected pending clubs (INVITED → ACTIVE) without waiting for club acceptance.
-                            </small>
-
-                            <form action="{{ route('admin.competition.forceJoin', $competition->id) }}" method="POST" class="border rounded p-3">
-                                @csrf
-                                <div class="mb-2">
-                                    @foreach($invitedClubs as $club)
-                                        <label class="mr-3 mb-2" style="display:inline-block;">
-                                            <input type="checkbox" name="club_ids[]" value="{{ $club->id }}"> {{ $club->name }}
-                                        </label>
-                                    @endforeach
-                                </div>
-
-                                <button type="submit" class="btn btn-warning">
-                                    <i class="fa fa-bolt"></i> Force Join Selected
-                                </button>
-                            </form>
-                        </div>
-                        @endif
-
                         <div class="mt-4">
                             <button type="submit" class="btn btn-primary pr-4 pl-4">
                                 <i class="fa fa-save"></i> Save Competition
@@ -257,6 +214,50 @@ $invitedClubs = $competition->clubs->filter(function($club) {
                             </a>
                         </div>
                     </form>
+
+                    @if($invitedClubs->count() > 0)
+                    <!-- Re-invite Section (part of update form via checkbox) -->
+                    <div class="reinvite-section">
+                        <h5><i class="fa fa-envelope"></i> Re-send Invitations</h5>
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input custom-checkbox-large" id="reinvite_pending" name="reinvite_pending" value="1" form="{{ $competition->id }}-competition-update-form">
+                            <label class="custom-control-label" for="reinvite_pending">
+                                <strong>Re-invite all pending clubs ({{ $invitedClubs->count() }} clubs)</strong>
+                            </label>
+                        </div>
+                        <small class="form-text text-muted mt-2">
+                            <i class="fa fa-info-circle"></i> This will resend WhatsApp invitations to all clubs that haven't accepted or rejected the invitation yet.
+                            <br>
+                            Pending clubs:
+                            @foreach($invitedClubs as $club)
+                                <span class="badge badge-warning">{{ $club->name }}</span>
+                            @endforeach
+                        </small>
+                    </div>
+
+                    <!-- Force Join MUST be a separate form (no nested forms) -->
+                    <div class="reinvite-section mt-3">
+                        <h5><i class="fa fa-check-circle"></i> Force Join Pending Clubs</h5>
+                        <small class="form-text text-muted mb-2">
+                            This will immediately activate the selected pending clubs (INVITED → ACTIVE) without waiting for club acceptance.
+                        </small>
+
+                        <form action="{{ route('admin.competition.forceJoin', $competition->id) }}" method="POST" class="border rounded p-3">
+                            @csrf
+                            <div class="mb-2">
+                                @foreach($invitedClubs as $club)
+                                    <label class="mr-3 mb-2" style="display:inline-block;">
+                                        <input type="checkbox" name="club_ids[]" value="{{ $club->id }}"> {{ $club->name }}
+                                    </label>
+                                @endforeach
+                            </div>
+
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fa fa-bolt"></i> Force Join Selected
+                            </button>
+                        </form>
+                    </div>
+                    @endif
                 </div>
             </div>
         </div>
