@@ -1,4 +1,4 @@
-FROM --platform=linux/arm64/v8 php:8.2-fpm
+FROM php:8.1-fpm
 
 WORKDIR /var/www/dashboard
 
