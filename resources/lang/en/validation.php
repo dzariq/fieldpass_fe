@@ -130,8 +130,11 @@ return [
     */
 
     'custom' => [
-        'attribute-name' => [
-            'rule-name' => 'custom-message',
+        'avatar' => [
+            'uploaded' => 'Avatar failed to upload. Check server PHP limits (upload_max_filesize, post_max_size), disk space, and temp upload directory.',
+        ],
+        'jersey' => [
+            'uploaded' => 'Jersey image failed to upload. Check server PHP limits (upload_max_filesize, post_max_size), disk space, and temp upload directory.',
         ],
     ],
 

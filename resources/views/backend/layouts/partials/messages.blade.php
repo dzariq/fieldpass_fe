@@ -44,6 +44,17 @@
     </div>
 @endif
 
+@if (session('upload_alert'))
+    {{-- Same message as validation alert, plus a one-time browser popup for easy copy/paste on production --}}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            try {
+                alert(@json(session('upload_alert')));
+            } catch (e) {}
+        });
+    </script>
+@endif
+
 @if (session('skipped'))
     <div class="alert alert-info alert-dismissible fade show" role="alert">
         <strong>Skipped Records!</strong>

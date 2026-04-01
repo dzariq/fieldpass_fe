@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Http\UploadedFile;
+use Throwable;
 
 
 class ClubController extends Controller
@@ -102,6 +104,14 @@ class ClubController extends Controller
         $club->association_id = $request->association_id;
 
         if ($request->hasFile('avatar')) {
+            $file = $request->file('avatar');
+            if ($file instanceof UploadedFile) {
+                $early = $this->respondIfUploadInvalid($file, 'avatar', 'Avatar');
+                if ($early !== null) {
+                    return $early;
+                }
+            }
+
             $request->validate([
                 'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:1028' // 2MB = 2048 KB
             ]);
@@ -114,14 +124,31 @@ class ClubController extends Controller
                 mkdir($destination, 0755, true); // create if doesn't exist
             }
 
-            $file->move($destination, $filename);
+            try {
+                $file->move($destination, $filename);
+            } catch (Throwable $e) {
+                Log::error('Club avatar move failed', ['exception' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+                $msg = 'Avatar could not be saved: ' . $e->getMessage() . ' (check that ' . $destination . ' exists and is writable).';
+
+                return back()->withInput()
+                    ->withErrors(['avatar' => $msg])
+                    ->with('upload_alert', $msg);
+            }
 
             $club->avatar = 'avatars/' . $filename; // save relative URL
         }
 
-         if ($request->hasFile('jersey')) {
+        if ($request->hasFile('jersey')) {
+            $file = $request->file('jersey');
+            if ($file instanceof UploadedFile) {
+                $early = $this->respondIfUploadInvalid($file, 'jersey', 'Jersey');
+                if ($early !== null) {
+                    return $early;
+                }
+            }
+
             $request->validate([
-                'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:1028' // 2MB = 2048 KB
+                'jersey' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:1028' // 2MB = 2048 KB
             ]);
             $file = $request->file('jersey');
 
@@ -132,7 +159,16 @@ class ClubController extends Controller
                 mkdir($destination, 0755, true); // create if doesn't exist
             }
 
-            $file->move($destination, $filename);
+            try {
+                $file->move($destination, $filename);
+            } catch (Throwable $e) {
+                Log::error('Club jersey move failed', ['exception' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+                $msg = 'Jersey could not be saved: ' . $e->getMessage() . ' (check that ' . $destination . ' exists and is writable).';
+
+                return back()->withInput()
+                    ->withErrors(['jersey' => $msg])
+                    ->with('upload_alert', $msg);
+            }
 
             $club->jersey = 'avatars/' . $filename; // save relative URL
         }
@@ -141,6 +177,55 @@ class ClubController extends Controller
 
         session()->flash('success', 'Club has been updated.');
         return back();
+    }
+
+    /**
+     * When PHP rejects the upload (size, tmp dir, etc.), Laravel's "uploaded" rule only shows a generic message.
+     * Return a redirect with the real reason + optional browser alert for production debugging.
+     */
+    private function respondIfUploadInvalid(UploadedFile $file, string $errorKey, string $label): ?RedirectResponse
+    {
+        if ($file->isValid()) {
+            return null;
+        }
+
+        $detail = $this->uploadFileDiagnosticMessage($file);
+        Log::warning('Club file upload invalid', [
+            'field' => $errorKey,
+            'error_code' => $file->getError(),
+            'detail' => $detail,
+        ]);
+
+        $msg = $label . ' upload failed: ' . $detail;
+
+        return back()->withInput()
+            ->withErrors([$errorKey => $msg])
+            ->with('upload_alert', $msg);
+    }
+
+    private function uploadFileDiagnosticMessage(UploadedFile $file): string
+    {
+        $code = $file->getError();
+        $phpMsg = match ($code) {
+            UPLOAD_ERR_INI_SIZE => 'File exceeds server upload_max_filesize (php.ini).',
+            UPLOAD_ERR_FORM_SIZE => 'File exceeds HTML form MAX_FILE_SIZE.',
+            UPLOAD_ERR_PARTIAL => 'File was only partially uploaded.',
+            UPLOAD_ERR_NO_FILE => 'No file was uploaded.',
+            UPLOAD_ERR_NO_TMP_DIR => 'Server is missing a temporary folder (upload_tmp_dir).',
+            UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk.',
+            UPLOAD_ERR_EXTENSION => 'A PHP extension stopped the file upload.',
+            default => 'Unknown PHP upload error code: ' . $code,
+        };
+
+        if (method_exists($file, 'getErrorMessage')) {
+            try {
+                return $phpMsg . ' Symfony: ' . $file->getErrorMessage();
+            } catch (Throwable) {
+                // ignore
+            }
+        }
+
+        return $phpMsg;
     }
 
     public function destroy(int $id): RedirectResponse

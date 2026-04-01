@@ -1,0 +1,146 @@
+<html xmlns:v="urn:schemas-microsoft-com:vml"
+xmlns:o="urn:schemas-microsoft-com:office:office"
+xmlns:w="urn:schemas-microsoft-com:office:word"
+xmlns:m="http://schemas.microsoft.com/office/2004/12/omml"
+xmlns="http://www.w3.org/TR/REC-html40">
+
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=unicode">
+<meta name=ProgId content=Word.Document>
+<meta name=Generator content="Microsoft Word 15">
+<meta name=Originator content="Microsoft Word 15">
+<title>Club Manager Guide</title>
+<!--[if gte mso 9]><xml>
+ <o:DocumentProperties>
+  <o:Author>FieldPass</o:Author>
+  <o:Template>Normal</o:Template>
+  <o:LastAuthor>FieldPass</o:LastAuthor>
+  <o:Revision>1</o:Revision>
+  <o:TotalTime>15</o:TotalTime>
+  <o:Created>2026-04-01T00:00:00Z</o:Created>
+  <o:LastSaved>2026-04-01T00:00:00Z</o:LastSaved>
+  <o:Pages>2</o:Pages>
+  <o:Words>450</o:Words>
+  <o:Characters>2600</o:Characters>
+  <o:Lines>70</o:Lines>
+  <o:Paragraphs>65</o:Paragraphs>
+  <o:CharactersWithSpaces>3050</o:CharactersWithSpaces>
+  <o:Version>16.00</o:Version>
+ </o:DocumentProperties>
+ <o:OfficeDocumentSettings>
+  <o:AllowPNG/>
+ </o:OfficeDocumentSettings>
+</xml><![endif]-->
+<!--[if gte mso 9]><xml>
+ <w:WordDocument>
+  <w:View>Print</w:View>
+  <w:SpellingState>Clean</w:SpellingState>
+  <w:GrammarState>Clean</w:GrammarState>
+  <w:TrackMoves>false</w:TrackMoves>
+  <w:TrackFormatting/>
+  <w:ValidateAgainstSchemas/>
+  <w:SaveIfXMLInvalid>false</w:SaveIfXMLInvalid>
+  <w:IgnoreMixedContent>false</w:IgnoreMixedContent>
+  <w:AlwaysShowPlaceholderText>false</w:AlwaysShowPlaceholderText>
+  <w:DoNotPromoteQF/>
+  <w:Compatibility>
+   <w:BreakWrappedTables/>
+   <w:SplitPgBreakAndParaMark/>
+  </w:Compatibility>
+ </w:WordDocument>
+</xml><![endif]-->
+
+<style>
+ body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; }
+ h1 { font-size: 20pt; margin: 0 0 6pt 0; }
+ h2 { font-size: 14pt; margin: 14pt 0 6pt 0; }
+ h3 { font-size: 12pt; margin: 10pt 0 4pt 0; }
+ .muted { color: #555; }
+ .box { border: 1px solid #ddd; padding: 10pt; border-radius: 6pt; background: #fafafa; }
+ .req { font-weight: bold; }
+ ul { margin-top: 4pt; }
+</style>
+</head>
+
+<body>
+
+<h1>FieldPass — Club Manager Guide</h1>
+<p class="muted">For Club Managers: login, update club branding, and submit lineup before match day.</p>
+
+<div class="box">
+  <p class="req">Important rule (Lineup deadline):</p>
+  <p>You should submit your player lineup <b>at least 24 hours before</b> the real match kickoff time. If you wait too late, the system/admin may lock the lineup and you may not be able to submit.</p>
+</div>
+
+<h2>1) Login (Club Manager)</h2>
+<ol>
+  <li>Open the admin portal in your browser (example: <b>http://localhost:8000/admin</b>).</li>
+  <li>Enter your <b>username</b> and <b>password</b>.</li>
+  <li>Click <b>Login</b>.</li>
+</ol>
+
+<h2>2) Update Club Logo</h2>
+<ol>
+  <li>From the left sidebar, go to <b>Clubs</b>.</li>
+  <li>Find your club and click <b>Edit</b>.</li>
+  <li>In the <b>Avatar / Logo</b> section:
+    <ul>
+      <li>Click <b>Choose File</b> and select a PNG/JPG image.</li>
+      <li>Keep it square if possible (recommended for clean display in tables and headers).</li>
+    </ul>
+  </li>
+  <li>Click <b>Save / Update</b>.</li>
+</ol>
+
+<h2>3) Update Club Jersey (Home/Away)</h2>
+<p class="muted">If your system shows jersey uploads (or “kit” images), update them the same way as the logo.</p>
+<ol>
+  <li>Go to <b>Clubs</b> → <b>Edit</b> your club.</li>
+  <li>Locate the <b>Jersey / Kit</b> fields (Home / Away).</li>
+  <li>Upload images (PNG/JPG) and click <b>Save / Update</b>.</li>
+</ol>
+
+<h2>4) Submit Player Lineup (24 hours before match)</h2>
+<ol>
+  <li>From the sidebar, go to <b>Matches</b> (or <b>Match</b>).</li>
+  <li>Find the upcoming match for your club.</li>
+  <li>Open the match and look for <b>Lineup</b> / <b>Player Lineup</b> / <b>Submit Lineup</b>.</li>
+  <li>Select players for:
+    <ul>
+      <li><b>Starting XI</b></li>
+      <li><b>Substitutes</b> (if the competition requires it)</li>
+    </ul>
+  </li>
+  <li>Double-check:
+    <ul>
+      <li>Positions look correct (Goalkeeper / Defender / Midfielder / Forward).</li>
+      <li>No missing required slots.</li>
+    </ul>
+  </li>
+  <li>Click <b>Save / Submit Lineup</b>.</li>
+</ol>
+
+<h2>5) Common issues & fixes</h2>
+<h3>A) I can’t see my club in the Clubs list</h3>
+<ul>
+  <li>Your admin account may not be assigned to the club yet. Ask the association admin/superadmin to assign your club under <b>Edit Admin → Assign Clubs</b>.</li>
+</ul>
+
+<h3>B) I can’t submit lineup / lineup is empty</h3>
+<ul>
+  <li>Check the competition has active clubs joined.</li>
+  <li>Confirm your club has players assigned (Players → filter by your club).</li>
+  <li>If it’s within 24 hours of kickoff, the match may be locked.</li>
+</ul>
+
+<h3>C) Logo doesn’t show after upload</h3>
+<ul>
+  <li>Refresh the page (Ctrl+F5).</li>
+  <li>Make sure the file is JPG/PNG and under the size limit.</li>
+</ul>
+
+<p class="muted">Document version: 2026-04-01</p>
+
+</body>
+</html>
+
