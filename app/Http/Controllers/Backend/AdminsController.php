@@ -447,8 +447,11 @@ class AdminsController extends Controller
         if ($request->has('association_ids') && !empty($request->association_ids))
             $admin->associations()->syncWithoutDetaching($request->association_ids);
 
-        if ($request->has('club_ids') && !empty($request->club_ids))
-            $admin->clubs()->syncWithoutDetaching($request->club_ids);
+        // If the clubs field was present on the form, sync to reflect removals too.
+        if ($request->boolean('club_ids_present')) {
+            $clubIds = $request->input('club_ids', []);
+            $admin->clubs()->sync($clubIds);
+        }
 
         session()->flash('success', 'Admin has been updated.');
         return back();

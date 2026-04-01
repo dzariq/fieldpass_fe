@@ -160,6 +160,7 @@ Admin Edit - Admin Panel
                             </div>
                             <div class="form-group col-md-6 col-sm-12">
                                 <label for="clubs">Assign Clubs</label>
+                                <input type="hidden" name="club_ids_present" value="1">
                                 <select name="club_ids[]" id="clubs" class="form-control select2" multiple>
                                     @foreach ($clubs as $club)
                                     <option value="{{ $club->id }}" {{ $admin->clubs->contains('id', $club->id) ? 'selected' : '' }}>{{ $club->name }}</option>
