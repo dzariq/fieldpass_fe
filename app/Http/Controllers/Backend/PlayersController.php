@@ -755,9 +755,10 @@ class PlayersController extends Controller
 
                 $player->clubs()->sync([$clubId]);
 
+                $defaultSalary = 50.0;
                 $salaryValue = $data['salary'] !== '' && is_numeric($data['salary'])
                     ? (float) $data['salary']
-                    : 0.0;
+                    : $defaultSalary;
 
                 $contractStart = date('Y-m-d');
                 $contractEnd = date('Y-m-d', strtotime($contractStart . ' +1 year'));
