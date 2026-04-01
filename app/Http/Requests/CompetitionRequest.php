@@ -25,7 +25,7 @@ class CompetitionRequest extends FormRequest
     {
         return [
             'name' => 'required|max:100',
-            'price' => 'required|min:2.00',
+            'price' => 'required|numeric|min:0',
             'association_id' => 'required',
             'start' => 'required',
             'end' => 'required',

@@ -16,27 +16,8 @@ if($association){
 }
 
 $defaultAvatar = asset('backend/assets/images/default-avatar.png');
-if ($club) {
-    if (!empty($club->avatar)) {
-        $headerAvatarSrc = asset($club->avatar);
-    } elseif (!empty($usr->avatar)) {
-        $headerAvatarSrc = asset($usr->avatar);
-    } else {
-        $headerAvatarSrc = $defaultAvatar;
-    }
-} elseif ($association) {
-    if (!empty($association->avatar)) {
-        $headerAvatarSrc = asset($association->avatar);
-    } elseif (!empty($usr->avatar)) {
-        $headerAvatarSrc = asset($usr->avatar);
-    } else {
-        $headerAvatarSrc = $defaultAvatar;
-    }
-} elseif (!empty($usr->avatar)) {
-    $headerAvatarSrc = asset($usr->avatar);
-} else {
-    $headerAvatarSrc = $defaultAvatar;
-}
+// Always show the admin avatar in the header (matches Edit Admin page).
+$headerAvatarSrc = !empty($usr->avatar) ? asset($usr->avatar) : $defaultAvatar;
 @endphp
 
 <header class="admin-header">

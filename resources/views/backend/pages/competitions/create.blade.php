@@ -123,7 +123,7 @@ $adminObj = App\Models\Admin::find($usr->id);
                             </div>
                               <div class="form-group col-md-6 col-sm-12">
                                 <label for="name">Competition Fee (RM)</label>
-                                <input type="number" min="2.00" default="0" name="price" class="form-control" value="{{ old('price') }}" required />
+                                <input type="number" min="0" step="0.01" name="price" class="form-control" value="{{ old('price', 0) }}" required />
                             </div>
                         </div>
                         @endif

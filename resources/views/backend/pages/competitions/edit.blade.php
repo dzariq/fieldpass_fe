@@ -201,7 +201,7 @@ $invitedClubs = $competition->clubs->filter(function($club) {
                             </div>
                              <div class="form-group col-md-6 col-sm-12">
                                 <label for="name">Competition Fee (RM)</label>
-                                <input type="number" min="2.00" default="0" name="price" class="form-control" value="{{ $competition->price }}" required />
+                                <input type="number" min="0" step="0.01" name="price" class="form-control" value="{{ old('price', $competition->price ?? 0) }}" required />
                             </div>
                         </div>
 
