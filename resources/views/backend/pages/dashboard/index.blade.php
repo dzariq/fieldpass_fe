@@ -35,6 +35,42 @@ Dashboard Page - Admin Panel
     </div>
     @endif
 
+    @if(Auth::guard('admin')->user() && Auth::guard('admin')->user()->can('association.create'))
+    <div class="row">
+        <div class="col-12 mt-3">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="header-title">Demo Data</h4>
+                    <p class="mb-3">
+                        Status:
+                        @if(!empty($demoEnabled))
+                            <strong class="text-success">Enabled</strong>
+                        @else
+                            <strong class="text-muted">Disabled</strong>
+                        @endif
+                    </p>
+
+                    @if(!empty($demoEnabled))
+                        <form method="POST" action="{{ route('admin.demo.disable') }}">
+                            @csrf
+                            <button type="submit" class="btn btn-danger">
+                                Disable demo data (rollback)
+                            </button>
+                        </form>
+                    @else
+                        <form method="POST" action="{{ route('admin.demo.enable') }}">
+                            @csrf
+                            <button type="submit" class="btn btn-primary">
+                                Enable demo data (populate)
+                            </button>
+                        </form>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <div class="dashboard-empty-state">
         <div class="empty-icon">
             <i class="fas fa-tachometer-alt"></i>

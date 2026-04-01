@@ -267,10 +267,16 @@ class DashboardController extends Controller
             $total_roles = Role::count();
             $total_permissions = Permission::count();
 
+            $demoEnabled = DB::table('demo_data_runs')
+                ->where('key', 'assoc:1|comp:7|clubs:6|players_per_club:10')
+                ->where('enabled', 1)
+                ->exists();
+
             return view('backend.pages.dashboard.index', compact(
                 'total_admins',
                 'total_roles',
-                'total_permissions'
+                'total_permissions',
+                'demoEnabled'
             ));
         }
     }

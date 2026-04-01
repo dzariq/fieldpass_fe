@@ -18,6 +18,7 @@ use App\Http\Controllers\Backend\Competition\CompetitionController;
 use App\Http\Controllers\Backend\Match\MatchesController;
 use App\Http\Controllers\Backend\Club\ClubController;
 use App\Http\Controllers\Backend\DashboardController;
+use App\Http\Controllers\Backend\DemoDataController;
 use App\Http\Controllers\Backend\Auth\RegisterController;
 use App\Http\Controllers\Backend\RolesController;
 
@@ -58,6 +59,8 @@ Route::get('/home', 'HomeController@index')->name('home');
 Route::group(['prefix' => 'admin', 'as' => 'admin.'], function () {
 
   Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+  Route::post('/demo-data/enable', [DemoDataController::class, 'enable'])->name('demo.enable');
+  Route::post('/demo-data/disable', [DemoDataController::class, 'disable'])->name('demo.disable');
   Route::resource('roles', RolesController::class);
   Route::resource('admins', AdminsController::class);
   Route::resource('players', PlayersController::class);
