@@ -39,7 +39,6 @@ class PlayerRequest extends FormRequest
             'password' => 'nullable|min:6|confirmed',
             'country_code' => 'nullable|string|max:4|regex:/^\d{1,4}$/',
             'phone' => 'nullable|max:20',
-            'position' => 'required|in:Goalkeeper,Defender,Midfielder,Forward',
         ];
     }
 
@@ -48,8 +47,6 @@ class PlayerRequest extends FormRequest
         return [
             'identity_number.regex' => 'IC number must be in format: XXXXXX-XX-XXXX (e.g., 900101-01-1234)',
             'identity_number.unique' => 'This IC number is already registered.',
-            'position.required' => 'Please select a position.',
-            'position.in' => 'Invalid position selected.',
         ];
     }
 }

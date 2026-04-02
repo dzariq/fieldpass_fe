@@ -73,10 +73,28 @@ Player Edit - Admin Panel
                     <h4 class="header-title">Edit Player - {{ $player->name }}</h4>
                     @include('backend.layouts.partials.messages')
 
-                    <form action="{{ route('admin.players.update', $player->id) }}" method="POST">
+                    <form action="{{ route('admin.players.update', $player->id) }}" method="POST" enctype="multipart/form-data">
                         @method('PUT')
                         @csrf
                         
+                        <div class="form-row">
+                            <div class="form-group col-md-6 col-sm-12">
+                                <label>Player Image</label>
+                                <div style="display:flex; align-items:center; gap:16px;">
+                                    <img
+                                        id="avatar-preview"
+                                        src="{{ $player->avatar ? asset($player->avatar) : asset('backend/assets/images/default-avatar.png') }}"
+                                        alt="Player Avatar"
+                                        style="width:72px;height:72px;border-radius:10px;object-fit:cover;border:1px solid #e5e7eb;background:#fff;"
+                                    >
+                                    <div>
+                                        <input type="file" class="form-control-file" name="avatar" id="avatar" accept="image/*">
+                                        <small class="form-text text-muted">Optional. PNG/JPG/WEBP, max 2MB.</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="form-row">
                             <div class="form-group col-md-6 col-sm-12">
                                 <label for="name" class="required-field">Player Name</label>
@@ -256,6 +274,17 @@ Player Edit - Admin Panel
         // Validate phone number (numbers only)
         $('#phone').on('input', function() {
             this.value = this.value.replace(/[^0-9]/g, '');
+        });
+
+        // Preview avatar on select
+        $('#avatar').on('change', function(e) {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                $('#avatar-preview').attr('src', ev.target.result);
+            };
+            reader.readAsDataURL(file);
         });
     });
 </script>

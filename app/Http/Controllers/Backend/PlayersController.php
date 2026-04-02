@@ -340,6 +340,27 @@ class PlayersController extends Controller
         $player->position = $request->position;
         $player->jersey_number = $request->jersey_number;
 
+        if ($request->hasFile('avatar')) {
+            $request->validate([
+                'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            ]);
+
+            $file = $request->file('avatar');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $destination = public_path('avatars');
+
+            if (!file_exists($destination)) {
+                mkdir($destination, 0755, true);
+            }
+
+            if ($player->avatar && file_exists(public_path($player->avatar))) {
+                unlink(public_path($player->avatar));
+            }
+
+            $file->move($destination, $filename);
+            $player->avatar = 'avatars/' . $filename;
+        }
+
 
         if ($request->password) {
             $player->password = Hash::make($request->password);
