@@ -73,11 +73,14 @@ xmlns="http://www.w3.org/TR/REC-html40">
 </div>
 
 <h2>1) Login (Club Manager)</h2>
+<p class="muted">Club managers use the <b>admin portal</b> with <b>Malaysia (+60) mobile OTP</b> — the same flow as association admins (not username/password).</p>
 <ol>
-  <li>Open the admin portal in your browser (example: <b>http://localhost:8000/admin</b>).</li>
-  <li>Enter your <b>username</b> and <b>password</b>.</li>
-  <li>Click <b>Login</b>.</li>
+  <li>Open the admin login page in your browser (example: <b>http://localhost:8000/admin/login</b>).</li>
+  <li>Enter your <b>mobile number</b> (national digits only, after +60 — no spaces).</li>
+  <li>Click <b>Send OTP</b>. You will receive a one-time code (SMS/WhatsApp, depending on integration).</li>
+  <li>Enter the <b>OTP code</b>, optionally tick <b>Remember me</b>, then click <b>Verify &amp; Sign In</b>.</li>
 </ol>
+<p class="muted">The phone number must match the one stored on your admin account. If login fails, ask your association admin to confirm your number under <b>Admins → Edit</b>.</p>
 
 <h2>2) Update Club Logo</h2>
 <ol>
@@ -139,7 +142,13 @@ xmlns="http://www.w3.org/TR/REC-html40">
   <li>Make sure the file is JPG/PNG and under the size limit.</li>
 </ul>
 
-<p class="muted">Document version: 2026-04-01</p>
+<h3>D) Players asking how to log in</h3>
+<ul>
+  <li>Players use the <b>player portal</b> (example: <b>/player/login</b>), not the admin URL.</li>
+  <li>They sign in with the same <b>+60 mobile OTP</b> flow; their phone must match their player profile and status must be <b>ACTIVE</b>.</li>
+</ul>
+
+<p class="muted">Document version: 2026-04-02 (admin login: mobile OTP)</p>
 
 </body>
 </html>

@@ -210,17 +210,19 @@ class PlayersController extends Controller
         $formattedStartDate = date("F j, Y", strtotime($contract->start_date));
         $formattedEndDate = date("F j, Y", strtotime($contract->end_date)); // Fixed: was using start_date
 
-        $data = array(
+        $data = [
             'action' => 'player_invitation',
             'username' => $player->username,
             'code' => $player->code,
-            'email' => $request->email,
+            'email' => $request->filled('email') ? $request->email : null,
+            'phone' => (string) $player->phone,
+            'country_code' => preg_replace('/\D/', '', (string) $request->country_code),
             'club_name' => $clubObj->name,
             'start' => $formattedStartDate,
-            'domain' => env('APP_URL'),
+            'domain' => config('app.url'),
             'end' => $formattedEndDate,
-            'name' => $request->name
-        );
+            'name' => $request->name,
+        ];
         $this->sendWAInvitation($data);
 
         session()->flash('success', __('Player has been created.'));
