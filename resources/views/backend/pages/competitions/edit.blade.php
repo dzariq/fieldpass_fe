@@ -100,7 +100,9 @@ $invitedClubs = $competition->clubs->filter(function($club) {
                                     <img src="{{ asset($competition->banner) }}" alt="Current Banner" class="image-preview">
                                 @endif
                                 <input type="file" class="form-control-file mt-2" name="banner" id="banner" accept="image/jpeg,image/png,image/jpg">
-                                <small class="form-text text-muted">Upload JPG or PNG file. Max size: 2MB</small>
+                                <small class="form-text text-muted">
+                                    Recommended size: 1200 × 300 px. Upload JPG or PNG file. Max size: 2MB
+                                </small>
                             </div>
 
                             <div class="form-group col-md-6 col-sm-12">
