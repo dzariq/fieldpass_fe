@@ -184,14 +184,6 @@
             } else {
                 pageContainer.classList.remove('sbar_collapsed');
             }
-
-            var btn = document.querySelector('.header-area .nav-btn');
-            if (btn && !btn.dataset.sidebarBound) {
-                btn.dataset.sidebarBound = '1';
-                btn.addEventListener('click', function () {
-                    pageContainer.classList.toggle('sbar_collapsed');
-                });
-            }
         }
 
         // Run immediately (scripts are loaded at bottom; DOMContentLoaded may have already fired).

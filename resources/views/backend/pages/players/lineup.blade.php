@@ -1047,6 +1047,7 @@ $subIds = $existingLineup ? [
         function updateCounts() {
             const selectedStarters = Array.from(starterSelects).filter(select => select.value !== '').length;
             const selectedSubs = Array.from(subSelects).filter(select => select.value !== '').length;
+            const totalSelected = selectedStarters + selectedSubs;
 
             if (starterCount) starterCount.textContent = `(${selectedStarters}/11)`;
             if (subCount) subCount.textContent = `(${selectedSubs}/7)`;
@@ -1054,16 +1055,14 @@ $subIds = $existingLineup ? [
             if (subCountInline) subCountInline.textContent = String(selectedSubs);
 
             if (saveButton) {
-                const allStartersFilled = selectedStarters === 11;
-                const allSubsFilled = selectedSubs === 7;
+                const startersComplete = selectedStarters === 11;
+                const minSubsMet = selectedSubs >= 3;
+                const canSave = startersComplete && minSubsMet; // 11 starters + min 3 subs (>=14 total)
 
-                if (allStartersFilled && allSubsFilled) {
-                    saveButton.disabled = false;
-                    saveButton.innerHTML = '💾 {{ __("Save Lineup") }}';
-                } else {
-                    saveButton.disabled = selectedStarters === 0 && selectedSubs === 0 ? false : true;
-                    saveButton.innerHTML = `💾 {{ __("Save") }} (${selectedStarters + selectedSubs}/18)`;
-                }
+                saveButton.disabled = !canSave;
+                saveButton.innerHTML = canSave
+                    ? `💾 {{ __("Save Lineup") }} (${totalSelected}/18)`
+                    : `💾 {{ __("Select at least 14") }} (${totalSelected}/18)`;
             }
         }
 
