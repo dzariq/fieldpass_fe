@@ -55,6 +55,16 @@
     </script>
 @endif
 
+@if (session('otp_verify_alert'))
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            try {
+                alert(@json(session('otp_verify_alert')));
+            } catch (e) {}
+        });
+    </script>
+@endif
+
 @if (session('skipped'))
     <div class="alert alert-info alert-dismissible fade show" role="alert">
         <strong>Skipped Records!</strong>

@@ -54,6 +54,18 @@ Route::post('/playerregister', [PlayerRegisterController::class, 'register'])->n
 Route::get('/home', 'HomeController@index')->name('home');
 
 /**
+ * Admin guest routes (must NOT use auth:admin middleware)
+ */
+Route::group(['prefix' => 'admin', 'as' => 'admin.'], function () {
+  Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
+  Route::post('/login/send-otp', [LoginController::class, 'sendOtp'])->name('login.send-otp');
+  Route::post('/login/verify-otp', [LoginController::class, 'verifyOtp'])->name('login.verify-otp');
+
+  Route::get('/password/reset', [ForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
+  Route::post('/password/reset/submit', [ForgotPasswordController::class, 'reset'])->name('password.update');
+});
+
+/**
  * Admin routes
  */
 Route::group(['prefix' => 'admin', 'as' => 'admin.'], function () {
@@ -109,10 +121,6 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.'], function () {
   Route::post('/invite/search', [PlayersController::class, 'searchPlayer'])->name('players.invite.search');
   Route::post('/invite/send', [PlayersController::class, 'sendInvite'])->name('players.invite.send');
 
-  // Login Routes.
-  Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
-  Route::post('/login/submit', [LoginController::class, 'login'])->name('login.submit');
-
   // Logout Routes.
   Route::post('/logout/submit', [LoginController::class, 'logout'])->name('logout.submit');
 
@@ -142,10 +150,6 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.'], function () {
   Route::get('/player/lineup', [PlayerLineupController::class, 'lineup'])->name('player.lineup');
   Route::post('/player/lineup', [PlayerLineupController::class, 'save'])->name('lineup.save');
 
-
-  // Forget Password Routes.
-  Route::get('/password/reset', [ForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
-  Route::post('/password/reset/submit', [ForgotPasswordController::class, 'reset'])->name('password.update');
 
   //ajax
   Route::get('/clubs_by_competition/{competition_id}', [AjaxController::class, 'getClubsByCompetition']);

@@ -30,4 +30,9 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'n8n' => [
+        'login_otp_url' => env('N8N_LOGIN_OTP_URL', 'https://n8n.fieldpass.com.my/webhook/login-otp'),
+        'verify_otp_url' => env('N8N_VERIFY_OTP_URL', 'https://n8n.fieldpass.com.my/webhook/verify-otp'),
+    ],
+
 ];
