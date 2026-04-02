@@ -188,6 +188,7 @@ class PlayersController extends Controller
         $player->password = Hash::make($this->randomPassword(6));
         $player->status = 'ACTIVE';
         $player->position = $request->position;
+        $player->market_value = 50;
         $player->save();
 
         if ($request->has('club_ids') && !empty($request->club_ids))
@@ -776,6 +777,7 @@ class PlayersController extends Controller
                 $player->referer = auth()->user()->id;
                 $player->password = Hash::make($this->randomPassword(6));
                 $player->status = 'INVITED';
+                $player->market_value = 50;
                 $player->save();
 
                 $player->clubs()->sync([$clubId]);

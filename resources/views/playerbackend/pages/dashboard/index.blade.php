@@ -32,6 +32,37 @@ Player Dashboard
         text-align: center;
     }
 
+    .club-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 999px;
+        background: rgba(102, 126, 234, 0.10);
+        border: 1px solid rgba(102, 126, 234, 0.22);
+        color: #2d3748;
+        font-weight: 700;
+        margin-top: 14px;
+        max-width: 100%;
+    }
+    .club-badge__logo {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        object-fit: cover;
+        background: #fff;
+        border: 2px solid #fff;
+        box-shadow: 0 6px 16px rgba(0,0,0,0.10);
+        flex: 0 0 auto;
+    }
+    .club-badge__name {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: min(320px, 65vw);
+        text-align: left;
+    }
+
     .avatar-wrapper {
         position: relative;
         display: inline-block;
@@ -252,6 +283,20 @@ Player Dashboard
                             <small class="form-text text-muted" style="display: block; margin-top: 15px;">
                                 Click the camera icon to upload a new avatar (Max: 2MB)
                             </small>
+
+                            @if(!empty($currentClub))
+                                <div class="club-badge" title="{{ $currentClub->name }}">
+                                    @php
+                                        $clubLogoPath = isset($currentClub->avatar) ? $currentClub->avatar : null;
+                                    @endphp
+                                    <img class="club-badge__logo"
+                                         src="{{ $clubLogoPath ? asset($clubLogoPath) : asset('backend/assets/images/default-avatar.png') }}"
+                                         alt="{{ $currentClub->name }}">
+                                    <div class="club-badge__name">
+                                        {{ __('Current Club') }}: {{ $currentClub->name }}
+                                    </div>
+                                </div>
+                            @endif
                         </div>
 
                         <!-- Personal Information -->

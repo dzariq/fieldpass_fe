@@ -6,6 +6,7 @@ namespace App\Http\Controllers\PlayerBackend;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PlayerRequest;
+use App\Models\PlayerContract;
 use App\Models\Player;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -42,10 +43,30 @@ class PlayerDashboardController extends Controller
         //player data
         $player = Auth::guard('player')->user();
 
+        $currentContract = null;
+        $currentClub = null;
+        if ($player) {
+            $currentContract = PlayerContract::query()
+                ->with('club')
+                ->where('player_id', $player->id)
+                ->where('status', 'active')
+                ->orderByDesc('end_date')
+                ->orderByDesc('start_date')
+                ->first();
+
+            $currentClub = $currentContract?->club;
+            if (!$currentClub) {
+                // Fallback when contract isn't present (legacy data)
+                $currentClub = $player->clubs()->first();
+            }
+        }
+
         return view(
             'playerbackend.pages.dashboard.index',
             [
-                'player' => $player
+                'player' => $player,
+                'currentClub' => $currentClub,
+                'currentContract' => $currentContract,
             ]
         );
     }
