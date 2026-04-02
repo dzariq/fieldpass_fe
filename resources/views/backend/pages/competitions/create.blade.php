@@ -50,7 +50,7 @@ $adminObj = App\Models\Admin::find($usr->id);
                     <h4 class="header-title">Create New Competition</h4>
                     @include('backend.layouts.partials.messages')
 
-                    <form action="{{ route('admin.competitions.store') }}" method="POST">
+                    <form action="{{ route('admin.competitions.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         <div class="form-row">
                             <div class="form-group col-md-6 col-sm-12">

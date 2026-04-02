@@ -285,6 +285,11 @@ class CompetitionController extends Controller
             ]);
 
             $file = $request->file('banner');
+            if ($file && !$file->isValid()) {
+                return back()->withErrors([
+                    'banner' => 'Banner upload failed. Please try again with a smaller image (recommended 1200×300).'
+                ])->withInput();
+            }
             $filename = time() . '_banner_' . $file->getClientOriginalName();
             $destination = public_path('avatars');
 
@@ -308,6 +313,11 @@ class CompetitionController extends Controller
             ]);
 
             $file = $request->file('pitch_image');
+            if ($file && !$file->isValid()) {
+                return back()->withErrors([
+                    'pitch_image' => 'Pitch image upload failed. Please try again with a smaller image.'
+                ])->withInput();
+            }
             $filename = time() . '_pitch_' . $file->getClientOriginalName();
             $destination = public_path('avatars');
 
@@ -331,6 +341,11 @@ class CompetitionController extends Controller
             ]);
 
             $file = $request->file('avatar');
+            if ($file && !$file->isValid()) {
+                return back()->withErrors([
+                    'avatar' => 'Avatar upload failed. Please try again with a smaller image.'
+                ])->withInput();
+            }
             $filename = time() . '_avatar_' . $file->getClientOriginalName();
             $destination = public_path('avatars');
 
