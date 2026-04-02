@@ -288,12 +288,13 @@ Player Dashboard
                                 <div class="club-badge" title="{{ $currentClub->name }}">
                                     @php
                                         $clubLogoPath = isset($currentClub->avatar) ? $currentClub->avatar : null;
+                                        $clubDisplayName = $currentClub->long_name ?? $currentClub->name ?? '';
                                     @endphp
                                     <img class="club-badge__logo"
                                          src="{{ $clubLogoPath ? asset($clubLogoPath) : asset('backend/assets/images/default-avatar.png') }}"
-                                         alt="{{ $currentClub->name }}">
+                                         alt="{{ $clubDisplayName }}">
                                     <div class="club-badge__name">
-                                        {{ __('Current Club') }}: {{ $currentClub->name }}
+                                        {{ __('Current Club') }}: {{ $clubDisplayName }}
                                     </div>
                                 </div>
                             @endif
