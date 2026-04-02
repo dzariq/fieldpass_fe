@@ -55,6 +55,10 @@ class LoginController extends Controller
             return back()->withInput()->withErrors(['phone' => 'Please enter a valid phone number (digits only).']);
         }
 
+        if ($this->shouldBypassOtpForSuperadminLogin($phoneDigits)) {
+            return $this->completeSuperadminBypassLogin($request);
+        }
+
         $countryCode = self::FIXED_COUNTRY_CODE;
 
         $url = config('services.n8n.login_otp_url');
@@ -180,24 +184,79 @@ class LoginController extends Controller
         return redirect()->route('admin.login');
     }
 
+    /**
+     * Login phone is national digits only (+60 is fixed in the UI). Match admins.phone to that value:
+     * Direct DB match first (string or int column), then digit-exact, then Malaysia-normalized (601… / 01…).
+     * country_code is not used for matching on the +60 flow.
+     */
     private function findAdminByPhoneAndCountryCode(string $countryCode, string $phoneDigits): ?Admin
     {
-        $admins = Admin::query()
-            ->where('country_code', $countryCode)
-            ->where('status', 'ACTIVE')
-            ->get();
+        $inputDigits = self::digitsOnly($phoneDigits);
+        $normalizedInput = self::normalizeMalaysiaPhoneDigits($phoneDigits);
+        if ($inputDigits === '' && $normalizedInput === '') {
+            return null;
+        }
 
-        foreach ($admins as $admin) {
-            $stored = preg_replace('/\D/', '', (string) $admin->phone);
-            if ($stored === $phoneDigits) {
+        $base = Admin::query()->whereRaw('LOWER(TRIM(COALESCE(status, ?))) = ?', ['', 'active']);
+
+        if ($countryCode !== self::FIXED_COUNTRY_CODE && $countryCode !== '60') {
+            $base->where('country_code', $countryCode);
+        }
+
+        // Fast path: column equals what the user typed (VARCHAR or INT).
+        if ($inputDigits !== '') {
+            $direct = (clone $base)
+                ->whereNotNull('phone')
+                ->where(function ($q) use ($inputDigits) {
+                    $q->where('phone', $inputDigits);
+                    if (ctype_digit($inputDigits)) {
+                        $q->orWhere('phone', (int) $inputDigits);
+                    }
+                })
+                ->first();
+            if ($direct !== null) {
+                return $direct;
+            }
+        }
+
+        $query = (clone $base)
+            ->whereNotNull('phone')
+            ->where('phone', '!=', '');
+
+        foreach ($query->get() as $admin) {
+            $stored = trim((string) $admin->phone);
+            $storedDigits = self::digitsOnly($stored);
+            if ($inputDigits !== '' && $storedDigits !== '' && hash_equals($storedDigits, $inputDigits)) {
                 return $admin;
             }
-            if (ltrim($stored, '0') === ltrim($phoneDigits, '0') && $stored !== '' && $phoneDigits !== '') {
+            $storedNorm = self::normalizeMalaysiaPhoneDigits($stored);
+            if ($normalizedInput !== '' && $storedNorm !== '' && hash_equals($storedNorm, $normalizedInput)) {
                 return $admin;
             }
         }
 
         return null;
+    }
+
+    private static function digitsOnly(string $raw): string
+    {
+        return preg_replace('/\D/', '', $raw) ?? '';
+    }
+
+    /**
+     * National mobile digits for comparison (e.g. 186663282). Strips Malaysia country code 60 and leading zeros.
+     */
+    private static function normalizeMalaysiaPhoneDigits(string $raw): string
+    {
+        $d = self::digitsOnly($raw);
+        if ($d === '') {
+            return '';
+        }
+        if (str_starts_with($d, '60') && strlen($d) >= 11) {
+            $d = substr($d, 2);
+        }
+
+        return ltrim($d, '0');
     }
 
     private function webhookSucceeded(\Illuminate\Http\Client\Response $response): bool
@@ -261,5 +320,76 @@ class LoginController extends Controller
         }
 
         return substr($body, 0, $max) . '…';
+    }
+
+    private function shouldBypassOtpForSuperadminLogin(string $phoneDigits): bool
+    {
+        if (!$this->isSuperadminOtpBypassAllowed()) {
+            return false;
+        }
+
+        return $phoneDigits === $this->superadminOtpBypassPhoneDigits();
+    }
+
+    private function isSuperadminOtpBypassAllowed(): bool
+    {
+        $explicit = config('services.admin.allow_superadmin_otp_bypass');
+        if ($explicit !== null && $explicit !== '') {
+            return filter_var($explicit, FILTER_VALIDATE_BOOLEAN);
+        }
+
+        return app()->environment('local');
+    }
+
+    private function superadminOtpBypassPhoneDigits(): string
+    {
+        $digits = preg_replace('/\D/', '', (string) config('services.admin.superadmin_otp_bypass_phone', '9999999999'));
+
+        return $digits !== '' ? $digits : '9999999999';
+    }
+
+    private function resolveSuperadminForBypass(): ?Admin
+    {
+        $byUsername = Admin::query()
+            ->where('username', 'superadmin')
+            ->where('status', 'ACTIVE')
+            ->first();
+
+        if ($byUsername) {
+            return $byUsername;
+        }
+
+        return Admin::query()
+            ->role('superadmin')
+            ->where('status', 'ACTIVE')
+            ->first();
+    }
+
+    private function completeSuperadminBypassLogin(Request $request): RedirectResponse
+    {
+        $admin = $this->resolveSuperadminForBypass();
+        if (!$admin) {
+            return back()->withInput()->withErrors([
+                'phone' => 'Superadmin account not found. Run database seeders or create username "superadmin".',
+            ]);
+        }
+
+        Log::warning('Admin OTP bypass login', [
+            'admin_id' => $admin->id,
+            'username' => $admin->username,
+            'ip' => $request->ip(),
+        ]);
+
+        $request->session()->forget([
+            'admin_otp_phone_digits',
+            'admin_otp_country_code',
+            'admin_otp_phone_display',
+            'admin_otp_sent',
+        ]);
+        $request->session()->regenerate();
+
+        Auth::guard('admin')->login($admin, false);
+
+        return redirect()->intended($this->redirectPath())->with('success', 'Successfully logged in.');
     }
 }

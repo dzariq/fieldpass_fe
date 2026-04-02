@@ -92,10 +92,6 @@ Admin Edit - Admin Panel
                                 <label for="name" class="required-field">Admin Name</label>
                                 <input type="text" class="form-control" id="name" name="name" placeholder="Enter Name" value="{{ $admin->name }}" required autofocus>
                             </div>
-                            <div class="form-group col-md-6 col-sm-12">
-                                <label for="email">Admin Email</label>
-                                <input type="email" class="form-control" id="email" name="email" placeholder="Enter Email" value="{{ $admin->email }}">
-                            </div>
                         </div>
 
                         <div class="form-row">

@@ -29,6 +29,7 @@
 
         <!-- main content area start -->
         <div class="main-content">
+            @include('backend.layouts.partials.impersonation_banner')
             @include('backend.layouts.partials.header')
             @yield('admin-content')
         </div>

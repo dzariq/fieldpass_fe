@@ -55,7 +55,7 @@
                                 <tr>
                                     <th width="5%">{{ __('Sl') }}</th>
                                     <th width="10%">{{ __('Name') }}</th>
-                                    <th width="10%">{{ __('Email') }}</th>
+                                    <th width="12%">{{ __('Phone') }}</th>
                                     <th width="30%">{{ __('Roles') }}</th>
                                     <th width="30%">{{ __('Associations') }}</th>
                                     <th width="30%">{{ __('Clubs') }}</th>
@@ -68,7 +68,7 @@
                                <tr>
                                     <td>{{ $loop->index+1 }}</td>
                                     <td>{{ $admin->name }}</td>
-                                    <td>{{ $admin->email }}</td>
+                                    <td>{{ $admin->country_code }} {{ $admin->phone }}</td>
                                     <td>
                                         @foreach ($admin->roles as $role)
                                             <span class="badge badge-info mr-1">
@@ -96,11 +96,17 @@
                                             </span>
                                     </td>
                                     <td>
+                                        @if (auth()->user()->can('association.create') && (int) $admin->id !== (int) auth()->id() && !session(\App\Http\Controllers\Backend\AdminImpersonationController::SESSION_IMPERSONATOR_KEY))
+                                            <form action="{{ route('admin.admins.impersonate', $admin) }}" method="POST" class="d-inline" onsubmit="return confirm('Sign in as {{ e($admin->name) }}? You can return from the yellow bar at the top.');">
+                                                @csrf
+                                                <button type="submit" class="btn btn-warning text-dark mb-1">{{ __('Impersonate') }}</button>
+                                            </form>
+                                        @endif
                                         @if (auth()->user()->can('admin.edit'))
                                             <a class="btn btn-success text-white" href="{{ route('admin.admins.edit', $admin->id) }}">Edit</a>
                                         @endif
                                         
-                                        @if (auth()->user()->can('admin.delete'))
+                                        @if (auth()->user()->can('admin.delete') && (int) $admin->id !== (int) auth()->id())
                                         <a class="btn btn-danger text-white" href="javascript:void(0);"
                                         onclick="event.preventDefault(); if(confirm('Are you sure you want to delete?')) { document.getElementById('delete-form-{{ $admin->id }}').submit(); }">
                                             {{ __('Delete') }}

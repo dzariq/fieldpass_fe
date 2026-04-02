@@ -12,6 +12,7 @@ use App\Models\Club;
 use Illuminate\Contracts\Support\Renderable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
@@ -25,7 +26,7 @@ class AdminsController extends Controller
 
         if (auth()->user()->can('association.create')) {
             return view('backend.pages.admins.index', [
-                'admins' => Admin::all(),
+                'admins' => Admin::with(['roles', 'associations', 'clubs'])->orderBy('id')->get(),
             ]);
         } else {
             $admin_obj = Admin::find(auth()->user()->id);
@@ -118,18 +119,17 @@ class AdminsController extends Controller
     {
         $this->checkAuthorization(auth()->user(), ['admin.create']);
 
-        if ($request)
-
-            $admin = new Admin();
+        $admin = new Admin();
         $admin->name = $request->name;
-        $admin->username = $request->username;
-        $admin->email = $request->has('email') ? $request->email : null;
+        $admin->username = $this->generateUniqueAdminUsername($request->name);
+        $admin->email = null;
         $admin->phone = $request->phone;
         $admin->country_code = $request->country_code;
         $admin->code = rand(11111111111, 99999999999);
         $admin->referer = auth()->user()->id;
-        $admin->password = Hash::make($request->password);
-        $admin->status = 'INVITED';
+        $plainPassword = $request->filled('password') ? (string) $request->password : Str::random(16);
+        $admin->password = Hash::make($plainPassword);
+        $admin->status = 'ACTIVE';
         $admin->save();
 
         if ($request->roles) {
@@ -138,50 +138,61 @@ class AdminsController extends Controller
 
         if ($request->has('association_ids') && !empty($request->association_ids)) {
             $admin->associations()->syncWithoutDetaching($request->association_ids);
-
-            $assoc = Association::find($request->association_ids[0]);
-
-            $data = array(
-                'action' => 'assoc_invitation',
-                'code' => $admin->code,
-                'username' => $admin->username,
-                'domain' => env('APP_URL'),
-                'email' => $admin->email,
-                'phone' => $admin->phone,
-                'association' => $assoc->name,
-                'name' => $request->name
-            );
-            // $this->sendEmailInvitation($data);
-            $this->sendWAInvitation($data);
         }
 
         if ($request->has('club_ids') && !empty($request->club_ids)) {
             $admin->clubs()->syncWithoutDetaching($request->club_ids);
-
-            $admin_obj = Admin::find(auth()->user()->id);
-            $club = Club::find($request->club_ids[0]);
-            $associationObj = $admin_obj->associations()->first();
-
-            $data = array(
-                'action' => 'club_invitation',
-                'code' => $admin->code,
-                'email' => $admin->email,
-                'domain' => env('APP_URL'),
-                'username' => $admin->username,
-                'phone' => $admin->phone,
-                'country_code' => str_replace('+', '', $admin->country_code), // Remove + sign
-                'club' => $club->name,
-                'association' => $associationObj->name,
-                'name' => $request->name
-            );
-            // $this->sendEmailInvitation($data);
-            $this->sendWAInvitation($data);
         }
 
+        $loginUrl = route('admin.login', [], true);
 
+        $editor = Admin::query()->find(auth()->user()->id);
+        $associationFromEditor = $editor?->associations()->first();
 
-        session()->flash('success', __('Admin has been created.'));
+        $payload = [
+            'action' => 'admin_created',
+            'login_url' => $loginUrl,
+            'content' => 'You may login here: '.$loginUrl,
+            'name' => $admin->name,
+            'username' => $admin->username,
+            'phone' => (string) ($admin->phone ?? ''),
+            'country_code' => str_replace('+', '', (string) $admin->country_code),
+            'code' => $admin->code,
+            'domain' => config('app.url'),
+        ];
+
+        $assoc = $admin->associations()->first();
+        if ($assoc) {
+            $payload['association'] = $assoc->name;
+        }
+        $club = $admin->clubs()->first();
+        if ($club) {
+            $payload['club'] = $club->name;
+        }
+        if (!isset($payload['association']) && $associationFromEditor) {
+            $payload['association'] = $associationFromEditor->name;
+        }
+
+        $this->sendWAInvitation($payload);
+
+        session()->flash('success', 'You may login here: '.$loginUrl);
+
         return redirect()->route('admin.admins.index');
+    }
+
+    private function generateUniqueAdminUsername(string $name): string
+    {
+        $base = preg_replace('/[^a-zA-Z0-9]/', '', strtolower($name));
+        $base = substr($base !== '' ? $base : 'admin', 0, 12);
+        $suffix = substr((string) time(), -6);
+        $username = $base.$suffix;
+        $n = 1;
+        while (Admin::query()->where('username', $username)->exists()) {
+            $username = $base.$suffix.$n;
+            $n++;
+        }
+
+        return $username;
     }
 
     public function reinvite($id)
@@ -212,7 +223,6 @@ class AdminsController extends Controller
         $data = array(
             'action' => 'club_invitation',
             'code' => $admin->code,
-            'email' => $admin->email,
             'domain' => env('APP_URL'),
             'username' => $admin->username,
             'phone' => $admin->phone,
@@ -231,65 +241,6 @@ class AdminsController extends Controller
         }
 
         return back();
-    }
-
-    function sendEmailInvitation($data)
-    {
-        $webhookUrl = 'https://n8n.fieldpass.com.my/webhook/email-invitation';
-
-        // Initialize cURL
-        $curl = curl_init();
-
-        // Set cURL options
-        curl_setopt_array($curl, array(
-            CURLOPT_URL => $webhookUrl,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => '',
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 30,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => 'POST',
-            CURLOPT_POSTFIELDS => json_encode($data),
-            CURLOPT_HTTPHEADER => array(
-                'Content-Type: application/json',
-                'Accept: application/json'
-            ),
-        ));
-
-        // Execute the request
-        $response = curl_exec($curl);
-        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-        $error = curl_error($curl);
-
-        // Close cURL
-        curl_close($curl);
-
-        // Handle response
-        if ($error) {
-            // Log error
-            Log::error('Email invitation webhook error: ' . $error);
-            return [
-                'success' => false,
-                'error' => $error,
-                'http_code' => $httpCode
-            ];
-        }
-
-        if ($httpCode >= 200 && $httpCode < 300) {
-            return [
-                'success' => true,
-                'response' => $response,
-                'http_code' => $httpCode
-            ];
-        } else {
-            return [
-                'success' => false,
-                'error' => 'HTTP Error: ' . $httpCode,
-                'response' => $response,
-                'http_code' => $httpCode
-            ];
-        }
     }
 
     public function edit(int $id): Renderable
@@ -357,7 +308,7 @@ class AdminsController extends Controller
         // Handle response
         if ($error) {
             // Log error
-            Log::error('Email invitation webhook error: ' . $error);
+            Log::error('Admin WhatsApp invitation webhook error: ' . $error);
             return [
                 'success' => false,
                 'error' => $error,
@@ -410,7 +361,6 @@ class AdminsController extends Controller
 
         $admin = Admin::findOrFail($id);
         $admin->name = $request->name;
-        $admin->email = $request->has('email') ? $request->email : null;
         $admin->phone = $request->phone;
         $admin->country_code = $request->country_code;
         $admin->username = $request->username;
@@ -460,6 +410,12 @@ class AdminsController extends Controller
     public function destroy(int $id): RedirectResponse
     {
         $this->checkAuthorization(auth()->user(), ['admin.delete']);
+
+        if ((int) $id === (int) auth()->id()) {
+            session()->flash('error', 'You cannot delete your own account.');
+
+            return back();
+        }
 
         $admin = Admin::findOrFail($id);
         $admin->delete();

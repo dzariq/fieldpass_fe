@@ -54,10 +54,6 @@ Admin Create - Admin Panel
                                 <label for="name">Admin Name</label>
                                 <input type="text" class="form-control" id="name" name="name" placeholder="Enter Name" required autofocus value="{{ old('name') }}">
                             </div>
-                            <div class="form-group col-md-6 col-sm-12">
-                                <label for="email">Admin Email</label>
-                                <input type="text" class="form-control" id="email" name="email" placeholder="Enter Email" required value="{{ old('email') }}">
-                            </div>
                         </div>
 
                         <div class="form-row">

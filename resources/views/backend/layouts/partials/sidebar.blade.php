@@ -189,14 +189,6 @@ $usr = Auth::guard('admin')->user();
                                 </a>
                             </li>
                             @endif
-                            @if ($usr->can('players.view'))
-                            <li class="{{ Route::is('admin.players.invite') ? 'active' : '' }}">
-                                <a href="{{ route('admin.players.invite') }}">
-                                    <i class="fas fa-user-plus"></i>
-                                    Invite Player
-                                </a>
-                            </li>
-                            @endif
                             @if ($usr->can('players.create'))
                             <li class="{{ Route::is('admin.players.create') ? 'active' : '' }}">
                                 <a href="{{ route('admin.players.create') }}">

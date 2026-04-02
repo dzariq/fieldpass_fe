@@ -58,18 +58,9 @@ Admin Create - Admin Panel
                                 <label for="name" class="required-field">Admin Name</label>
                                 <input type="text" class="form-control" id="name" name="name" placeholder="Enter Name" required autofocus value="{{ old('name') }}">
                             </div>
-                            <div class="form-group col-md-6 col-sm-12">
-                                <label for="email">Admin Email</label>
-                                <input type="email" class="form-control" id="email" name="email" placeholder="Enter Email" value="{{ old('email') }}">
-                            </div>
                         </div>
 
                         <div class="form-row">
-                            <div class="form-group col-md-6 col-sm-12">
-                                <label for="username" class="required-field">Admin Username</label>
-                                <input type="text" class="form-control bg-light" id="username" name="username" placeholder="Auto-generated from name" readonly required value="{{ old('username') }}">
-                                <small class="form-text text-muted">Username will be auto-generated from name</small>
-                            </div>
                             <div class="form-group col-md-6 col-sm-12">
                                 <label for="roles" class="required-field">Assign Roles</label>
                                 <select name="roles[]" id="roles" class="form-control select2" multiple required>
@@ -152,32 +143,6 @@ Admin Create - Admin Panel
         $('#phone').on('input', function() {
             this.value = this.value.replace(/[^0-9]/g, '');
         });
-
-        // Auto-generate username from name
-        $('#name').on('input', function() {
-            let name = $(this).val();
-            
-            // Convert to lowercase, remove special characters, replace spaces with empty string
-            let username = name.toLowerCase()
-                .replace(/[^a-z0-9\s]/g, '') // Remove special characters
-                .replace(/\s+/g, ''); // Remove spaces
-            
-            // Limit to 20 characters
-            username = username.substring(0, 20);
-            
-            // Add timestamp suffix to make it unique
-            if (username.length > 0) {
-                let timestamp = Date.now().toString().slice(-6); // Last 6 digits of timestamp
-                username = username + timestamp;
-            }
-            
-            $('#username').val(username);
-        });
-
-        // Generate username on page load if name has old value
-        if ($('#name').val()) {
-            $('#name').trigger('input');
-        }
     });
 </script>
 @endsection

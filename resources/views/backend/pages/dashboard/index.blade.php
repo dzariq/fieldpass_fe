@@ -31,7 +31,11 @@ Dashboard Page - Admin Panel
     @if(Auth::guard('admin')->user())
     <div class="dashboard-welcome">
         <h2>Welcome back, {{ Auth::guard('admin')->user()->name }}</h2>
-        <p>Use the menu to manage associations, clubs, competitions, and players.</p>
+        @can('association.create')
+            <p>Use the menu to manage associations, clubs, competitions, and players.</p>
+        @else
+            <p>Use the sidebar to open your association or club areas.</p>
+        @endcan
     </div>
     @endif
 
@@ -78,7 +82,11 @@ Dashboard Page - Admin Panel
             <i class="fas fa-tachometer-alt"></i>
         </div>
         <h3>Dashboard overview</h3>
-        <p>Your main dashboard content will appear here. Use the sidebar to open Association or Club dashboard for stats and competitions.</p>
+        @can('association.create')
+            <p>Your main dashboard content will appear here. Use the sidebar to open Association or Club areas for stats and competitions.</p>
+        @else
+            <p>Use the sidebar for the areas your role can access.</p>
+        @endcan
     </div>
 </div>
 @endsection

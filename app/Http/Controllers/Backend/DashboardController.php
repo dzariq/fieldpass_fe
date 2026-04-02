@@ -18,11 +18,11 @@ class DashboardController extends Controller
     {
         $this->checkAuthorization(auth()->user(), ['dashboard.view']);
 
-        // Get the admin's association_id
         $admin = auth()->user();
-        $admin_obj = Admin::find($admin->id);
-        $associationIds = $admin_obj->associations()->pluck('association.id')->toArray();
-        $clubIds = $admin_obj->clubs()->pluck('club.id')->toArray();
+        $admin_obj = Admin::query()->with(['associations', 'clubs'])->findOrFail($admin->id);
+        // Use loaded relations so IDs resolve reliably (query pluck('club.id') can be empty on some DB setups).
+        $associationIds = $admin_obj->associations->pluck('id')->unique()->values()->all();
+        $clubIds = $admin_obj->clubs->pluck('id')->unique()->values()->all();
 
         if (count($associationIds) > 0) {
             // ASSOCIATION ADMIN DASHBOARD
@@ -134,12 +134,16 @@ class DashboardController extends Controller
                 'passedFixturesByCompetition',
                 'upcomingFixturesByCompetition'
             ));
-        } else if (count($clubIds) > 0) {
+        }
+
+        if (count($clubIds) > 0) {
             // CLUB ADMIN DASHBOARD - Updated Logic
 
             // Get club information
             $clubId = $clubIds[0]; // Take first club if multiple
             $club = DB::table('club')->where('id', $clubId)->first();
+
+            if ($club !== null) {
 
             // Get club statistics
             $total_admins = Admin::count();
@@ -261,23 +265,24 @@ class DashboardController extends Controller
                 'losses',
                 'clubId'
             ));
-        } else {
-            // SUPER ADMIN DASHBOARD
-            $total_admins = Admin::count();
-            $total_roles = Role::count();
-            $total_permissions = Permission::count();
-
-            $demoEnabled = DB::table('demo_data_runs')
-                ->whereIn('key', DemoDataController::allDemoKeys())
-                ->where('enabled', 1)
-                ->exists();
-
-            return view('backend.pages.dashboard.index', compact(
-                'total_admins',
-                'total_roles',
-                'total_permissions',
-                'demoEnabled'
-            ));
+            }
         }
+
+        // SUPER ADMIN DASHBOARD (any admin without association/club scope still lands here; demo UI is permission-gated in the view)
+        $total_admins = Admin::count();
+        $total_roles = Role::count();
+        $total_permissions = Permission::count();
+
+        $demoEnabled = DB::table('demo_data_runs')
+            ->whereIn('key', DemoDataController::allDemoKeys())
+            ->where('enabled', 1)
+            ->exists();
+
+        return view('backend.pages.dashboard.index', compact(
+            'total_admins',
+            'total_roles',
+            'total_permissions',
+            'demoEnabled'
+        ));
     }
 }

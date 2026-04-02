@@ -4,6 +4,7 @@ use App\Http\Controllers\Backend\AjaxController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
+use App\Http\Controllers\Backend\AdminImpersonationController;
 use App\Http\Controllers\Backend\AdminsController;
 use App\Http\Controllers\Backend\PlayersController;
 use App\Http\Controllers\Backend\MatchUpdateController;
@@ -73,6 +74,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.'], function () {
   Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
   Route::post('/demo-data/enable', [DemoDataController::class, 'enable'])->name('demo.enable');
   Route::post('/demo-data/disable', [DemoDataController::class, 'disable'])->name('demo.disable');
+  Route::post('/admins/{admin}/impersonate', [AdminImpersonationController::class, 'store'])->name('admins.impersonate');
+  Route::post('/impersonation/leave', [AdminImpersonationController::class, 'leave'])->name('impersonation.leave');
   Route::resource('roles', RolesController::class);
   Route::resource('admins', AdminsController::class);
   Route::resource('players', PlayersController::class);
@@ -159,20 +162,23 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.'], function () {
     ->name('match.registered_players');
 })->middleware('auth:admin');
 
-// Player authentication routes
+/**
+ * Player guest routes (must NOT use auth:player — same pattern as admin login).
+ */
 Route::group(['prefix' => 'player', 'as' => 'player.'], function () {
+  Route::get('/login', [PlayerLoginController::class, 'showLoginForm'])->name('login');
+  Route::post('/login/send-otp', [PlayerLoginController::class, 'sendOtp'])->name('login.send-otp');
+  Route::post('/login/verify-otp', [PlayerLoginController::class, 'verifyOtp'])->name('login.verify-otp');
+
+  Route::get('/password/reset', [PlayerForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
+  Route::post('/password/reset/submit', [PlayerForgotPasswordController::class, 'reset'])->name('password.update');
+});
+
+Route::group(['prefix' => 'player', 'as' => 'player.', 'middleware' => 'auth:player'], function () {
   Route::get('/', [PlayerDashboardController::class, 'index'])->name('dashboard');
   Route::post('/dashboard/update/{id}', [PlayerDashboardController::class, 'update'])->name('dashboard.update');
   Route::put('/dashboard/update/{id}', [PlayerDashboardController::class, 'update'])->name('dashboard.update');
   Route::get('/playerdetails/{id}', [PlayerDashboardController::class, 'details'])->name('details');
 
-  // Login Routes.
-  Route::get('/login', [PlayerLoginController::class, 'showLoginForm'])->name('login');
-  Route::post('/login/submit', [PlayerLoginController::class, 'login'])->name('login.submit');
-
-  // Logout Routes.
   Route::post('/logout/submit', [PlayerLoginController::class, 'logout'])->name('logout.submit');
-
-  Route::get('/password/reset', [PlayerForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
-  Route::post('/password/reset/submit', [PlayerForgotPasswordController::class, 'reset'])->name('password.update');
-})->middleware('auth:player');
+});

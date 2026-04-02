@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class AdminRequest extends FormRequest
 {
@@ -17,21 +19,53 @@ class AdminRequest extends FormRequest
     }
 
     /**
+     * Primary key of the admin being updated (null on create).
+     * Route `admins/{admin}` uses model binding, so `route('admin')` may be an Admin model.
+     */
+    private function adminPrimaryKey(): ?int
+    {
+        $admin = $this->route('admin');
+        if ($admin instanceof Model) {
+            $key = $admin->getKey();
+
+            return is_numeric($key) ? (int) $key : null;
+        }
+
+        if ($admin === null || $admin === '') {
+            return null;
+        }
+
+        return is_numeric($admin) ? (int) $admin : null;
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
-        $adminId = $this->route('admin');
+        $adminId = $this->adminPrimaryKey();
+
+        $phoneUnique = Rule::unique('admins', 'phone');
+        if ($adminId !== null) {
+            $phoneUnique->ignore($adminId);
+        }
+
+        $usernameUnique = Rule::unique('admins', 'username');
+        if ($adminId !== null) {
+            $usernameUnique->ignore($adminId);
+        }
 
         return [
             'name' => 'required|max:50',
-            'email' => 'nullable|max:100|email|unique:admins,email,' . $adminId,
-            'phone' => 'required|max:20|unique:admins,phone,' . $adminId,
+            'phone' => ['required', 'string', 'max:20', 'regex:/^[0-9]+$/', $phoneUnique],
             'country_code' => 'required|max:5',
-            'username' => 'required|max:100|unique:admins,username,' . $adminId,
-            'password' => $adminId ? 'nullable|min:6|confirmed' : 'min:6|confirmed',
+            'username' => array_merge(
+                $adminId !== null ? ['required'] : ['nullable'],
+                ['max:100', $usernameUnique]
+            ),
+            'password' => 'nullable|min:6|confirmed',
         ];
     }
 }

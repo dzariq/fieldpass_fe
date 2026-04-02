@@ -26,14 +26,8 @@
     }
 
     @keyframes slideUp {
-        from {
-            opacity: 0;
-            transform: translateY(30px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
     }
 
     .login-header {
@@ -79,10 +73,7 @@
         padding: 40px 30px;
     }
 
-    .form-group-modern {
-        margin-bottom: 25px;
-    }
-
+    .form-group-modern { margin-bottom: 22px; }
     .form-label-modern {
         display: block;
         font-weight: 600;
@@ -91,63 +82,86 @@
         font-size: 14px;
     }
 
-    .input-wrapper {
-        position: relative;
-    }
-
-    .input-icon {
-        position: absolute;
-        left: 15px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #999;
-        font-size: 18px;
-        z-index: 1;
-    }
-
-    .form-control-modern {
-        width: 100%;
-        padding: 14px 15px 14px 45px;
+    .phone-row {
+        display: flex;
+        align-items: stretch;
+        gap: 0;
         border: 2px solid #e0e0e0;
         border-radius: 10px;
+        overflow: hidden;
+        background: #fff;
+    }
+    .phone-row:focus-within {
+        border-color: #667eea;
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    }
+    .phone-prefix {
+        flex: 0 0 auto;
+        padding: 12px 14px;
+        background: #f8f9fa;
+        font-weight: 600;
+        color: #333;
+        border-right: 2px solid #e0e0e0;
+    }
+    .phone-input-wrap { flex: 1; }
+    .phone-input-wrap .otp-phone-input {
+        width: 100%;
+        border: none;
+        border-radius: 0;
+        padding: 12px 16px;
         font-size: 15px;
+        background: #f8f9fa;
+    }
+    .phone-input-wrap .otp-phone-input:focus {
+        outline: none;
+        background: #fff;
+    }
+    .phone-readonly {
+        flex: 1;
+        padding: 12px 16px;
+        font-weight: 600;
+        color: #333;
+        background: #f8f9fa;
+    }
+
+    .form-hint {
+        display: block;
+        margin-top: 8px;
+        font-size: 12px;
+        color: #666;
+    }
+    .form-hint a { color: #667eea; font-weight: 600; }
+
+    .otp-input {
+        width: 100%;
+        padding: 14px 16px;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        font-size: 16px;
         transition: all 0.3s ease;
         background-color: #f8f9fa;
     }
-
-    .form-control-modern:focus {
+    .otp-input:focus {
         outline: none;
         border-color: #667eea;
         background-color: white;
         box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
     }
+    .otp-input.is-invalid { border-color: #e74c3c; background-color: #fff5f5; }
 
-    .invalid-feedback {
+    .invalid-feedback, .error-message {
         display: block;
         color: #e74c3c;
         font-size: 13px;
-        margin-top: 5px;
-        margin-left: 5px;
+        margin-top: 6px;
     }
 
-    .form-control-modern.is-invalid {
-        border-color: #e74c3c;
-        background-color: #fff5f5;
-    }
-
-    .remember-area {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin: 20px 0;
-    }
-
+    .remember-area { margin: 16px 0 8px; }
     .custom-checkbox-modern {
         display: flex;
         align-items: center;
         cursor: pointer;
     }
-
     .custom-checkbox-modern input[type="checkbox"] {
         width: 18px;
         height: 18px;
@@ -155,7 +169,6 @@
         cursor: pointer;
         accent-color: #667eea;
     }
-
     .custom-checkbox-modern label {
         font-size: 14px;
         color: #555;
@@ -180,85 +193,21 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        gap: 8px;
     }
-
     .btn-login:hover {
         transform: translateY(-2px);
         box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
     }
 
-    .btn-login:active {
-        transform: translateY(0);
-    }
-
-    .btn-login i {
-        margin-left: 8px;
-        transition: transform 0.3s ease;
-    }
-
-    .btn-login:hover i {
-        transform: translateX(5px);
-    }
-
-    .alert-modern {
-        padding: 12px 15px;
-        border-radius: 8px;
-        margin-bottom: 20px;
-        font-size: 14px;
-        display: flex;
-        align-items: center;
-    }
-
-    .alert-modern i {
-        margin-right: 10px;
-        font-size: 18px;
-    }
-
-    .alert-success {
-        background-color: #d4edda;
-        color: #155724;
-        border: 1px solid #c3e6cb;
-    }
-
-    .alert-danger {
-        background-color: #f8d7da;
-        color: #721c24;
-        border: 1px solid #f5c6cb;
-    }
-
-    .alert-warning {
-        background-color: #fff3cd;
-        color: #856404;
-        border: 1px solid #ffeaa7;
-    }
-
-    .alert-info {
-        background-color: #d1ecf1;
-        color: #0c5460;
-        border: 1px solid #bee5eb;
-    }
-
     @media (max-width: 576px) {
-        .login-header {
-            padding: 30px 20px;
-        }
-
-        .login-header h2 {
-            font-size: 24px;
-        }
-
-        .login-body {
-            padding: 30px 20px;
-        }
-
-        .logo-wrapper {
-            width: 80px;
-            height: 80px;
-        }
+        .login-header { padding: 30px 20px; }
+        .login-header h2 { font-size: 24px; }
+        .login-body { padding: 30px 20px; }
+        .logo-wrapper { width: 80px; height: 80px; }
     }
 </style>
 
-<!-- login area start -->
 <div class="login-area-modern">
     <div class="login-container">
         <div class="login-header">
@@ -266,77 +215,120 @@
                 <img src="{{ asset('backend/assets/images/media/logo.png') }}" alt="FieldPass">
             </div>
             <h2>Player Login</h2>
-            <p>Welcome back! Sign in to continue</p>
+            <p>Sign in with mobile OTP (+60)</p>
         </div>
 
         <div class="login-body">
             @include('playerbackend.layouts.partials.messages')
 
-            <form method="POST" action="{{ route('player.login.submit') }}">
+            @if(empty($otp_sent))
+            <form method="POST" action="{{ route('player.login.send-otp') }}" id="send-otp-form" autocomplete="on">
                 @csrf
+                <input type="hidden" name="country_code" value="+60">
 
-                <!-- Email/Username Field -->
                 <div class="form-group-modern">
-                    <label for="email" class="form-label-modern">Email or Username</label>
-                    <div class="input-wrapper">
-                        <i class="input-icon ti-email"></i>
-                        <input 
-                            type="text" 
-                            id="email" 
-                            name="email" 
-                            class="form-control-modern @error('email') is-invalid @enderror"
-                            placeholder="Enter your email or username"
-                            value="{{ old('email') }}"
-                            autofocus
-                            required>
+                    <label for="phone" class="form-label-modern">Mobile number</label>
+                    <div class="phone-row">
+                        <span class="phone-prefix" aria-hidden="true">+60</span>
+                        <div class="phone-input-wrap">
+                            <input
+                                type="tel"
+                                inputmode="numeric"
+                                pattern="[0-9]*"
+                                id="phone"
+                                name="phone"
+                                class="otp-phone-input @error('phone') is-invalid @enderror"
+                                placeholder="e.g. 123456789"
+                                value="{{ old('phone') }}"
+                                required
+                                maxlength="15"
+                                autocomplete="tel-national"
+                            >
+                        </div>
                     </div>
-                    @error('email')
-                        <span class="invalid-feedback">
-                            <strong>{{ $message }}</strong>
-                        </span>
+                    <small class="form-hint">Malaysia (+60) only. Numbers only, no spaces.</small>
+                    @error('phone')
+                        <span class="error-message">{{ $message }}</span>
                     @enderror
                 </div>
 
-                <!-- Password Field -->
-                <div class="form-group-modern">
-                    <label for="password" class="form-label-modern">Password</label>
-                    <div class="input-wrapper">
-                        <i class="input-icon ti-lock"></i>
-                        <input 
-                            type="password" 
-                            id="password" 
-                            name="password" 
-                            class="form-control-modern @error('password') is-invalid @enderror"
-                            placeholder="Enter your password"
-                            required>
-                    </div>
-                    @error('password')
-                        <span class="invalid-feedback">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                    @enderror
-                </div>
-
-                <!-- Remember Me -->
-                <div class="remember-area">
-                    <div class="custom-checkbox-modern">
-                        <input 
-                            type="checkbox" 
-                            id="remember" 
-                            name="remember"
-                            {{ old('remember') ? 'checked' : '' }}>
-                        <label for="remember">Remember Me</label>
-                    </div>
-                </div>
-
-                <!-- Submit Button -->
                 <button type="submit" class="btn-login">
-                    Sign In
+                    Send OTP
                     <i class="ti-arrow-right"></i>
                 </button>
             </form>
+            @else
+            <form method="POST" action="{{ route('player.login.verify-otp') }}" id="verify-otp-form" autocomplete="one-time-code">
+                @csrf
+                <input type="hidden" name="country_code" value="+60">
+                <input type="hidden" name="phone" value="{{ old('phone', $pending_phone ?? '') }}">
+
+                <div class="form-group-modern">
+                    <span class="form-label-modern">Mobile number</span>
+                    <div class="phone-row">
+                        <span class="phone-prefix">+60</span>
+                        <div class="phone-readonly">{{ old('phone', $pending_phone ?? '') }}</div>
+                    </div>
+                    <p class="form-hint"><a href="{{ route('player.login', ['change_phone' => 1]) }}">Use a different number</a></p>
+                </div>
+
+                <div class="form-group-modern">
+                    <label for="otp" class="form-label-modern">OTP code</label>
+                    <input
+                        type="text"
+                        inputmode="numeric"
+                        pattern="[0-9]*"
+                        id="otp"
+                        name="otp"
+                        class="otp-input @error('otp') is-invalid @enderror"
+                        placeholder="Enter OTP"
+                        value="{{ old('otp') }}"
+                        required
+                        maxlength="10"
+                        autocomplete="one-time-code"
+                    >
+                    @error('otp')
+                        <span class="error-message">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <div class="remember-area">
+                    <div class="custom-checkbox-modern">
+                        <input type="checkbox" id="remember" name="remember" value="1" {{ old('remember') ? 'checked' : '' }}>
+                        <label for="remember">Remember me</label>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-login">
+                    Verify &amp; Sign In
+                    <i class="ti-arrow-right"></i>
+                </button>
+            </form>
+            @endif
         </div>
     </div>
 </div>
-<!-- login area end -->
+@endsection
+
+@section('scripts')
+<script>
+(function () {
+    var sendForm = document.getElementById('send-otp-form');
+    if (sendForm) {
+        sendForm.addEventListener('submit', function () {
+            var el = document.getElementById('phone');
+            if (el) el.value = (el.value || '').replace(/\D/g, '').trim();
+        });
+    }
+    var verifyForm = document.getElementById('verify-otp-form');
+    if (verifyForm) {
+        verifyForm.addEventListener('submit', function () {
+            var phone = verifyForm.querySelector('input[name="phone"]');
+            var otp = document.getElementById('otp');
+            if (phone) phone.value = (phone.value || '').replace(/\D/g, '').trim();
+            if (otp) otp.value = (otp.value || '').replace(/\D/g, '').trim();
+        });
+    }
+})();
+</script>
 @endsection

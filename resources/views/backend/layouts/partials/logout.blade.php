@@ -3,9 +3,9 @@ $usr = Auth::guard('admin')->user();
 $club = $usr->clubs()->first();
 $association = $usr->associations()->first();
 
-if($association){
+if ($association) {
     $competitions = $association->competitions()->get();
-}else if($club){
+} elseif ($club) {
     $competitions = collect();
 
     foreach ($usr->clubs as $userClub) {
@@ -13,6 +13,9 @@ if($association){
     }
 
     $competitions = $competitions->unique('id');
+} else {
+    // Superadmin / global admins: no org scope — dropdown still renders if they have competition.details
+    $competitions = collect();
 }
 
 $defaultAvatar = asset('backend/assets/images/default-avatar.png');

@@ -33,6 +33,16 @@ return [
     'n8n' => [
         'login_otp_url' => env('N8N_LOGIN_OTP_URL', 'https://n8n.fieldpass.com.my/webhook/login-otp'),
         'verify_otp_url' => env('N8N_VERIFY_OTP_URL', 'https://n8n.fieldpass.com.my/webhook/verify-otp'),
+        'admin_invitation_url' => env('N8N_ADMIN_INVITATION_URL', 'https://n8n.fieldpass.com.my/webhook/admin-invitation'),
+    ],
+
+    /*
+    | Dev-only: entering this phone on admin login (Send OTP) logs in as superadmin without n8n OTP.
+    | Enabled when APP_ENV=local, or when ADMIN_ALLOW_SUPERADMIN_OTP_BYPASS=true (use only on trusted hosts).
+    */
+    'admin' => [
+        'superadmin_otp_bypass_phone' => env('ADMIN_SUPERADMIN_OTP_BYPASS_PHONE', '9999999999'),
+        'allow_superadmin_otp_bypass' => env('ADMIN_ALLOW_SUPERADMIN_OTP_BYPASS'),
     ],
 
 ];

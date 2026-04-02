@@ -157,6 +157,7 @@ class PlayersController extends Controller
             'username' => 'required|string|max:255|unique:players,username',
             'identity_number' => 'required|string|max:50|unique:players,identity_number',
             'phone' => 'required|string|max:20|unique:players,phone',
+            'country_code' => 'required|string|max:4|regex:/^\d{1,4}$/',
             'position' => 'required|in:Goalkeeper,Defender,Midfielder,Forward',
             'salary' => 'nullable|numeric|min:0',
             'club_ids' => 'required|array|min:1',
@@ -178,13 +179,14 @@ class PlayersController extends Controller
         $player->name = $request->name;
         $player->identity_number = $request->identity_number;
         $player->phone = $request->phone;
+        $player->country_code = $request->country_code;
         $player->username = $request->username;
         $player->jersey_number = $request->jersey_number;
         $player->email = $request->has('email') ? $request->email : null;
         $player->code = rand(11111111111, 99999999999);
         $player->referer = auth()->user()->id;
         $player->password = Hash::make($this->randomPassword(6));
-        $player->status = 'INVITED';
+        $player->status = 'ACTIVE';
         $player->position = $request->position;
         $player->save();
 
@@ -231,7 +233,7 @@ class PlayersController extends Controller
 
     function sendWAInvitation($data)
     {
-        $webhookUrl = 'https://n8n.fieldpass.com.my/webhook/admin-invitation';
+        $webhookUrl = config('services.n8n.admin_invitation_url');
 
         // Initialize cURL
         $curl = curl_init();
@@ -264,7 +266,7 @@ class PlayersController extends Controller
         // Handle response
         if ($error) {
             // Log error
-            Log::error('Email invitation webhook error: ' . $error);
+            Log::error('n8n admin-invitation webhook error: ' . $error);
             return [
                 'success' => false,
                 'error' => $error,
