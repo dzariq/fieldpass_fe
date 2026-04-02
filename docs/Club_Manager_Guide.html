@@ -1,0 +1,112 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="Generator" content="FieldPass">
+<title>Club Manager Guide</title>
+<style>
+  body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; color: #111; max-width: 8.5in; margin: 1in auto; line-height: 1.35; }
+  h1 { font-size: 20pt; margin: 0 0 6pt 0; }
+  h2 { font-size: 14pt; margin: 14pt 0 6pt 0; border-bottom: 1px solid #e0e0e0; padding-bottom: 4pt; }
+  h3 { font-size: 12pt; margin: 10pt 0 4pt 0; }
+  .muted { color: #555; }
+  .box { border: 1px solid #ddd; padding: 10pt; border-radius: 6pt; background: #fafafa; margin: 10pt 0; }
+  .req { font-weight: 700; }
+  ol, ul { margin-top: 4pt; }
+  li { margin-bottom: 4pt; }
+  code { font-size: 10.5pt; background: #f0f0f0; padding: 1px 4px; }
+  .version { margin-top: 18pt; font-size: 10pt; color: #666; }
+</style>
+</head>
+<body>
+
+<h1>FieldPass — Club Manager Guide</h1>
+<p class="muted">For Club Managers: login, update club branding, and submit lineup before match day.</p>
+
+<div class="box">
+  <p class="req">Important rule (Lineup deadline):</p>
+  <p>You should submit your player lineup <strong>at least 24 hours before</strong> the real match kickoff time. If you wait too late, the system/admin may lock the lineup and you may not be able to submit.</p>
+</div>
+
+<h2>1) Login (Club Manager)</h2>
+<p class="muted">Club managers use the <strong>admin portal</strong> with <strong>Malaysia (+60) mobile OTP</strong> — the same flow as association admins (not username/password).</p>
+<ol>
+  <li>Open the admin login page in your browser (example: <strong>http://localhost:8000/admin/login</strong>).</li>
+  <li>Enter your <strong>mobile number</strong> (national digits only, after +60 — no spaces).</li>
+  <li>Click <strong>Send OTP</strong>. You will receive a one-time code (SMS/WhatsApp, depending on integration).</li>
+  <li>Enter the <strong>OTP code</strong>, optionally tick <strong>Remember me</strong>, then click <strong>Verify &amp; Sign In</strong>.</li>
+</ol>
+<p class="muted">The phone number must match the one stored on your admin account. If login fails, ask your association admin to confirm your number under <strong>Admins → Edit</strong>.</p>
+
+<h2>2) Update Club Logo</h2>
+<ol>
+  <li>From the left sidebar, go to <strong>Clubs</strong>.</li>
+  <li>Find your club and click <strong>Edit</strong>.</li>
+  <li>In the <strong>Avatar / Logo</strong> section:
+    <ul>
+      <li>Click <strong>Choose File</strong> and select a PNG/JPG image.</li>
+      <li>Keep it square if possible (recommended for clean display in tables and headers).</li>
+    </ul>
+  </li>
+  <li>Click <strong>Save / Update</strong>.</li>
+</ol>
+
+<h2>3) Update Club Jersey (Home/Away)</h2>
+<p class="muted">If your system shows jersey uploads (or “kit” images), update them the same way as the logo.</p>
+<ol>
+  <li>Go to <strong>Clubs</strong> → <strong>Edit</strong> your club.</li>
+  <li>Locate the <strong>Jersey / Kit</strong> fields (Home / Away).</li>
+  <li>Upload images (PNG/JPG) and click <strong>Save / Update</strong>.</li>
+</ol>
+
+<h2>4) Submit Player Lineup (24 hours before match)</h2>
+<ol>
+  <li>From the sidebar, go to <strong>Matches</strong> (or <strong>Match</strong>).</li>
+  <li>Find the upcoming match for your club.</li>
+  <li>Open the match and look for <strong>Lineup</strong> / <strong>Player Lineup</strong> / <strong>Submit Lineup</strong>.</li>
+  <li>Select players for:
+    <ul>
+      <li><strong>Starting XI</strong></li>
+      <li><strong>Substitutes</strong> (if the competition requires it)</li>
+    </ul>
+  </li>
+  <li>Double-check:
+    <ul>
+      <li>Positions look correct (Goalkeeper / Defender / Midfielder / Forward).</li>
+      <li>No missing required slots.</li>
+    </ul>
+  </li>
+  <li>Click <strong>Save / Submit Lineup</strong>.</li>
+</ol>
+
+<h2>5) Common issues &amp; fixes</h2>
+<h3>A) I can’t see my club in the Clubs list</h3>
+<ul>
+  <li>Your admin account may not be assigned to the club yet. Ask the association admin/superadmin to assign your club under <strong>Edit Admin → Assign Clubs</strong>.</li>
+</ul>
+
+<h3>B) I can’t submit lineup / lineup is empty</h3>
+<ul>
+  <li>Check the competition has active clubs joined.</li>
+  <li>Confirm your club has players assigned (Players → filter by your club).</li>
+  <li>If it’s within 24 hours of kickoff, the match may be locked.</li>
+</ul>
+
+<h3>C) Logo doesn’t show after upload</h3>
+<ul>
+  <li>Refresh the page (Ctrl+F5).</li>
+  <li>Make sure the file is JPG/PNG and under the size limit.</li>
+</ul>
+
+<h3>D) Players asking how to log in</h3>
+<ul>
+  <li>Players use the <strong>player portal</strong> (example: <strong>/player/login</strong>), not the admin URL.</li>
+  <li>They sign in with the same <strong>+60 mobile OTP</strong> flow; their phone must match their player profile and status must be <strong>ACTIVE</strong>.</li>
+</ul>
+
+<p class="version">Document version: 2026-04-02. Open this file in Word via File &gt; Open, or in any web browser. Admin login: Malaysia (+60) mobile OTP.</p>
+
+</body>
+</html>

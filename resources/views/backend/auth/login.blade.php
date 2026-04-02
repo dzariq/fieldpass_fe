@@ -95,14 +95,6 @@
                     @enderror
                 </div>
 
-                <div class="form-options">
-                    <label class="checkbox-wrapper">
-                        <input type="checkbox" name="remember" id="remember" value="1" {{ old('remember') ? 'checked' : '' }}>
-                        <span class="checkmark"></span>
-                        Remember me
-                    </label>
-                </div>
-
                 <button type="submit" class="auth-button">
                     <span>Verify &amp; Sign In</span>
                     <svg class="button-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">

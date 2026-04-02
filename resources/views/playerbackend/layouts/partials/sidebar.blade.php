@@ -21,11 +21,6 @@
                         <ul class="collapse">
                             <li class="{{ Route::is('player.dashboard') ? 'active' : '' }}"><a href="{{ route('player.dashboard') }}">Dashboard</a></li>
                         </ul>
-                        <ul class="collapse">
-                            <li class="{{ Route::is('player.details') ? 'active' : '' }}">
-                                <a href="{{ route('player.details', ['id' => $usr->id]) }}">My Performance</a>
-                            </li>
-                        </ul>
                     </li>
 
                 </ul>
@@ -34,3 +29,21 @@
     </div>
 </div>
 <!-- sidebar menu area end -->
+
+<style>
+    /* Mobile: sidebar hidden when collapsed, visible when nav-btn opens it */
+    @media (max-width: 992px) {
+        .sidebar-menu {
+            transition: transform 0.3s ease, left 0.3s ease;
+            z-index: 999;
+        }
+        .page-container.sbar_collapsed .sidebar-menu {
+            transform: translateX(-100%);
+            left: 0 !important;
+        }
+        .page-container:not(.sbar_collapsed) .sidebar-menu {
+            transform: translateX(0);
+            left: 0 !important;
+        }
+    }
+</style>

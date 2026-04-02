@@ -1,0 +1,179 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="Generator" content="FieldPass">
+<title>Association and Competition Setup Guide</title>
+<style>
+  body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; color: #111; max-width: 8.5in; margin: 1in auto; line-height: 1.35; }
+  h1 { font-size: 20pt; margin: 0 0 12pt 0; }
+  h2 { font-size: 14pt; margin: 18pt 0 8pt 0; border-bottom: 1px solid #e0e0e0; padding-bottom: 4pt; }
+  h3 { font-size: 12pt; margin: 14pt 0 6pt 0; }
+  .muted { color: #555; }
+  .box { border: 1px solid #ddd; padding: 10pt; border-radius: 6pt; background: #fafafa; margin: 10pt 0; }
+  .box-blue { border-left: 3pt solid #2F6FED; padding-left: 10pt; background: #F3F7FF; }
+  .box-orange { border-left: 3pt solid #C2410C; padding-left: 10pt; background: #FFF7ED; }
+  ol, ul { margin-top: 4pt; }
+  li { margin-bottom: 4pt; }
+  code { font-size: 10.5pt; background: #f0f0f0; padding: 1px 4px; }
+  .version { margin-top: 24pt; font-size: 10pt; color: #666; }
+</style>
+</head>
+<body>
+
+<h1>Association Admin Guide: Competition to Clubs to Managers to Matches to Players</h1>
+<p class="muted">Recommended end-to-end flow for an <strong>Association Admin</strong>: set up a competition, create clubs, add club managers, invite clubs to the competition, create matches, and add players (bulk or individual).</p>
+
+<div class="box box-blue">
+  <p><strong>Scope and assumptions</strong></p>
+  <ul>
+    <li>You use the backend as an <strong>Association Admin</strong> (or equivalent permissions).</li>
+    <li>Your account is linked to the correct association.</li>
+    <li>Menus depend on role permissions; missing items usually mean a missing permission.</li>
+  </ul>
+</div>
+
+<h2>1) Create (or confirm) your Association</h2>
+<ol>
+  <li>Open the Admin Panel login page (for example <strong>/admin/login</strong>). Sign in with <strong>Malaysia (+60) mobile OTP</strong>: enter your national mobile number (digits only), click <strong>Send OTP</strong>, enter the code you receive, then <strong>Verify and Sign In</strong>. The number must match the phone on your admin account.</li>
+  <li>Go to <strong>Associations</strong>.</li>
+  <li>If the association already exists, open it and confirm details (name, avatar/logo, etc.).</li>
+  <li>If it does not exist, create it (you may need a <strong>superadmin</strong>, depending on permissions).</li>
+</ol>
+
+<h2>2) Create Clubs under the Association</h2>
+<ol>
+  <li>Go to <strong>Clubs</strong>.</li>
+  <li>Click <strong>Create Club</strong>.</li>
+  <li>Fill in club details and assign the club to your <strong>Association</strong>.</li>
+  <li>Save.</li>
+</ol>
+<div class="box box-blue">
+  <p><strong>Tip:</strong> Add a club logo early; it helps everywhere in competitions and match listings.</p>
+</div>
+
+<h2>3) Invite (create) Club Managers</h2>
+<p>Club managers are admin users who run day-to-day club operations in the admin portal.</p>
+<ol>
+  <li>Go to <strong>Admins</strong> (or <strong>All Admins</strong>).</li>
+  <li>Click <strong>Create Admin</strong>.</li>
+  <li>Choose a role such as <strong>Club Manager</strong> (or your organization's club-level role).</li>
+  <li>Assign the admin to the correct <strong>Association</strong> and/or <strong>Club</strong>.</li>
+  <li>Enter a valid <strong>mobile number</strong> and country code (used for OTP login). Save.</li>
+</ol>
+<div class="box box-blue">
+  <p><strong>Expected outcome:</strong> The new manager appears in the admins list and can sign in with <strong>mobile OTP</strong> using the phone you entered. They should only see data for their assigned club(s).</p>
+</div>
+
+<h2>4) Create a Competition</h2>
+<ol>
+  <li>Go to <strong>Competitions</strong>.</li>
+  <li>Click <strong>Create Competition</strong>.</li>
+  <li>Fill in:
+    <ul>
+      <li><strong>Name</strong></li>
+      <li><strong>Association</strong> (yours)</li>
+      <li><strong>Start</strong> and <strong>End</strong> dates</li>
+      <li><strong>Description</strong></li>
+      <li><strong>Competition Fee (RM)</strong> (use <strong>0</strong> for a free competition)</li>
+    </ul>
+  </li>
+  <li>Save.</li>
+</ol>
+
+<h2>5) Invite Clubs to the Competition (activate clubs)</h2>
+<p>Clubs must be linked to a competition so they appear in match creation (home/away) and related flows.</p>
+<ol>
+  <li>Open the competition (edit/details).</li>
+  <li>Find the section such as <strong>Invite Clubs</strong>.</li>
+  <li>Select clubs under your association that should participate.</li>
+  <li>Save.</li>
+</ol>
+<div class="box box-orange">
+  <p><strong>If clubs do not appear in "Create Match"</strong></p>
+  <ul>
+    <li>Ensure the club is invited/linked to the competition.</li>
+    <li>Ensure the club's competition status is <strong>ACTIVE</strong> (not only INVITED), depending on your workflow.</li>
+  </ul>
+</div>
+
+<h2>6) Create Matches</h2>
+<ol>
+  <li>Go to <strong>Matches</strong>.</li>
+  <li>Click <strong>Create New Match</strong> (or equivalent).</li>
+  <li>Select the <strong>Competition</strong>.</li>
+  <li>Set <strong>Matchweek</strong>, date, and time.</li>
+  <li>Select <strong>Home Club</strong> and <strong>Away Club</strong> (must be different). Dropdowns depend on the selected competition.</li>
+  <li>Save the match.</li>
+  <li>Repeat for each matchweek and fixture.</li>
+</ol>
+<div class="box box-blue">
+  <p><strong>Expected outcome:</strong> The match appears in the match list within your association's scope.</p>
+</div>
+
+<h2>7) Bulk Upload Players (assign players to a club)</h2>
+<p>Bulk upload creates players and assigns them to a selected club (and an active contract), so they appear in club/association views.</p>
+<h3>7.1 Download the template</h3>
+<ol>
+  <li>Go to <strong>Players</strong> then <strong>Bulk Upload</strong>.</li>
+  <li>Download the CSV template.</li>
+</ol>
+<h3>7.2 Fill the CSV</h3>
+<p><strong>Required columns</strong> (must match the template header exactly):</p>
+<ul>
+  <li><code>name</code></li>
+  <li><code>email</code> (optional)</li>
+  <li><code>identity_number</code> (required)</li>
+  <li><code>country_code</code> (optional)</li>
+  <li><code>phone</code> (optional)</li>
+  <li><code>position</code> (required: Goalkeeper, Defender, Midfielder, Forward)</li>
+  <li><code>salary</code> (optional)</li>
+</ul>
+<div class="box box-blue">
+  <p><strong>Important:</strong> On the bulk upload page, select a <strong>Club</strong> before uploading. All rows are assigned to that club.</p>
+</div>
+<h3>7.3 Upload</h3>
+<ol>
+  <li>Select the <strong>Club</strong> dropdown.</li>
+  <li>Choose your CSV file.</li>
+  <li>Click <strong>Upload Players</strong>.</li>
+</ol>
+<p><strong>What the system does:</strong></p>
+<ul>
+  <li>Creates each player with status <strong>INVITED</strong> (bulk upload path). If you add a player individually via <strong>Create Player</strong>, the account is created as <strong>ACTIVE</strong> and a notification may be sent via the integration.</li>
+  <li>Links the player to the selected club.</li>
+  <li>Creates a club contract (start = today, end = +1 year, salary from CSV or default).</li>
+  <li>Skips duplicates where configured (e.g. identity number / phone).</li>
+</ul>
+
+<h2>8) Verification Checklist</h2>
+<ul>
+  <li><strong>Competitions:</strong> Exists under your association with correct dates and fee.</li>
+  <li><strong>Clubs:</strong> Exist and are linked to the competition.</li>
+  <li><strong>Managers:</strong> Can sign in with mobile OTP and see only permitted data.</li>
+  <li><strong>Matches:</strong> List shows matches for your association's competitions.</li>
+  <li><strong>Players:</strong> Visible for clubs in your association; bulk-uploaded players show club context.</li>
+</ul>
+
+<h2>9) Player login (player portal)</h2>
+<p>Squad players use the <strong>player</strong> login URL (for example <strong>/player/login</strong>). Sign-in uses the same <strong>Malaysia (+60) mobile OTP</strong> flow as the admin portal: <strong>Send OTP</strong>, then <strong>Verify and Sign In</strong>. The phone number must match the player record, and the player must be <strong>ACTIVE</strong>.</p>
+
+<h2>Appendix: Common Issues</h2>
+<h3>A) I can't see clubs in match creation</h3>
+<ul>
+  <li>Confirm the competition has clubs invited/linked.</li>
+  <li>Confirm clubs are <strong>ACTIVE</strong> in the competition if your workflow requires it.</li>
+  <li>Reload after selecting a competition; club lists may load dynamically.</li>
+</ul>
+<h3>B) I can't push to GitHub (blocked by secrets)</h3>
+<ul>
+  <li>Never commit <code>.env</code> (it should be gitignored).</li>
+  <li>If a push is blocked for secrets, remove the secret from history before pushing again.</li>
+</ul>
+
+<p class="version">Document version: 2026-04-02. Open this file in Word via File &gt; Open, or in any web browser. Admin and player login: Malaysia (+60) mobile OTP.</p>
+
+</body>
+</html>

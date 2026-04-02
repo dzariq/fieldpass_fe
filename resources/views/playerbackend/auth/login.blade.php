@@ -156,27 +156,6 @@
         margin-top: 6px;
     }
 
-    .remember-area { margin: 16px 0 8px; }
-    .custom-checkbox-modern {
-        display: flex;
-        align-items: center;
-        cursor: pointer;
-    }
-    .custom-checkbox-modern input[type="checkbox"] {
-        width: 18px;
-        height: 18px;
-        margin-right: 8px;
-        cursor: pointer;
-        accent-color: #667eea;
-    }
-    .custom-checkbox-modern label {
-        font-size: 14px;
-        color: #555;
-        cursor: pointer;
-        user-select: none;
-        margin: 0;
-    }
-
     .btn-login {
         width: 100%;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -290,13 +269,6 @@
                     @error('otp')
                         <span class="error-message">{{ $message }}</span>
                     @enderror
-                </div>
-
-                <div class="remember-area">
-                    <div class="custom-checkbox-modern">
-                        <input type="checkbox" id="remember" name="remember" value="1" {{ old('remember') ? 'checked' : '' }}>
-                        <label for="remember">Remember me</label>
-                    </div>
                 </div>
 
                 <button type="submit" class="btn-login">

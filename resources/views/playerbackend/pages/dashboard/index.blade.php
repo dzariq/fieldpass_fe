@@ -334,34 +334,6 @@ Player Dashboard
                             </div>
                         </div>
 
-                        <!-- Security -->
-                        <div class="form-section">
-                            <div class="section-title">
-                                <i class="fa fa-lock"></i> Security
-                            </div>
-                            
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="password" class="form-label">New Password</label>
-                                    <div class="input-icon">
-                                        <i class="fa fa-key"></i>
-                                        <input type="password" class="form-control" id="password" name="password" placeholder="Enter new password">
-                                    </div>
-                                    <small class="info-text">
-                                        <i class="fa fa-info-circle"></i> Leave blank to keep current password
-                                    </small>
-                                </div>
-                                
-                                <div class="col-md-6 mb-3">
-                                    <label for="password_confirmation" class="form-label">Confirm New Password</label>
-                                    <div class="input-icon">
-                                        <i class="fa fa-key"></i>
-                                        <input type="password" class="form-control" id="password_confirmation" name="password_confirmation" placeholder="Confirm new password">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
                         <!-- Info Alert -->
                         <div class="alert alert-modern">
                             <strong><i class="fa fa-info-circle"></i> Security Notice:</strong> 

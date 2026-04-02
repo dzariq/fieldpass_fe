@@ -167,3 +167,40 @@
         });
     }
 </script>
+
+<script>
+    (function () {
+        function isMobile() {
+            return window.matchMedia && window.matchMedia('(max-width: 992px)').matches;
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            var pageContainer = document.querySelector('.page-container');
+            if (!pageContainer) return;
+
+            // Default behavior: collapsed on mobile, expanded on desktop.
+            if (isMobile()) {
+                pageContainer.classList.add('sbar_collapsed');
+            } else {
+                pageContainer.classList.remove('sbar_collapsed');
+            }
+
+            var btn = document.querySelector('.header-area .nav-btn');
+            if (btn) {
+                btn.addEventListener('click', function () {
+                    pageContainer.classList.toggle('sbar_collapsed');
+                });
+            }
+
+            window.addEventListener('resize', function () {
+                // Keep user toggle on resize; only enforce initial mobile collapse once per page load.
+                if (!pageContainer.dataset.sidebarInit) {
+                    if (isMobile()) {
+                        pageContainer.classList.add('sbar_collapsed');
+                    }
+                    pageContainer.dataset.sidebarInit = '1';
+                }
+            });
+        });
+    })();
+</script>
