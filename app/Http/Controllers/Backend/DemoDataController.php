@@ -12,14 +12,32 @@ use Illuminate\Support\Facades\Log;
 
 class DemoDataController extends Controller
 {
-    private const DEMO_KEY = 'assoc:1|comp:7|clubs:6|players_per_club:10';
+    /** Current demo fingerprint (16 players per club × 6 clubs = 96 players). */
+    public const DEMO_KEY = 'assoc:1|comp:7|clubs:6|players_per_club:16';
+
+    private const CLUB_COUNT = 6;
+
+    private const PLAYERS_PER_CLUB = 16;
+
+    /** Earlier demo runs (10 players/club); still honored for disable + dashboard. */
+    private const DEMO_KEYS_LEGACY = [
+        'assoc:1|comp:7|clubs:6|players_per_club:10',
+    ];
+
+    /**
+     * @return list<string>
+     */
+    public static function allDemoKeys(): array
+    {
+        return array_merge([self::DEMO_KEY], self::DEMO_KEYS_LEGACY);
+    }
 
     public function enable(): RedirectResponse
     {
         $this->checkAuthorization(auth()->user(), ['association.create']); // superadmin
 
         $alreadyEnabled = DB::table('demo_data_runs')
-            ->where('key', self::DEMO_KEY)
+            ->whereIn('key', self::allDemoKeys())
             ->where('enabled', 1)
             ->exists();
 
@@ -31,7 +49,7 @@ class DemoDataController extends Controller
             DB::beginTransaction();
 
             $runId = DB::table('demo_data_runs')->insertGetId([
-                'key' => self::DEMO_KEY,
+                'key' => self::DEMO_KEY, // fingerprint includes players_per_club:16
                 'enabled' => 1,
                 'created_by_admin_id' => auth()->user()->id ?? null,
                 'created_at' => now(),
@@ -101,6 +119,8 @@ class DemoDataController extends Controller
                 'Aqilah', 'Hawa', 'Zahra', 'Intan', 'Solehah', 'Humaira', 'Alyaa', 'Nadiah', 'Sabrina', 'Khadijah',
                 'Salwa', 'Mardhiah', 'Putri', 'Alya', 'Hidayah', 'Natasya', 'Syazana', 'Jannah', 'Maisarah', 'Zarina',
                 'Raihana', 'Natasha', 'Hanis', 'Anisya', 'Hajar', 'Nursyuhada', 'Afiqah', 'Wardah', 'Farhana', 'Irdina',
+                'Syuhada', 'Dalili', 'Suraya', 'Amani', 'Damia', 'Insyirah', 'Juwairiah', 'Kalilah', 'Liyana', 'Fatinah',
+                'Najiha', 'Oliya', 'Qalesya', 'Rina', 'Safiyyah', 'Tengku', 'Umaira', 'Wanie', 'Yumna', 'Zarith',
             ];
 
             $positions = ['Goalkeeper', 'Defender', 'Midfielder', 'Forward'];
@@ -108,7 +128,7 @@ class DemoDataController extends Controller
             $playerCounter = 1;
 
             foreach ($clubIds as $clubCode => $clubId) {
-                for ($i = 1; $i <= 10; $i++) {
+                for ($i = 1; $i <= self::PLAYERS_PER_CLUB; $i++) {
                     $name = $malayWomenNames[($playerCounter - 1) % count($malayWomenNames)];
                     $identity = sprintf('DEMO-%d-%03d', $runId, $playerCounter);
                     $email = sprintf('demo%u_p%03d@fieldpass.local', $runId, $playerCounter);
@@ -178,7 +198,14 @@ class DemoDataController extends Controller
             }
 
             DB::commit();
-            return back()->with('success', 'Demo data enabled: 6 clubs + 60 players added and joined to competition #7.');
+            $totalPlayers = self::CLUB_COUNT * self::PLAYERS_PER_CLUB;
+
+            return back()->with('success', sprintf(
+                'Demo data enabled: %d clubs + %d players (%d each) added and joined to competition #7.',
+                self::CLUB_COUNT,
+                $totalPlayers,
+                self::PLAYERS_PER_CLUB
+            ));
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Demo data enable failed: ' . $e->getMessage());
@@ -191,7 +218,7 @@ class DemoDataController extends Controller
         $this->checkAuthorization(auth()->user(), ['association.create']); // superadmin
 
         $run = DB::table('demo_data_runs')
-            ->where('key', self::DEMO_KEY)
+            ->whereIn('key', self::allDemoKeys())
             ->where('enabled', 1)
             ->orderByDesc('id')
             ->first();

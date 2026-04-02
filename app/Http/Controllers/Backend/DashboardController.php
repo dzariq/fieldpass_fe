@@ -268,7 +268,7 @@ class DashboardController extends Controller
             $total_permissions = Permission::count();
 
             $demoEnabled = DB::table('demo_data_runs')
-                ->where('key', 'assoc:1|comp:7|clubs:6|players_per_club:10')
+                ->whereIn('key', DemoDataController::allDemoKeys())
                 ->where('enabled', 1)
                 ->exists();
 
