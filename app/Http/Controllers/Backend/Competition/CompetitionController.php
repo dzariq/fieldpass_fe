@@ -18,6 +18,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http as FacadesHttp;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Log;
@@ -194,7 +195,8 @@ class CompetitionController extends Controller
             ]);
             $file = $request->file('avatar');
 
-            $filename = time() . '_' . $file->getClientOriginalName();
+            $ext = strtolower($file->getClientOriginalExtension() ?: 'jpg');
+            $filename = 'comp_avatar_' . time() . '_' . Str::lower(Str::random(16)) . '.' . $ext;
             $destination = public_path('avatars');
 
             if (!file_exists($destination)) {
@@ -290,7 +292,8 @@ class CompetitionController extends Controller
                     'banner' => 'Banner upload failed. Please try again with a smaller image (recommended 1200×300).'
                 ])->withInput();
             }
-            $filename = time() . '_banner_' . $file->getClientOriginalName();
+            $ext = strtolower($file->getClientOriginalExtension() ?: 'jpg');
+            $filename = 'comp_banner_' . time() . '_' . Str::lower(Str::random(16)) . '.' . $ext;
             $destination = public_path('avatars');
 
             if (!file_exists($destination)) {
@@ -318,7 +321,8 @@ class CompetitionController extends Controller
                     'pitch_image' => 'Pitch image upload failed. Please try again with a smaller image.'
                 ])->withInput();
             }
-            $filename = time() . '_pitch_' . $file->getClientOriginalName();
+            $ext = strtolower($file->getClientOriginalExtension() ?: 'jpg');
+            $filename = 'comp_pitch_' . time() . '_' . Str::lower(Str::random(16)) . '.' . $ext;
             $destination = public_path('avatars');
 
             if (!file_exists($destination)) {
@@ -346,7 +350,8 @@ class CompetitionController extends Controller
                     'avatar' => 'Avatar upload failed. Please try again with a smaller image.'
                 ])->withInput();
             }
-            $filename = time() . '_avatar_' . $file->getClientOriginalName();
+            $ext = strtolower($file->getClientOriginalExtension() ?: 'jpg');
+            $filename = 'comp_avatar_' . time() . '_' . Str::lower(Str::random(16)) . '.' . $ext;
             $destination = public_path('avatars');
 
             if (!file_exists($destination)) {
