@@ -21,8 +21,19 @@ class LoginController extends Controller
 
     private const FIXED_COUNTRY_CODE = '+60';
 
-    public function showLoginForm(): View
+    public function showLoginForm(Request $request): View|RedirectResponse
     {
+        if ($request->boolean('change_phone')) {
+            $request->session()->forget([
+                'admin_otp_phone_digits',
+                'admin_otp_country_code',
+                'admin_otp_phone_display',
+                'admin_otp_sent',
+            ]);
+
+            return redirect()->route('admin.login');
+        }
+
         return view('backend.auth.login', [
             'country_code' => self::FIXED_COUNTRY_CODE,
             'otp_sent' => (bool) session('admin_otp_sent', false),

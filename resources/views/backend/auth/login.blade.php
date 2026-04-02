@@ -70,7 +70,7 @@
                         <span class="phone-prefix">+60</span>
                         <div class="phone-readonly">{{ old('phone', $pending_phone ?? '') }}</div>
                     </div>
-                    <p class="form-hint"><a href="{{ route('admin.login') }}">Use a different number</a></p>
+                    <p class="form-hint"><a href="{{ route('admin.login', ['change_phone' => 1]) }}">Use a different number</a></p>
                 </div>
 
                 <div class="form-group">
