@@ -479,12 +479,17 @@ class PlayerLineupController extends Controller
 
     public function save(LineupRequest $request): RedirectResponse
     {
-        $starters = $request->input('starters');
-        $subs = $request->input('subs');
+        $starters = $request->input('starters', []);
+        $subs = $request->input('subs', []);
 
-        $combined = array_merge($starters, $subs);
+        // Only count real selections (ignore empty strings / nulls)
+        $selected = array_values(array_filter(array_merge($starters, $subs), fn ($v) => $v !== null && $v !== ''));
 
-        if (count($combined) !== count(array_unique($combined))) {
+        if (count($selected) < 14) {
+            return back()->withErrors(['minimum' => '❌ Please select at least 14 players (11 starters + minimum 3 substitutes).'])->withInput();
+        }
+
+        if (count($selected) !== count(array_unique($selected))) {
             return back()->withErrors(['duplicate' => '❌ Player cannot be selected more than once.'])->withInput();
         }
 
@@ -504,24 +509,24 @@ class PlayerLineupController extends Controller
             'match_id' => $matchId,
             'club_id' => $clubId,
             'code' => $code,
-            'gk' => $starters[0],
-            'player1' => $starters[1],
-            'player2' => $starters[2],
-            'player3' => $starters[3],
-            'player4' => $starters[4],
-            'player5' => $starters[5],
-            'player6' => $starters[6],
-            'player7' => $starters[7],
-            'player8' => $starters[8],
-            'player9' => $starters[9],
-            'player10' => $starters[10],
-            'sub1' => $subs[0],
-            'sub2' => $subs[1],
-            'sub3' => $subs[2],
-            'sub4' => $subs[3],
-            'sub5' => $subs[4],
-            'sub6' => $subs[5],
-            'sub7' => $subs[6],
+            'gk' => $starters[0] ?? null,
+            'player1' => $starters[1] ?? null,
+            'player2' => $starters[2] ?? null,
+            'player3' => $starters[3] ?? null,
+            'player4' => $starters[4] ?? null,
+            'player5' => $starters[5] ?? null,
+            'player6' => $starters[6] ?? null,
+            'player7' => $starters[7] ?? null,
+            'player8' => $starters[8] ?? null,
+            'player9' => $starters[9] ?? null,
+            'player10' => $starters[10] ?? null,
+            'sub1' => $subs[0] ?? null,
+            'sub2' => $subs[1] ?? null,
+            'sub3' => $subs[2] ?? null,
+            'sub4' => $subs[3] ?? null,
+            'sub5' => $subs[4] ?? null,
+            'sub6' => $subs[5] ?? null,
+            'sub7' => $subs[6] ?? null,
         ];
 
         if ($lineup) {

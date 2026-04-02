@@ -76,6 +76,288 @@ $usr = Auth::guard('admin')->user();
         margin-top: 15px;
     }
 
+    /* Interactive pitch (new UI) */
+    .pitch-wrap {
+        display: grid;
+        grid-template-columns: 1.3fr 0.7fr;
+        gap: 15px;
+        margin-top: 15px;
+        align-items: start;
+    }
+    @media (max-width: 992px) {
+        .pitch-wrap { grid-template-columns: 1fr; }
+    }
+    .pitch-card {
+        background: #0f4c3a;
+        border-radius: 14px;
+        padding: 14px;
+        color: #fff;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,0.18);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    }
+    .pitch-card:before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(circle at 50% 50%, rgba(255,255,255,0.10), transparent 55%),
+          linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0));
+        pointer-events: none;
+    }
+    .pitch {
+        position: relative;
+        aspect-ratio: 16 / 10;
+        min-height: 380px;
+        border-radius: 12px;
+        background: linear-gradient(90deg, rgba(255,255,255,0.06) 0 50%, rgba(0,0,0,0.04) 50% 100%);
+        border: 2px solid rgba(255,255,255,0.30);
+        overflow: hidden;
+    }
+    .pitch .line {
+        position: absolute;
+        inset: 0;
+        border: 2px solid rgba(255,255,255,0.35);
+        border-radius: 10px;
+        margin: 10px;
+        pointer-events: none;
+    }
+    .pitch .midline {
+        position: absolute;
+        top: 0; bottom: 0;
+        left: 50%;
+        width: 2px;
+        background: rgba(255,255,255,0.35);
+        transform: translateX(-1px);
+        pointer-events: none;
+    }
+    .pitch .circle {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 110px;
+        height: 110px;
+        border-radius: 50%;
+        border: 2px solid rgba(255,255,255,0.35);
+        transform: translate(-50%, -50%);
+        pointer-events: none;
+    }
+    .slot-grid {
+        position: absolute;
+        inset: 12px;
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        grid-template-rows: repeat(4, 1fr);
+        gap: 10px;
+        padding: 6px;
+    }
+    .slot {
+        background: rgba(255,255,255,0.10);
+        border: 1px solid rgba(255,255,255,0.25);
+        border-radius: 12px;
+        padding: 8px 10px;
+        cursor: pointer;
+        transition: transform .12s ease, background .12s ease, border-color .12s ease;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-height: 62px;
+        min-width: 0;
+        user-select: none;
+    }
+    .slot:hover {
+        transform: translateY(-1px);
+        background: rgba(255,255,255,0.14);
+        border-color: rgba(255,255,255,0.40);
+    }
+    .slot .meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        font-size: 11px;
+        opacity: .95;
+    }
+    .slot .badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 34px;
+        height: 18px;
+        padding: 0 8px;
+        border-radius: 999px;
+        background: rgba(0,0,0,0.20);
+        color: #fff;
+        border: 1px solid rgba(255,255,255,0.18);
+        font-weight: 700;
+        font-size: 10px;
+    }
+    .slot .name {
+        font-weight: 800;
+        font-size: 12px;
+        margin-top: 4px;
+        line-height: 1.15;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .slot .hint {
+        font-size: 11px;
+        opacity: .85;
+        margin-top: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Keep pitch boxes uniform height/alignment */
+    .slot {
+        height: 74px;
+        justify-content: flex-start;
+    }
+    .slot .meta { min-height: 18px; }
+    .slot .name { min-height: 14px; }
+    .slot .hint { min-height: 13px; }
+
+    /* Mobile pitch alignment: prevent horizontal overflow + tighten spacing */
+    @media (max-width: 576px) {
+        .pitch {
+            min-height: 320px;
+        }
+        .slot-grid {
+            inset: 8px;
+            gap: 8px;
+            padding: 4px;
+        }
+        .slot {
+            padding: 6px 8px;
+            min-height: 54px;
+            height: 64px;
+        }
+        .slot .meta { font-size: 10px; }
+        .slot .badge { min-width: 30px; height: 16px; font-size: 9px; padding: 0 6px; }
+        .slot .name { font-size: 11px; }
+        .slot .hint { font-size: 10px; }
+    }
+    .slot.empty .name { opacity: .85; font-weight: 700; }
+    .slot.empty .hint { opacity: .75; }
+
+    /* slot placement */
+    .slot[data-slot="gk"] { grid-column: 1 / span 5; justify-self: center; width: min(360px, 100%); }
+    .slot[data-slot="p2"] { grid-row: 2; grid-column: 1 / span 2; }
+    .slot[data-slot="p3"] { grid-row: 2; grid-column: 3; }
+    .slot[data-slot="p4"] { grid-row: 2; grid-column: 4 / span 2; }
+    .slot[data-slot="p5"] { grid-row: 3; grid-column: 1; }
+    .slot[data-slot="p6"] { grid-row: 3; grid-column: 2; }
+    .slot[data-slot="p7"] { grid-row: 3; grid-column: 3; }
+    .slot[data-slot="p8"] { grid-row: 3; grid-column: 4; }
+    .slot[data-slot="p9"] { grid-row: 3; grid-column: 5; }
+    .slot[data-slot="p10"] { grid-row: 4; grid-column: 2 / span 2; }
+    .slot[data-slot="p11"] { grid-row: 4; grid-column: 4 / span 2; }
+
+    .bench-card {
+        background: #f8f9fa;
+        border-radius: 14px;
+        padding: 14px;
+        border: 1px solid #e9ecef;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.06);
+    }
+    .bench-title {
+        display:flex;
+        align-items:center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 10px;
+        color: #0f4c3a;
+    }
+    .bench-title h5 { margin:0; font-weight: 800; font-size: 1rem; display:flex; align-items:center; gap:8px;}
+    .mini-count {
+        font-size: 12px;
+        background: #0f4c3a;
+        color: #fff;
+        border-radius: 999px;
+        padding: 2px 10px;
+        font-weight: 800;
+    }
+    .bench-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    .bench-slot { background: #fff; border: 1px dashed #cfd8dc; border-radius: 12px; padding: 10px; cursor: pointer; }
+    .bench-slot:hover { border-style: solid; border-color: #0f4c3a33; }
+
+    /* Player picker modal */
+    .picker-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.55);
+        z-index: 2000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+    }
+    .picker-backdrop.show { display: flex; }
+    .picker {
+        width: min(720px, 96vw);
+        max-height: min(78vh, 720px);
+        background: #fff;
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 30px 80px rgba(0,0,0,0.35);
+    }
+    .picker-head {
+        padding: 12px 14px;
+        background: #0f4c3a;
+        color: #fff;
+        display:flex;
+        align-items:center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+    .picker-head .title { font-weight: 800; }
+    .picker-head button {
+        border: none;
+        background: rgba(255,255,255,0.12);
+        color: #fff;
+        border-radius: 10px;
+        padding: 6px 10px;
+        font-weight: 800;
+        cursor: pointer;
+    }
+    .picker-body { padding: 12px 14px; }
+    .picker-search {
+        width: 100%;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 10px 12px;
+        margin-bottom: 10px;
+        outline: none;
+    }
+    .picker-list {
+        overflow: auto;
+        max-height: calc(78vh - 130px);
+        border: 1px solid #eef1f4;
+        border-radius: 12px;
+    }
+    .picker-item {
+        display:flex;
+        align-items:center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 12px;
+        border-bottom: 1px solid #f2f4f7;
+        cursor: pointer;
+    }
+    .picker-item:last-child { border-bottom: none; }
+    .picker-item:hover { background: #f8fafc; }
+    .picker-item.disabled { opacity: .45; cursor: not-allowed; }
+    .picker-left { display:flex; flex-direction: column; gap:2px; }
+    .picker-name { font-weight: 800; color: #111; }
+    .picker-sub { font-size: 12px; color: #555; }
+    .picker-tag { font-size: 11px; font-weight: 800; color: #0f4c3a; background:#e7f7f2; border: 1px solid #bfe9dc; padding:2px 10px; border-radius: 999px; white-space: nowrap; }
+    .picker-actions { display:flex; gap:8px; }
+    .picker-clear { border: 1px solid #e5e7eb; background:#fff; border-radius: 10px; padding: 6px 10px; font-weight: 800; cursor:pointer; }
+    .picker-clear:hover { background:#f8fafc; }
+
     .lineup-section {
         background: #f8f9fa;
         border-radius: 10px;
@@ -210,6 +492,44 @@ $usr = Auth::guard('admin')->user();
         text-align: center;
         box-shadow: 0 2px 8px rgba(255, 107, 53, 0.25);
         font-size: 13px;
+    }
+
+    .deadline-warning.blink-red {
+        background: linear-gradient(45deg, #dc3545, #c82333);
+        box-shadow: 0 2px 10px rgba(220, 53, 69, 0.35);
+        animation: fpBlinkRed 1s infinite;
+    }
+
+    @keyframes fpBlinkRed {
+        0%, 100% { filter: brightness(1); }
+        50% { filter: brightness(1.35); }
+    }
+
+    .lineup-status {
+        border-radius: 10px;
+        padding: 12px 16px;
+        margin: 12px 0 15px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        border: 1px solid #e9ecef;
+    }
+    .lineup-status .meta {
+        font-size: 12px;
+        font-weight: 600;
+        opacity: .9;
+    }
+    .lineup-status.submitted {
+        background: linear-gradient(135deg, #d4edda, #c3e6cb);
+        color: #155724;
+        border-color: #b7dfc1;
+    }
+    .lineup-status.not-submitted {
+        background: linear-gradient(135deg, #fff3cd, #ffe8a1);
+        color: #856404;
+        border-color: #ffe08a;
     }
 
     .admin-override-notice {
@@ -517,6 +837,25 @@ $subIds = $existingLineup ? [
     </div>
     @endif
 
+    <div class="lineup-status {{ $existingLineup ? 'submitted' : 'not-submitted' }}">
+        <div>
+            @if ($existingLineup)
+                ✅ {{ __('Lineup already submitted') }}
+                <div class="meta">
+                    {{ __('Last saved') }}: {{ optional($existingLineup->updated_at)->timezone('Asia/Kuala_Lumpur')->format('d M Y H:i') ?? '-' }}
+                </div>
+            @else
+                ⚠️ {{ __('Lineup not submitted yet') }}
+                <div class="meta">
+                    {{ __('Save your lineup before the deadline') }} ({{ $submissionDeadline->format('d M Y H:i') }})
+                </div>
+            @endif
+        </div>
+        <div class="meta">
+            {{ __('Match') }}: {{ $matchDate->format('d M Y H:i') }}
+        </div>
+    </div>
+
     @if ($deadlinePassed)
         @if ($canBypassDeadline)
         <div class="admin-override-notice">
@@ -524,7 +863,7 @@ $subIds = $existingLineup ? [
             <span>{{ __('Special permission: Edit after deadline') }}</span>
         </div>
         @else
-        <div class="deadline-warning">
+        <div class="deadline-warning blink-red">
             🚫 {{ __('Submission closed') }} - {{ $submissionDeadline->format('d M Y H:i') }}
         </div>
         @endif
@@ -549,73 +888,88 @@ $subIds = $existingLineup ? [
         <input type="hidden" name="match_id" value="{{ $match->id }}">
         <input type="hidden" name="club_id" value="{{ $club_id }}">
 
+        {{-- Keep real selects for form submission (hidden); interactive pitch drives these values --}}
+        <div style="display:none;">
+            @for ($i = 1; $i <= 11; $i++)
+                <select name="starters[]" class="form-control player-select" {{ !$isEditingAllowed ? 'disabled' : '' }} data-position="{{ $i }}">
+                    <option value="">{{ __('Select Player') }}</option>
+                    @foreach ($players as $player)
+                        @if ($i == 1 && $player->position == 'Goalkeeper')
+                            <option value="{{ $player->id }}" {{ (old("starters.$i") ?? ($starterIds[$i - 1] ?? '')) == $player->id ? 'selected' : '' }}>
+                                {{ $player->name }} - {{ $player->position }}
+                            </option>
+                        @elseif ($i != 1 && $player->position != 'Goalkeeper')
+                            <option value="{{ $player->id }}" {{ (old("starters.$i") ?? ($starterIds[$i - 1] ?? '')) == $player->id ? 'selected' : '' }}>
+                                {{ $player->name }} - {{ $player->position }}
+                            </option>
+                        @endif
+                    @endforeach
+                </select>
+            @endfor
+            @for ($i = 1; $i <= 7; $i++)
+                <select name="subs[]" class="form-control player-select sub-select" {{ !$isEditingAllowed ? 'disabled' : '' }} data-position="sub{{ $i }}">
+                    <option value="">{{ __('Select Player') }}</option>
+                    @foreach ($players as $player)
+                        <option value="{{ $player->id }}" {{ (old("subs.$i") ?? ($subIds[$i - 1] ?? '')) == $player->id ? 'selected' : '' }}>
+                            {{ $player->name }} - {{ $player->position }}
+                        </option>
+                    @endforeach
+                </select>
+            @endfor
+        </div>
 
-        <div class="lineup-container">
-            <div class="lineup-section">
-                <h5>
-                    <div class="section-icon">11</div>
-                    {{ __('Starting 11') }}
-                    <span class="player-count" id="starter-count">(0/11)</span>
-                </h5>
-
-                @for ($i = 1; $i <= 11; $i++)
-                <div class="form-group {{ $i == 1 ? 'goalkeeper-section' : '' }}">
-                    <label>
-                        <div class="position-number">{{ $i == 1 ? 'GK' : $i }}</div>
-                        {{ $i == 1 ? '🥅 Goalkeeper' : "⚽ Position #$i" }}
-                    </label>
-                    <select name="starters[]" class="form-control player-select"
-                        {{ !$isEditingAllowed ? 'disabled' : 'required' }}
-                        data-position="{{ $i }}">
-                        <option value="">{{ __('Select Player') }}</option>
-                        @foreach ($players as $player)
-                            @if ($i == 1 && $player->position == 'Goalkeeper')
-                                <option value="{{ $player->id }}"
-                                    {{ (old("starters.$i") ?? ($starterIds[$i - 1] ?? '')) == $player->id ? 'selected' : '' }}>
-                                    {{ $player->name }} - {{ $player->position }}
-                                </option>
-                            @elseif ($i != 1 && $player->position != 'Goalkeeper')
-                                <option value="{{ $player->id }}"
-                                    {{ (old("starters.$i") ?? ($starterIds[$i - 1] ?? '')) == $player->id ? 'selected' : '' }}>
-                                    {{ $player->name }} - {{ $player->position }}
-                                </option>
-                            @endif
-                        @endforeach
-                    </select>
+        <div class="pitch-wrap">
+            <div class="pitch-card">
+                <div style="display:flex; align-items:center; justify-content: space-between; gap:10px; margin-bottom: 10px;">
+                    <div style="font-weight: 900; letter-spacing: .2px;">{{ __('Starting XI') }}</div>
+                    <div class="mini-count"><span id="starter-count-inline">0</span>/11</div>
                 </div>
-                @endfor
+                <div class="pitch">
+                    <div class="line"></div>
+                    <div class="midline"></div>
+                    <div class="circle"></div>
+
+                    <div class="slot-grid" id="pitchSlots">
+                        <div class="slot empty" data-slot="gk" data-position="1">
+                            <div class="meta"><span class="badge">GK</span><span>🥅</span></div>
+                            <div class="name">{{ __('Select Goalkeeper') }}</div>
+                            <div class="hint">{{ __('Tap to choose') }}</div>
+                        </div>
+                        <div class="slot empty" data-slot="p2" data-position="2"><div class="meta"><span class="badge">2</span><span>⚽</span></div><div class="name">{{ __('Select Player') }}</div><div class="hint">{{ __('Tap to choose') }}</div></div>
+                        <div class="slot empty" data-slot="p3" data-position="3"><div class="meta"><span class="badge">3</span><span>⚽</span></div><div class="name">{{ __('Select Player') }}</div><div class="hint">{{ __('Tap to choose') }}</div></div>
+                        <div class="slot empty" data-slot="p4" data-position="4"><div class="meta"><span class="badge">4</span><span>⚽</span></div><div class="name">{{ __('Select Player') }}</div><div class="hint">{{ __('Tap to choose') }}</div></div>
+                        <div class="slot empty" data-slot="p5" data-position="5"><div class="meta"><span class="badge">5</span><span>⚽</span></div><div class="name">{{ __('Select Player') }}</div><div class="hint">{{ __('Tap to choose') }}</div></div>
+                        <div class="slot empty" data-slot="p6" data-position="6"><div class="meta"><span class="badge">6</span><span>⚽</span></div><div class="name">{{ __('Select Player') }}</div><div class="hint">{{ __('Tap to choose') }}</div></div>
+                        <div class="slot empty" data-slot="p7" data-position="7"><div class="meta"><span class="badge">7</span><span>⚽</span></div><div class="name">{{ __('Select Player') }}</div><div class="hint">{{ __('Tap to choose') }}</div></div>
+                        <div class="slot empty" data-slot="p8" data-position="8"><div class="meta"><span class="badge">8</span><span>⚽</span></div><div class="name">{{ __('Select Player') }}</div><div class="hint">{{ __('Tap to choose') }}</div></div>
+                        <div class="slot empty" data-slot="p9" data-position="9"><div class="meta"><span class="badge">9</span><span>⚽</span></div><div class="name">{{ __('Select Player') }}</div><div class="hint">{{ __('Tap to choose') }}</div></div>
+                        <div class="slot empty" data-slot="p10" data-position="10"><div class="meta"><span class="badge">10</span><span>⚽</span></div><div class="name">{{ __('Select Player') }}</div><div class="hint">{{ __('Tap to choose') }}</div></div>
+                        <div class="slot empty" data-slot="p11" data-position="11"><div class="meta"><span class="badge">11</span><span>⚽</span></div><div class="name">{{ __('Select Player') }}</div><div class="hint">{{ __('Tap to choose') }}</div></div>
+                    </div>
+                </div>
             </div>
 
-            <div class="lineup-section substitutes-section">
-                <h5>
-                    <div class="section-icon">S</div>
-                    {{ __('Substitutes') }}
-                    <span class="player-count" id="sub-count">(0/7)</span>
-                </h5>
-
-                @for ($i = 1; $i <= 7; $i++)
-                <div class="form-group">
-                    <label>
-                        <div class="position-number">S{{ $i }}</div>
-                        {{ "🔄 Sub #$i" }}
-                    </label>
-                    <select name="subs[]" class="form-control player-select sub-select"
-                        {{ !$isEditingAllowed ? 'disabled' : 'required' }}
-                        data-position="sub{{ $i }}">
-                        <option value="">{{ __('Select Player') }}</option>
-                        @foreach ($players as $player)
-                            <option value="{{ $player->id }}"
-                                {{ (old("subs.$i") ?? ($subIds[$i - 1] ?? '')) == $player->id ? 'selected' : '' }}>
-                                {{ $player->name }} ({{ $player->email }}) - {{ $player->position }}
-                            </option>
-                        @endforeach
-                    </select>
+            <div class="bench-card">
+                <div class="bench-title">
+                    <h5><span class="section-icon">S</span>{{ __('Substitutes') }}</h5>
+                    <div class="mini-count"><span id="sub-count-inline">0</span>/7</div>
                 </div>
-                @endfor
+                <div class="bench-grid" id="benchSlots">
+                    @for ($i = 1; $i <= 7; $i++)
+                        <div class="bench-slot slot empty" data-position="sub{{ $i }}" data-slot="sub{{ $i }}">
+                            <div class="meta"><span class="badge">S{{ $i }}</span><span>🔄</span></div>
+                            <div class="name">{{ __('Select Sub') }} {{ $i }}</div>
+                            <div class="hint">{{ __('Tap to choose') }}</div>
+                        </div>
+                    @endfor
+                </div>
             </div>
         </div>
 
         @if ($isEditingAllowed)
+        <div class="alert alert-info mt-3">
+            ℹ️ {{ __('You can save once at least 14 players are selected (11 starters + minimum 3 substitutes).') }}
+        </div>
         <button type="submit" class="btn btn-primary mt-3" id="saveButton">
             💾 {{ __('Save Lineup') }}
         </button>
@@ -630,6 +984,23 @@ $subIds = $existingLineup ? [
         </div>
         @endif
     </form>
+
+    {{-- Player picker modal --}}
+    <div class="picker-backdrop" id="playerPicker">
+        <div class="picker" role="dialog" aria-modal="true" aria-label="Select player">
+            <div class="picker-head">
+                <div class="title" id="pickerTitle">{{ __('Select Player') }}</div>
+                <div class="picker-actions">
+                    <button type="button" class="picker-clear" id="pickerClear">{{ __('Clear') }}</button>
+                    <button type="button" id="pickerClose">{{ __('Close') }}</button>
+                </div>
+            </div>
+            <div class="picker-body">
+                <input type="text" class="picker-search" id="pickerSearch" placeholder="{{ __('Search player...') }}">
+                <div class="picker-list" id="pickerList"></div>
+            </div>
+        </div>
+    </div>
 </div>
 
 @endif
@@ -645,8 +1016,33 @@ $subIds = $existingLineup ? [
         const subSelects = document.querySelectorAll('.sub-select');
         const starterCount = document.getElementById('starter-count');
         const subCount = document.getElementById('sub-count');
+        const starterCountInline = document.getElementById('starter-count-inline');
+        const subCountInline = document.getElementById('sub-count-inline');
         const saveButton = document.getElementById('saveButton');
         const formationDisplay = document.getElementById('formation-display');
+
+        const pickerBackdrop = document.getElementById('playerPicker');
+        const pickerList = document.getElementById('pickerList');
+        const pickerSearch = document.getElementById('pickerSearch');
+        const pickerTitle = document.getElementById('pickerTitle');
+        const pickerClose = document.getElementById('pickerClose');
+        const pickerClear = document.getElementById('pickerClear');
+
+        // Build a players index from the existing selects (options appear multiple times; de-dupe by id).
+        const allPlayers = Array.from(document.querySelectorAll('select.player-select option'))
+            .filter(o => o.value && o.value !== '')
+            .map(o => {
+                const text = (o.textContent || '').trim();
+                const parts = text.split(' - ');
+                const name = (parts[0] || text).trim().split(' (')[0];
+                const position = (parts[1] || '').trim();
+                return { id: o.value, name, position, label: text };
+            })
+            .filter((p, idx, arr) => arr.findIndex(x => x.id === p.id) === idx);
+
+        let activeSelect = null;
+        let activeSlotEl = null;
+        let activeKind = null; // 'gk' | 'outfield' | 'sub'
 
         function updateCounts() {
             const selectedStarters = Array.from(starterSelects).filter(select => select.value !== '').length;
@@ -654,6 +1050,8 @@ $subIds = $existingLineup ? [
 
             if (starterCount) starterCount.textContent = `(${selectedStarters}/11)`;
             if (subCount) subCount.textContent = `(${selectedSubs}/7)`;
+            if (starterCountInline) starterCountInline.textContent = String(selectedStarters);
+            if (subCountInline) subCountInline.textContent = String(selectedSubs);
 
             if (saveButton) {
                 const allStartersFilled = selectedStarters === 11;
@@ -667,6 +1065,130 @@ $subIds = $existingLineup ? [
                     saveButton.innerHTML = `💾 {{ __("Save") }} (${selectedStarters + selectedSubs}/18)`;
                 }
             }
+        }
+
+        function currentSelectedIds() {
+            return new Set(Array.from(selects).map(s => s.value).filter(v => v && v !== ''));
+        }
+
+        function slotLabelForSelect(selectEl) {
+            const pos = String(selectEl.dataset.position || '');
+            if (pos === '1') return { badge: 'GK', kind: 'gk', title: 'Select Goalkeeper' };
+            if (pos.startsWith('sub')) return { badge: pos.replace('sub', 'S'), kind: 'sub', title: 'Select Substitute' };
+            return { badge: pos, kind: 'outfield', title: 'Select Player' };
+        }
+
+        function setSlotDisplay(slotEl, player) {
+            if (!slotEl) return;
+            if (!player) {
+                slotEl.classList.add('empty');
+                const pos = String(slotEl.dataset.position || '');
+                if (pos === '1') slotEl.querySelector('.name').textContent = 'Select Goalkeeper';
+                else if (pos.startsWith('sub')) slotEl.querySelector('.name').textContent = `Select Sub ${pos.replace('sub', '')}`;
+                else slotEl.querySelector('.name').textContent = 'Select Player';
+                slotEl.querySelector('.hint').textContent = 'Tap to choose';
+                return;
+            }
+            slotEl.classList.remove('empty');
+            slotEl.querySelector('.name').textContent = player.name;
+            slotEl.querySelector('.hint').textContent = player.position ? player.position : 'Selected';
+        }
+
+        function syncSlotsFromSelects() {
+            for (let i = 1; i <= 11; i++) {
+                const sel = document.querySelector(`select.player-select[data-position="${i}"]`);
+                const slotEl = document.querySelector(`.slot[data-position="${i}"]`);
+                if (!sel || !slotEl) continue;
+                const player = allPlayers.find(p => p.id === sel.value) || null;
+                setSlotDisplay(slotEl, player);
+            }
+            for (let i = 1; i <= 7; i++) {
+                const pos = `sub${i}`;
+                const sel = document.querySelector(`select.player-select[data-position="${pos}"]`);
+                const slotEl = document.querySelector(`.slot[data-position="${pos}"]`);
+                if (!sel || !slotEl) continue;
+                const player = allPlayers.find(p => p.id === sel.value) || null;
+                setSlotDisplay(slotEl, player);
+            }
+        }
+
+        function renderPickerList(query) {
+            if (!pickerList) return;
+            const q = (query || '').toLowerCase().trim();
+            const selected = currentSelectedIds();
+            const currentVal = activeSelect ? activeSelect.value : '';
+
+            const filtered = allPlayers.filter(p => {
+                if (activeKind === 'gk' && p.position !== 'Goalkeeper') return false;
+                if (activeKind === 'outfield' && p.position === 'Goalkeeper') return false;
+                if (q === '') return true;
+                return (p.name.toLowerCase().includes(q) || (p.position || '').toLowerCase().includes(q));
+            });
+
+            pickerList.innerHTML = '';
+            if (filtered.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'picker-item disabled';
+                empty.textContent = 'No players found';
+                pickerList.appendChild(empty);
+                return;
+            }
+
+            filtered.forEach(p => {
+                const isTaken = selected.has(p.id) && p.id !== currentVal;
+                const row = document.createElement('div');
+                row.className = 'picker-item' + (isTaken ? ' disabled' : '');
+
+                const left = document.createElement('div');
+                left.className = 'picker-left';
+                const nm = document.createElement('div');
+                nm.className = 'picker-name';
+                nm.textContent = p.name;
+                const sub = document.createElement('div');
+                sub.className = 'picker-sub';
+                sub.textContent = p.position ? p.position : '';
+                left.appendChild(nm);
+                left.appendChild(sub);
+
+                const tag = document.createElement('div');
+                tag.className = 'picker-tag';
+                tag.textContent = p.position || '';
+
+                row.appendChild(left);
+                row.appendChild(tag);
+
+                if (!isTaken) {
+                    row.addEventListener('click', function () {
+                        if (!activeSelect) return;
+                        activeSelect.value = p.id;
+                        activeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                        closePicker();
+                    });
+                }
+
+                pickerList.appendChild(row);
+            });
+        }
+
+        function openPicker(selectEl, slotEl) {
+            if (!pickerBackdrop || !pickerTitle || !pickerSearch) return;
+            activeSelect = selectEl;
+            activeSlotEl = slotEl;
+            const lbl = slotLabelForSelect(selectEl);
+            activeKind = lbl.kind;
+            pickerTitle.textContent = lbl.kind === 'gk' ? 'Select Goalkeeper' : (lbl.kind === 'sub' ? `Select Substitute (${lbl.badge})` : `Select Player (#${lbl.badge})`);
+            pickerSearch.value = '';
+            renderPickerList('');
+            pickerBackdrop.classList.add('show');
+            setTimeout(() => pickerSearch.focus(), 0);
+        }
+
+        function closePicker() {
+            if (!pickerBackdrop) return;
+            pickerBackdrop.classList.remove('show');
+            activeSelect = null;
+            activeSlotEl = null;
+            activeKind = null;
         }
 
         function updateDropdowns() {
@@ -697,6 +1219,7 @@ $subIds = $existingLineup ? [
 
             updateCounts();
             updateFormationDisplay();
+            syncSlotsFromSelects();
         }
 
         function updateFormationDisplay() {
@@ -744,6 +1267,43 @@ $subIds = $existingLineup ? [
             });
         });
 
+        // Pitch/bench slot click -> open picker
+        document.querySelectorAll('.slot[data-position]').forEach(slotEl => {
+            slotEl.addEventListener('click', function() {
+                if (!@json($isEditingAllowed)) return;
+                const pos = slotEl.dataset.position;
+                const selectEl = document.querySelector(`select.player-select[data-position="${pos}"]`);
+                if (!selectEl) return;
+                openPicker(selectEl, slotEl);
+            });
+        });
+
+        // picker events
+        if (pickerClose) pickerClose.addEventListener('click', closePicker);
+        if (pickerBackdrop) {
+            pickerBackdrop.addEventListener('click', function(e) {
+                if (e.target === pickerBackdrop) closePicker();
+            });
+        }
+        if (pickerSearch) {
+            pickerSearch.addEventListener('input', function() {
+                renderPickerList(pickerSearch.value);
+            });
+        }
+        if (pickerClear) {
+            pickerClear.addEventListener('click', function() {
+                if (!activeSelect) return;
+                activeSelect.value = '';
+                activeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                closePicker();
+            });
+        }
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && pickerBackdrop && pickerBackdrop.classList.contains('show')) {
+                closePicker();
+            }
+        });
+
         if (document.getElementById('lineupForm')) {
             document.getElementById('lineupForm').addEventListener('submit', function(e) {
                 if (saveButton) {
@@ -768,9 +1328,15 @@ $subIds = $existingLineup ? [
                     const hours = Math.floor(timeDiff / (1000 * 60 * 60));
                     const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
                     countdownElement.innerHTML = `⚠️ {{ __('Closes in') }} ${hours}h ${minutes}m`;
+                    // Blink red when within 1 hour of deadline
+                    if (timeDiff <= (60 * 60 * 1000)) {
+                        countdownElement.classList.add('blink-red');
+                    } else {
+                        countdownElement.classList.remove('blink-red');
+                    }
                 } else {
                     countdownElement.innerHTML = '🚫 {{ __("Deadline passed") }}';
-                    countdownElement.style.background = 'linear-gradient(45deg, #dc3545, #c82333)';
+                    countdownElement.classList.add('blink-red');
                     @if(!$canBypassDeadline)
                     if (saveButton) saveButton.disabled = true;
                     @endif

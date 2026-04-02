@@ -68,7 +68,9 @@
                             </div>
                         </form>
                         @include('backend.layouts.partials.messages')
-                        <table class="table table-hover text-center">
+                        <!-- Desktop/tablet table -->
+                        <div class="d-none d-md-block">
+                            <table class="table table-hover text-center">
                             <thead class="bg-light text-capitalize">
                                 <tr>
                                     <th width="5%">{{ __('Sl') }}</th>
@@ -121,7 +123,89 @@
                                 </tr>
                                 @endforelse
                             </tbody>
-                        </table>
+                            </table>
+                        </div>
+
+                        <!-- Mobile cards (match the fixture look) -->
+                        <div class="d-md-none">
+                            @forelse ($matches as $match)
+                                <div class="card mb-3 match-card">
+                                    <div class="card-body">
+                                        <div class="text-center">
+                                            <div class="match-card__vs">VS</div>
+                                            <div class="text-muted small">{{ \Carbon\Carbon::createFromTimestamp($match->date)->format('M j, Y H:i') }}</div>
+                                            <div class="text-success small">{{ \Carbon\Carbon::createFromTimestamp($match->date)->diffForHumans() }}</div>
+                                            <div class="mt-1">
+                                                <span class="badge badge-info">MW{{ $match->matchweek }}</span>
+                                                @if($match->competition)
+                                                    <span class="badge badge-outline-success">{{ $match->competition->type }}</span>
+                                                @endif
+                                            </div>
+                                        </div>
+
+                                        <div class="row align-items-center mt-3">
+                                            <div class="col-5 text-center">
+                                                <div class="club-mini">
+                                                    <div class="club-mini__name">{{ Str::limit($match->home_club->name ?? '', 14) }}</div>
+                                                    @if(isset($match->home_lineup_submitted) && !(int)$match->home_lineup_submitted)
+                                                        <span class="badge badge-danger badge-sm mt-1">Missing</span>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                            <div class="col-2 text-center">
+                                                <div class="text-muted small">vs</div>
+                                            </div>
+                                            <div class="col-5 text-center">
+                                                <div class="club-mini">
+                                                    <div class="club-mini__name">{{ Str::limit($match->away_club->name ?? '', 14) }}</div>
+                                                    @if(isset($match->away_lineup_submitted) && !(int)$match->away_lineup_submitted)
+                                                        <span class="badge badge-danger badge-sm mt-1">Missing</span>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="match-actions mt-3">
+                                            @can('admin.view')
+                                                <a class="btn btn-outline-primary btn-block"
+                                                   href="{{ route('admin.player.lineup', ['id' => $match->id, 'club_id' => $match->home_club_id]) }}">
+                                                    <i class="fas fa-users"></i> Home Lineup
+                                                </a>
+                                                <a class="btn btn-outline-primary btn-block"
+                                                   href="{{ route('admin.player.lineup', ['id' => $match->id, 'club_id' => $match->away_club_id]) }}">
+                                                    <i class="fas fa-users"></i> Away Lineup
+                                                </a>
+                                            @endcan
+                                            @can('match.edit')
+                                                <a class="btn btn-outline-secondary btn-block"
+                                                   href="{{ route('admin.match.match_info', ['id' => $match->id]) }}">
+                                                    <i class="fas fa-edit"></i> Match Update
+                                                </a>
+                                            @endcan
+
+                                            @can('admin.view')
+                                                @if(isset($match->home_lineup_submitted) && !(int)$match->home_lineup_submitted)
+                                                    <div class="alert alert-warning py-1 px-2 mt-2 mb-0 small text-center">
+                                                        <i class="fas fa-exclamation-triangle"></i> Home club lineup not submitted
+                                                    </div>
+                                                @endif
+                                                @if(isset($match->away_lineup_submitted) && !(int)$match->away_lineup_submitted)
+                                                    <div class="alert alert-warning py-1 px-2 mt-2 mb-0 small text-center">
+                                                        <i class="fas fa-exclamation-triangle"></i> Away club lineup not submitted
+                                                    </div>
+                                                @endif
+                                            @endcan
+                                        </div>
+
+                                        <div class="text-center mt-3">
+                                            <span class="badge badge-info">{{ $match->status }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="text-muted py-4 text-center">{{ __('No matches found.') }}</div>
+                            @endforelse
+                        </div>
                         <div class="d-flex justify-content-between align-items-center flex-wrap mt-3">
                             <div class="small text-muted">
                                 {{ __('Showing') }} {{ $matches->firstItem() ?? 0 }} {{ __('to') }} {{ $matches->lastItem() ?? 0 }} {{ __('of') }} {{ $matches->total() }} {{ __('matches') }}
@@ -137,4 +221,47 @@
         <!-- data table end -->
     </div>
 </div>
+@endsection
+
+@section('styles')
+<style>
+    .badge-outline-success {
+        color: #28a745;
+        border: 1px solid #28a745;
+        background-color: rgba(40, 167, 69, 0.1);
+    }
+    .match-card {
+        border-radius: 14px;
+        border: 1px solid rgba(16, 24, 40, 0.10);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.06);
+    }
+    .match-card__vs {
+        font-weight: 800;
+        font-size: 1.1rem;
+        color: #334155;
+        letter-spacing: -0.01em;
+    }
+    .club-mini__name {
+        font-weight: 800;
+        color: #0f172a;
+        font-size: 0.95rem;
+        line-height: 1.1;
+    }
+    .match-actions .btn {
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-weight: 800;
+        box-shadow: none;
+    }
+    .match-actions .btn-outline-primary {
+        background: rgba(37, 99, 235, 0.06);
+        border-color: rgba(37, 99, 235, 0.35);
+        color: #1d4ed8;
+    }
+    .match-actions .btn-outline-secondary {
+        background: rgba(100, 116, 139, 0.08);
+        border-color: rgba(100, 116, 139, 0.35);
+        color: #334155;
+    }
+</style>
 @endsection

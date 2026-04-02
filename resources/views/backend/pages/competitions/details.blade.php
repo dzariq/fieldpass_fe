@@ -142,56 +142,109 @@ $currentMatchweek = request()->get('matchweek', $matchweeks->first());
                             <div class="clearfix"></div>
                             <div class="data-tables">
                                 @include('backend.layouts.partials.messages')
-                                <table id="dataTable2" style="width:100%" class="text-center">
-                                    <thead class="bg-light text-capitalize">
-                                        <tr>
-                                            <th width="5%">{{ __('ID') }}</th>
-                                            <th width="20%">{{ __('Home Club') }}</th>
-                                            <th width="20%">{{ __('Away Club') }}</th>
-                                            <th width="10%">{{ __('MW') }}</th>
-                                            <th width="10%">{{ __('Date') }}</th>
-                                            <th width="10%">{{ __('Status') }}</th>
-                                            <th width="15%">{{ __('Actions') }}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @php
-                                        $matches = $currentMatchweek 
-                                            ? $competition->matches()->where('matchweek', $currentMatchweek)->orderBy('date', 'asc')->get()
-                                            : $competition->matches()->orderBy('matchweek', 'asc')->orderBy('date', 'asc')->limit(50)->get();
-                                        @endphp
-                                        
-                                        @foreach ($matches as $match)
-                                        <tr>
-                                            <td>{{ $loop->index+1 }}</td>
-                                            <td>
-                                                {{ $match->home_club->name }} ({{ $match->home_score }})
-                                                @if ($usr->can('club.create'))
-                                                    <br><a href="{{ route('admin.player.lineup', ['id' => $match->id, 'club_id' => $match->home_club_id]) }}" class="btn btn-sm btn-info mt-1">Lineup</a>
-                                                @endif
-                                            </td>
-                                            <td>
-                                                ({{ $match->away_score }}) {{ $match->away_club->name }}
-                                                @if ($usr->can('club.create'))
-                                                    <br><a href="{{ route('admin.player.lineup', ['id' => $match->id, 'club_id' => $match->away_club_id]) }}" class="btn btn-sm btn-info mt-1">Lineup</a>
-                                                @endif
-                                            </td>
-                                            <td>{{ $match->matchweek }}</td>
-                                            <td>{{ date('Y-m-d', $match->date) }}</td>
-                                            <td>
-                                                <span class="badge badge-{{ $match->status == 'COMPLETED' ? 'success' : ($match->status == 'LIVE' ? 'warning' : 'secondary') }}">
-                                                    {{ $match->status }}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <a href="{{ route('admin.match.match_info', ['id' => $match->id]) }}" class="btn btn-sm btn-primary">
-                                                    {{ __('View') }}
-                                                </a>
-                                            </td>
-                                        </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
+                                @php
+                                    $matches = $currentMatchweek
+                                        ? $competition->matches()->where('matchweek', $currentMatchweek)->orderBy('date', 'asc')->get()
+                                        : $competition->matches()->orderBy('matchweek', 'asc')->orderBy('date', 'asc')->limit(50)->get();
+                                @endphp
+
+                                <!-- Desktop table -->
+                                <div class="d-none d-md-block">
+                                    <table id="dataTable2" style="width:100%" class="text-center">
+                                        <thead class="bg-light text-capitalize">
+                                            <tr>
+                                                <th width="5%">{{ __('ID') }}</th>
+                                                <th width="20%">{{ __('Home Club') }}</th>
+                                                <th width="20%">{{ __('Away Club') }}</th>
+                                                <th width="10%">{{ __('MW') }}</th>
+                                                <th width="10%">{{ __('Date') }}</th>
+                                                <th width="10%">{{ __('Status') }}</th>
+                                                <th width="15%">{{ __('Actions') }}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach ($matches as $match)
+                                                <tr>
+                                                    <td>{{ $loop->index+1 }}</td>
+                                                    <td>
+                                                        {{ $match->home_club->name }} ({{ $match->home_score }})
+                                                        @if ($usr->can('club.create'))
+                                                            <br><a href="{{ route('admin.player.lineup', ['id' => $match->id, 'club_id' => $match->home_club_id]) }}" class="btn btn-sm btn-info mt-1">Lineup</a>
+                                                        @endif
+                                                    </td>
+                                                    <td>
+                                                        ({{ $match->away_score }}) {{ $match->away_club->name }}
+                                                        @if ($usr->can('club.create'))
+                                                            <br><a href="{{ route('admin.player.lineup', ['id' => $match->id, 'club_id' => $match->away_club_id]) }}" class="btn btn-sm btn-info mt-1">Lineup</a>
+                                                        @endif
+                                                    </td>
+                                                    <td>{{ $match->matchweek }}</td>
+                                                    <td>{{ date('Y-m-d', $match->date) }}</td>
+                                                    <td>
+                                                        <span class="badge badge-{{ $match->status == 'COMPLETED' ? 'success' : ($match->status == 'LIVE' ? 'warning' : 'secondary') }}">
+                                                            {{ $match->status }}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <a href="{{ route('admin.match.match_info', ['id' => $match->id]) }}" class="btn btn-sm btn-primary">
+                                                            {{ __('View') }}
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <!-- Mobile cards -->
+                                <div class="d-md-none">
+                                    @foreach ($matches as $match)
+                                        <div class="card fp-match-card mb-3">
+                                            <div class="card-body">
+                                                <div class="text-center">
+                                                    <div class="fp-match-card__vs">VS</div>
+                                                    <div class="text-muted small">{{ \Carbon\Carbon::createFromTimestamp($match->date)->format('M j, Y H:i') }}</div>
+                                                    <div class="text-success small">{{ \Carbon\Carbon::createFromTimestamp($match->date)->diffForHumans() }}</div>
+                                                    <div class="mt-1">
+                                                        <span class="badge badge-info">MW{{ $match->matchweek }}</span>
+                                                        <span class="badge badge-{{ $match->status == 'COMPLETED' ? 'success' : ($match->status == 'LIVE' ? 'warning' : 'secondary') }}">{{ $match->status }}</span>
+                                                    </div>
+                                                </div>
+
+                                                <div class="row align-items-center mt-3">
+                                                    <div class="col-5 text-center">
+                                                        <div class="fp-club-mini__name">{{ Str::limit($match->home_club->name ?? '', 14) }}</div>
+                                                    </div>
+                                                    <div class="col-2 text-center">
+                                                        <div class="text-muted small">vs</div>
+                                                    </div>
+                                                    <div class="col-5 text-center">
+                                                        <div class="fp-club-mini__name">{{ Str::limit($match->away_club->name ?? '', 14) }}</div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="fp-match-actions mt-3">
+                                                    @if ($usr->can('club.create'))
+                                                        <a class="btn btn-outline-primary btn-block"
+                                                           href="{{ route('admin.player.lineup', ['id' => $match->id, 'club_id' => $match->home_club_id]) }}">
+                                                            <i class="fas fa-users"></i> Home Lineup
+                                                        </a>
+                                                        <a class="btn btn-outline-primary btn-block"
+                                                           href="{{ route('admin.player.lineup', ['id' => $match->id, 'club_id' => $match->away_club_id]) }}">
+                                                            <i class="fas fa-users"></i> Away Lineup
+                                                        </a>
+                                                    @endif
+                                                    @if ($usr->can('match.edit'))
+                                                        <a class="btn btn-outline-secondary btn-block"
+                                                           href="{{ route('admin.match.match_info', ['id' => $match->id]) }}">
+                                                            <i class="fas fa-edit"></i> Match Update
+                                                        </a>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -249,4 +302,42 @@ $currentMatchweek = request()->get('matchweek', $matchweeks->first());
         @endif
     });
 </script>
+@endsection
+
+@section('styles')
+<style>
+    .fp-match-card {
+        border-radius: 14px;
+        border: 1px solid rgba(16, 24, 40, 0.10);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.06);
+    }
+    .fp-match-card__vs {
+        font-weight: 900;
+        font-size: 1.1rem;
+        color: #334155;
+        letter-spacing: -0.01em;
+    }
+    .fp-club-mini__name {
+        font-weight: 800;
+        color: #0f172a;
+        font-size: 0.95rem;
+        line-height: 1.1;
+    }
+    .fp-match-actions .btn {
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-weight: 800;
+        box-shadow: none;
+    }
+    .fp-match-actions .btn-outline-primary {
+        background: rgba(37, 99, 235, 0.06);
+        border-color: rgba(37, 99, 235, 0.35);
+        color: #1d4ed8;
+    }
+    .fp-match-actions .btn-outline-secondary {
+        background: rgba(100, 116, 139, 0.08);
+        border-color: rgba(100, 116, 139, 0.35);
+        color: #334155;
+    }
+</style>
 @endsection

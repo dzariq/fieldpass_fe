@@ -324,6 +324,39 @@
                                                 <small class="competition-badge badge badge-outline-success">
                                                     {{ $fixture->competition_type }}
                                                 </small>
+
+                                                @if(auth()->user()->can('admin.view') || auth()->user()->can('match.edit'))
+                                                    <div class="fixture-actions mt-2">
+                                                        <div class="btn-group btn-group-sm" role="group" aria-label="Fixture actions">
+                                                            @can('admin.view')
+                                                                <a class="btn btn-outline-primary"
+                                                                   href="{{ route('admin.player.lineup', ['id' => $fixture->id]) }}">
+                                                                    <i class="fas fa-users"></i> Lineup
+                                                                </a>
+                                                            @endcan
+                                                            @can('match.edit')
+                                                                <a class="btn btn-outline-secondary"
+                                                                   href="{{ route('admin.match.match_info', ['id' => $fixture->id]) }}">
+                                                                    <i class="fas fa-edit"></i> Match Update
+                                                                </a>
+                                                            @endcan
+                                                        </div>
+
+                                                        @can('admin.view')
+                                                            @php
+                                                                $myClubIsHome = (int) $fixture->home_club_id === (int) $clubId;
+                                                                $myLineupSubmitted = $myClubIsHome
+                                                                    ? (isset($fixture->home_lineup_submitted) ? (int) $fixture->home_lineup_submitted : null)
+                                                                    : (isset($fixture->away_lineup_submitted) ? (int) $fixture->away_lineup_submitted : null);
+                                                            @endphp
+                                                            @if($myLineupSubmitted === 0)
+                                                                <div class="alert alert-warning py-1 px-2 mt-2 mb-0 small">
+                                                                    <i class="fas fa-exclamation-triangle"></i> Your club lineup not submitted
+                                                                </div>
+                                                            @endif
+                                                        @endcan
+                                                    </div>
+                                                @endif
                                             </div>
                                         </div>
                                         <div class="col-3 text-center">
@@ -468,6 +501,58 @@
     .fixture-info h5 {
         font-size: 1.2rem;
         font-weight: 600;
+    }
+
+    .fixture-actions .btn {
+        white-space: nowrap;
+    }
+
+    /* Fixture action buttons: modern + mobile-first */
+    .fixture-actions .btn-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: center;
+    }
+    .fixture-actions .btn-group > .btn {
+        float: none;
+        flex: 1 1 auto;
+        border-radius: 10px !important;
+        padding: 8px 10px;
+        font-weight: 700;
+        font-size: 0.82rem;
+        line-height: 1.1;
+        border-width: 1px;
+        box-shadow: none;
+    }
+    .fixture-actions .btn-outline-primary {
+        background: rgba(37, 99, 235, 0.06);
+        border-color: rgba(37, 99, 235, 0.35);
+        color: #1d4ed8;
+    }
+    .fixture-actions .btn-outline-primary:hover {
+        background: rgba(37, 99, 235, 0.12);
+        border-color: rgba(37, 99, 235, 0.55);
+        color: #1d4ed8;
+    }
+    .fixture-actions .btn-outline-secondary {
+        background: rgba(100, 116, 139, 0.08);
+        border-color: rgba(100, 116, 139, 0.35);
+        color: #334155;
+    }
+    .fixture-actions .btn-outline-secondary:hover {
+        background: rgba(100, 116, 139, 0.14);
+        border-color: rgba(100, 116, 139, 0.55);
+        color: #334155;
+    }
+    @media (max-width: 576px) {
+        .fixture-actions .btn-group {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .fixture-actions .btn-group > .btn {
+            width: 100%;
+        }
     }
     
     /* Competition Header Styles */

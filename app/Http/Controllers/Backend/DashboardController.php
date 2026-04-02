@@ -67,6 +67,8 @@ class DashboardController extends Controller
                     'match.id',
                     'match.date',
                     'match.matchweek',
+                    'match.home_club_id',
+                    'match.away_club_id',
                     'match.home_score',
                     'match.away_score',
                     'home_club.name as home_club_name',
@@ -103,6 +105,8 @@ class DashboardController extends Controller
                     'match.id',
                     'match.date',
                     'match.matchweek',
+                    'match.home_club_id',
+                    'match.away_club_id',
                     'home_club.name as home_club_name',
                     'home_club.avatar as home_club_avatar',
                     'away_club.name as away_club_name',
@@ -188,6 +192,14 @@ class DashboardController extends Controller
                 ->join('club as home_club', 'match.home_club_id', '=', 'home_club.id')
                 ->join('club as away_club', 'match.away_club_id', '=', 'away_club.id')
                 ->join('competition', 'match.competition_id', '=', 'competition.id')
+                ->leftJoin('match_players as home_lineup', function ($join) {
+                    $join->on('match.id', '=', 'home_lineup.match_id')
+                        ->on('match.home_club_id', '=', 'home_lineup.club_id');
+                })
+                ->leftJoin('match_players as away_lineup', function ($join) {
+                    $join->on('match.id', '=', 'away_lineup.match_id')
+                        ->on('match.away_club_id', '=', 'away_lineup.club_id');
+                })
                 ->where(function ($query) use ($clubId) {
                     $query->where('match.home_club_id', $clubId)
                         ->orWhere('match.away_club_id', $clubId);
@@ -206,7 +218,9 @@ class DashboardController extends Controller
                     'away_club.avatar as away_club_avatar',
                     'competition.name as competition_name',
                     'competition.type as competition_type',
-                    'competition.id as competition_id'
+                    'competition.id as competition_id',
+                    DB::raw('CASE WHEN home_lineup.match_id IS NOT NULL THEN 1 ELSE 0 END as home_lineup_submitted'),
+                    DB::raw('CASE WHEN away_lineup.match_id IS NOT NULL THEN 1 ELSE 0 END as away_lineup_submitted')
                 )
                 ->orderBy('match.date', 'asc')
                 ->limit(20)

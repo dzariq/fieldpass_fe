@@ -174,7 +174,7 @@
             return window.matchMedia && window.matchMedia('(max-width: 992px)').matches;
         }
 
-        document.addEventListener('DOMContentLoaded', function () {
+        function initSidebarToggle() {
             var pageContainer = document.querySelector('.page-container');
             if (!pageContainer) return;
 
@@ -186,21 +186,18 @@
             }
 
             var btn = document.querySelector('.header-area .nav-btn');
-            if (btn) {
+            if (btn && !btn.dataset.sidebarBound) {
+                btn.dataset.sidebarBound = '1';
                 btn.addEventListener('click', function () {
                     pageContainer.classList.toggle('sbar_collapsed');
                 });
             }
+        }
 
-            window.addEventListener('resize', function () {
-                // Keep user toggle on resize; only enforce initial mobile collapse once per page load.
-                if (!pageContainer.dataset.sidebarInit) {
-                    if (isMobile()) {
-                        pageContainer.classList.add('sbar_collapsed');
-                    }
-                    pageContainer.dataset.sidebarInit = '1';
-                }
-            });
-        });
+        // Run immediately (scripts are loaded at bottom; DOMContentLoaded may have already fired).
+        initSidebarToggle();
+        // Also run on DOM ready for safety.
+        document.addEventListener('DOMContentLoaded', initSidebarToggle);
+        window.addEventListener('resize', initSidebarToggle);
     })();
 </script>

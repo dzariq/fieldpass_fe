@@ -5,83 +5,79 @@ Dashboard Page - Admin Panel
 @endsection
 
 @section('admin-content')
-<!-- page title area start -->
-<div class="page-title-area">
-    <div class="row align-items-center">
-        <div class="col-sm-6">
-            <div class="breadcrumbs-area clearfix">
-                <h4 class="page-title pull-left">Dashboard</h4>
-                <ul class="breadcrumbs pull-left">
-                    <li><a href="index.html">Home</a></li>
+<div class="main-content-inner">
+    <div class="fp-dashboard-header mb-4">
+        <div class="fp-dashboard-header__top">
+            <div>
+                <h1 class="fp-dashboard-title mb-0">Dashboard</h1>
+                <ul class="fp-breadcrumbs" aria-label="Breadcrumb">
+                    <li><a href="{{ route('admin.dashboard') }}">Home</a></li>
                     <li><span>Dashboard</span></li>
                 </ul>
             </div>
-        </div>
-        <div class="col-sm-6 clearfix">
-            @include('backend.layouts.partials.logout')
+            <div class="fp-dashboard-header__actions">
+                @include('backend.layouts.partials.logout')
+            </div>
         </div>
     </div>
-</div>
-<!-- page title area end -->
 
-<div class="main-content-inner">
     <!-- Competition Statistics Cards -->
-    <div class="row mb-4">
-        <div class="col-lg-3 col-md-6">
-            <div class="card bg-primary text-white">
+    <div class="row fp-stat-grid">
+        <div class="col-6 col-lg-3 mb-3">
+            <div class="card fp-stat-card fp-stat-card--primary">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between">
+                    <div class="fp-stat-card__row">
                         <div>
-                            <h3 class="mb-0">{{ $totalActive }}</h3>
-                            <p class="mb-0">Total Active</p>
+                            <div class="fp-stat-card__value">{{ $totalActive }}</div>
+                            <div class="fp-stat-card__label">Total Active</div>
                         </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-trophy fa-2x"></i>
+                        <div class="fp-stat-card__icon" aria-hidden="true">
+                            <i class="fas fa-trophy"></i>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-lg-3 col-md-6">
-            <div class="card bg-success text-white">
+        <div class="col-6 col-lg-3 mb-3">
+            <div class="card fp-stat-card fp-stat-card--success">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between">
+                    <div class="fp-stat-card__row">
                         <div>
-                            <h3 class="mb-0">{{ $leagues }}</h3>
-                            <p class="mb-0">Leagues</p>
+                            <div class="fp-stat-card__value">{{ $leagues }}</div>
+                            <div class="fp-stat-card__label">Leagues</div>
                         </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-medal fa-2x"></i>
+                        <div class="fp-stat-card__icon" aria-hidden="true">
+                            <i class="fas fa-medal"></i>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-lg-3 col-md-6">
-            <div class="card bg-warning text-white">
+        <div class="col-6 col-lg-3 mb-3">
+            <div class="card fp-stat-card fp-stat-card--warning">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between">
+                    <div class="fp-stat-card__row">
                         <div>
-                            <h3 class="mb-0">{{ $cups }}</h3>
-                            <p class="mb-0">Cups</p>
+                            <div class="fp-stat-card__value">{{ $cups }}</div>
+                            <div class="fp-stat-card__label">Cups</div>
                         </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-award fa-2x"></i>
+                        <div class="fp-stat-card__icon" aria-hidden="true">
+                            <i class="fas fa-award"></i>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-lg-3 col-md-6">
-            <div class="card bg-info text-white">
+        <div class="col-6 col-lg-3 mb-3">
+            <div class="card fp-stat-card fp-stat-card--info">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between">
+                    <div class="fp-stat-card__row">
                         <div>
-                            <h3 class="mb-0">{{ $tournaments }}</h3>
-                            <p class="mb-0">Tournaments</p>
+                            <div class="fp-stat-card__value">{{ $tournaments }}</div>
+                            <div class="fp-stat-card__label">Tournaments</div>
                         </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-crown fa-2x"></i>
+                        <div class="fp-stat-card__icon" aria-hidden="true">
+                            <i class="fas fa-crown"></i>
                         </div>
                     </div>
                 </div>
@@ -424,6 +420,42 @@ Dashboard Page - Admin Panel
                                                 <small class="competition-badge badge badge-outline-success">
                                                     {{ $fixture->competition_type }}
                                                 </small>
+
+                                                @if(auth()->user()->can('admin.view') || auth()->user()->can('match.edit'))
+                                                    <div class="fixture-actions mt-2">
+                                                        <div class="btn-group btn-group-sm" role="group" aria-label="Fixture actions">
+                                                            @can('admin.view')
+                                                                <a class="btn btn-outline-primary"
+                                                                   href="{{ route('admin.player.lineup', ['id' => $fixture->id, 'club_id' => $fixture->home_club_id]) }}">
+                                                                    <i class="fas fa-users"></i> Home Lineup
+                                                                </a>
+                                                                <a class="btn btn-outline-primary"
+                                                                   href="{{ route('admin.player.lineup', ['id' => $fixture->id, 'club_id' => $fixture->away_club_id]) }}">
+                                                                    <i class="fas fa-users"></i> Away Lineup
+                                                                </a>
+                                                            @endcan
+                                                            @can('match.edit')
+                                                                <a class="btn btn-outline-secondary"
+                                                                   href="{{ route('admin.match.match_info', ['id' => $fixture->id]) }}">
+                                                                    <i class="fas fa-edit"></i> Match Update
+                                                                </a>
+                                                            @endcan
+                                                        </div>
+
+                                                        @can('admin.view')
+                                                            @if(isset($fixture->home_lineup_submitted) && !$fixture->home_lineup_submitted)
+                                                                <div class="alert alert-warning py-1 px-2 mt-2 mb-0 small">
+                                                                    <i class="fas fa-exclamation-triangle"></i> Home club lineup not submitted
+                                                                </div>
+                                                            @endif
+                                                            @if(isset($fixture->away_lineup_submitted) && !$fixture->away_lineup_submitted)
+                                                                <div class="alert alert-warning py-1 px-2 mt-2 mb-0 small">
+                                                                    <i class="fas fa-exclamation-triangle"></i> Away club lineup not submitted
+                                                                </div>
+                                                            @endif
+                                                        @endcan
+                                                    </div>
+                                                @endif
                                                 
                                                 <!-- Match Readiness Status -->
                                                 @if(isset($fixture->home_lineup_submitted) && isset($fixture->away_lineup_submitted))
@@ -499,6 +531,113 @@ Dashboard Page - Admin Panel
 @endsection
 
 <style>
+    :root {
+        --fp-card-radius: 14px;
+        --fp-card-shadow: 0 10px 30px rgba(16, 24, 40, 0.08);
+        --fp-border: 1px solid rgba(16, 24, 40, 0.10);
+    }
+
+    .fp-dashboard-header {
+        background: #fff;
+        border: var(--fp-border);
+        border-radius: var(--fp-card-radius);
+        box-shadow: var(--fp-card-shadow);
+        padding: 14px;
+    }
+    .fp-dashboard-header__top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    .fp-dashboard-title {
+        margin: 0;
+        font-weight: 800;
+        font-size: 1.1rem;
+        line-height: 1.2;
+        color: #0f172a;
+        letter-spacing: -0.01em;
+    }
+    .fp-breadcrumbs {
+        margin: 8px 0 0;
+        padding: 0;
+        list-style: none;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        color: #64748b;
+        font-size: 0.82rem;
+    }
+    .fp-breadcrumbs li {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .fp-breadcrumbs li + li:before {
+        content: "•";
+        color: rgba(100, 116, 139, 0.7);
+        margin-right: 6px;
+    }
+    .fp-breadcrumbs a {
+        color: #2563eb;
+        text-decoration: none;
+    }
+    .fp-breadcrumbs a:hover {
+        text-decoration: underline;
+    }
+    .fp-dashboard-header__actions {
+        margin-left: auto;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+    }
+
+    /* Stat cards */
+    .fp-stat-grid .card-body {
+        padding: 14px;
+    }
+    .fp-stat-card {
+        border-radius: var(--fp-card-radius);
+        border: var(--fp-border);
+        box-shadow: var(--fp-card-shadow);
+        overflow: hidden;
+    }
+    .fp-stat-card__row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+    }
+    .fp-stat-card__value {
+        font-weight: 900;
+        font-size: 1.35rem;
+        line-height: 1.1;
+        color: #0f172a;
+        letter-spacing: -0.02em;
+    }
+    .fp-stat-card__label {
+        margin-top: 6px;
+        font-size: 0.85rem;
+        color: #64748b;
+        font-weight: 600;
+    }
+    .fp-stat-card__icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+        display: grid;
+        place-items: center;
+        flex: 0 0 auto;
+        font-size: 18px;
+        color: #0f172a;
+        background: rgba(15, 23, 42, 0.06);
+    }
+    .fp-stat-card--primary .fp-stat-card__icon { background: rgba(37, 99, 235, 0.12); color: #1d4ed8; }
+    .fp-stat-card--success .fp-stat-card__icon { background: rgba(34, 197, 94, 0.12); color: #15803d; }
+    .fp-stat-card--warning .fp-stat-card__icon { background: rgba(245, 158, 11, 0.14); color: #b45309; }
+    .fp-stat-card--info .fp-stat-card__icon { background: rgba(14, 165, 233, 0.14); color: #0369a1; }
+
     .border-left-primary {
         border-left: 4px solid #007bff !important;
     }
@@ -509,8 +648,7 @@ Dashboard Page - Admin Panel
         border-left: 4px solid #17a2b8 !important;
     }
     .card {
-        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
-        border: 1px solid #e3e6f0;
+        border-radius: var(--fp-card-radius);
     }
     .card-header {
         background-color: #f8f9fc;
@@ -575,6 +713,58 @@ Dashboard Page - Admin Panel
     .fixture-info h5 {
         font-size: 1.2rem;
         font-weight: 600;
+    }
+
+    .fixture-actions .btn {
+        white-space: nowrap;
+    }
+
+    /* Fixture action buttons: modern + mobile-first */
+    .fixture-actions .btn-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: center;
+    }
+    .fixture-actions .btn-group > .btn {
+        float: none;
+        flex: 1 1 auto;
+        border-radius: 10px !important;
+        padding: 8px 10px;
+        font-weight: 700;
+        font-size: 0.82rem;
+        line-height: 1.1;
+        border-width: 1px;
+        box-shadow: none;
+    }
+    .fixture-actions .btn-outline-primary {
+        background: rgba(37, 99, 235, 0.06);
+        border-color: rgba(37, 99, 235, 0.35);
+        color: #1d4ed8;
+    }
+    .fixture-actions .btn-outline-primary:hover {
+        background: rgba(37, 99, 235, 0.12);
+        border-color: rgba(37, 99, 235, 0.55);
+        color: #1d4ed8;
+    }
+    .fixture-actions .btn-outline-secondary {
+        background: rgba(100, 116, 139, 0.08);
+        border-color: rgba(100, 116, 139, 0.35);
+        color: #334155;
+    }
+    .fixture-actions .btn-outline-secondary:hover {
+        background: rgba(100, 116, 139, 0.14);
+        border-color: rgba(100, 116, 139, 0.55);
+        color: #334155;
+    }
+    @media (max-width: 576px) {
+        .fixture-actions .btn-group {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .fixture-actions .btn-group > .btn {
+            width: 100%;
+        }
     }
     
     /* Competition Header Styles */

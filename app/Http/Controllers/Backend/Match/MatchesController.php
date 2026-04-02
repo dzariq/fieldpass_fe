@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Backend\match;
 
 use App\Models\Competition;
 use App\Models\MatchPlayerList;
+use App\Models\MatchPlayer;
 use App\Models\Player;
 use Illuminate\Http\Request;
 
@@ -32,7 +33,18 @@ class MatchesController extends Controller
         $this->checkAuthorization(auth()->user(), ['match.view']);
 
         $perPage = (int) min(max($request->get('per_page', 25), 10), 100);
-        $baseQuery = Matches::query()->with(['home_club', 'away_club', 'competition']);
+        $baseQuery = Matches::query()
+            ->with(['home_club', 'away_club', 'competition'])
+            ->addSelect([
+                'home_lineup_submitted' => MatchPlayer::query()
+                    ->selectRaw('CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END')
+                    ->whereColumn('match_players.match_id', 'match.id')
+                    ->whereColumn('match_players.club_id', 'match.home_club_id'),
+                'away_lineup_submitted' => MatchPlayer::query()
+                    ->selectRaw('CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END')
+                    ->whereColumn('match_players.match_id', 'match.id')
+                    ->whereColumn('match_players.club_id', 'match.away_club_id'),
+            ]);
 
         $admin_obj = Admin::find(auth()->user()->id);
         $associationIds = $admin_obj ? $admin_obj->associations()->pluck('association.id') : collect();
