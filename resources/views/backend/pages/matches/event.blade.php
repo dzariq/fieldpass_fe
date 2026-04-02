@@ -515,6 +515,54 @@ Match Events
         font-size: 0.875rem;
     }
 
+    /* Compact match-day UX helpers */
+    details.recorded-events {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 12px;
+        margin: 14px 0;
+    }
+    details.recorded-events > summary {
+        list-style: none;
+        cursor: pointer;
+        font-weight: 800;
+        color: #111827;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        user-select: none;
+    }
+    details.recorded-events > summary::-webkit-details-marker {
+        display: none;
+    }
+    .fp-summary-right {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: #6b7280;
+        font-weight: 700;
+        font-size: 0.82rem;
+    }
+    .fp-chevron {
+        width: 26px;
+        height: 26px;
+        border-radius: 8px;
+        display: grid;
+        place-items: center;
+        background: #f3f4f6;
+        color: #374151;
+        font-weight: 900;
+        line-height: 1;
+    }
+    details.recorded-events[open] .fp-chevron {
+        transform: rotate(180deg);
+    }
+    .fp-recorded-body {
+        margin-top: 10px;
+    }
+
     /* Mobile Responsive */
     @media (max-width: 768px) {
         .nav-tabs {
@@ -536,11 +584,49 @@ Match Events
         }
 
         .page-title-area {
-            padding: 16px 20px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            margin-bottom: 14px;
         }
 
         .main-content-inner {
-            padding: 16px;
+            padding: 12px;
+            border-radius: 14px;
+        }
+
+        .page-title {
+            font-size: 1.15rem;
+        }
+
+        .match-score {
+            padding: 8px 14px;
+            border-radius: 10px;
+        }
+        .match-score span {
+            font-size: 1.05rem;
+        }
+
+        .player-actions-section {
+            padding: 14px;
+        }
+        .action-player-select {
+            padding: 12px;
+        }
+        .action-type-badge {
+            padding: 5px 10px;
+            font-size: 0.78rem;
+            margin-bottom: 10px;
+        }
+
+        /* Keep Save always reachable during match */
+        .btn-save-actions {
+            width: 100%;
+            position: sticky;
+            bottom: 10px;
+            z-index: 30;
+        }
+        .tab-content {
+            padding-bottom: 72px; /* room for sticky save button */
         }
     }
 
@@ -667,10 +753,15 @@ $subIdsAway = $existingLineupAway ? [
         </li>
     </ul>
   @if(isset($matchEvents) && count($matchEvents) > 0)
-                <div class="recorded-events">
-                    <div class="events-title">
-                        📋 {{ __('Recorded Events') }}
-                    </div>
+                <details class="recorded-events" open>
+                    <summary>
+                        <span>📋 {{ __('Recorded Events') }}</span>
+                        <span class="fp-summary-right">
+                            {{ count($matchEvents) }}
+                            <span class="fp-chevron">⌄</span>
+                        </span>
+                    </summary>
+                    <div class="fp-recorded-body">
 
                     @php
                     $eventsByType = collect($matchEvents)->groupBy(function($event) {
@@ -920,7 +1011,8 @@ $subIdsAway = $existingLineupAway ? [
                         @endforeach
                     </div>
                     @endif
-                </div>
+                    </div>
+                </details>
                 @endif
     <div class="tab-content">
         <!-- HOME TEAM TAB -->
