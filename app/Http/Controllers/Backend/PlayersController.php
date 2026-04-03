@@ -119,9 +119,7 @@ class PlayersController extends Controller
         // $this->checkAuthorization(auth()->user(), ['players.view']);
 
         if (auth()->user()->can('association.view')) {
-            return view('backend.pages.players.index', [
-                'players' => Player::all(),
-            ]);
+            $players = Player::with(['clubs'])->orderBy('name')->paginate(30);
         } else {
             $admin_obj = Admin::find(auth()->user()->id);
             $clubIds = $admin_obj->clubs()->pluck('club.id')->toArray();
@@ -129,13 +127,14 @@ class PlayersController extends Controller
             $players = Player::whereHas('clubs', function ($query) use ($clubIds) {
                 $query->whereIn('club_id', $clubIds);
             })
-                ->with(['clubs']) // Eager load associations and clubs
-                ->get();
-
-            return view('backend.pages.players.index', [
-                'players' => $players,
-            ]);
+                ->with(['clubs'])
+                ->orderBy('name')
+                ->paginate(30);
         }
+
+        return view('backend.pages.players.index', [
+            'players' => $players,
+        ]);
     }
 
     public function create(): Renderable
@@ -355,13 +354,25 @@ class PlayersController extends Controller
     {
         // $this->checkAuthorization(auth()->user(), ['players.edit', 'admin.create']);
 
+        $phoneDigits = preg_replace('/\D/', '', (string) $request->input('phone', ''));
+        $request->merge(['phone' => $phoneDigits === '' ? null : $phoneDigits]);
+        $ccDigits = preg_replace('/\D/', '', (string) $request->input('country_code', ''));
+        $request->merge(['country_code' => $ccDigits === '' ? null : $ccDigits]);
+
         // Validate request with unique rules excluding current player
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'nullable|email|max:255|unique:players,email,' . $id,
             'username' => 'required|string|max:255|unique:players,username,' . $id,
             'identity_number' => 'required|string|max:50|unique:players,identity_number,' . $id,
-            'phone' => 'required|string|max:20|unique:players,phone,' . $id,
+            'country_code' => ['nullable', 'string', 'max:4', 'regex:/^\d{1,4}$/'],
+            'phone' => [
+                'nullable',
+                'string',
+                'max:20',
+                'regex:/^[0-9]{7,15}$/',
+                Rule::unique('players', 'phone')->ignore($id),
+            ],
             'position' => 'required|in:Goalkeeper,Defender,Midfielder,Forward',
             'salary' => 'nullable|numeric|min:0',
             'club_ids' => 'nullable|array',
@@ -382,7 +393,8 @@ class PlayersController extends Controller
         $player->email = $request->has('email') ? $request->email : null;
         $player->username = $request->username;
         $player->identity_number = $request->identity_number;
-        $player->phone = $request->phone;
+        $player->country_code = $validated['country_code'] ?? null;
+        $player->phone = $validated['phone'] ?? null;
         $player->position = $request->position;
         $player->jersey_number = $request->jersey_number;
 
@@ -914,22 +926,27 @@ class PlayersController extends Controller
         }
     }
 
-    public function updateMarketValue(Request $request, int $id)
+    public function updateMarketValue(Request $request, int $id): JsonResponse
     {
-        $this->checkAuthorization(auth()->user(), ['admin.create']);
+        $player = Player::findOrFail($id);
+        if (! $this->adminMayEditPlayer($player)) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
 
         $request->validate([
-            'market_value' => 'required|numeric|min:0|max:9999999999',
+            'market_value' => 'required|integer|min:40|max:150',
+        ], [
+            'market_value.min' => 'Market value must be at least 40.',
+            'market_value.max' => 'Market value may not be greater than 150.',
         ]);
 
-        $player = Player::findOrFail($id);
         $player->market_value = $request->market_value;
         $player->save();
 
         return response()->json([
             'success' => true,
-            'message' => 'Market value updated successfully!',
-            'market_value' => ($player->market_value),
+            'message' => 'Market value updated.',
+            'market_value' => $player->market_value,
         ]);
     }
 
@@ -944,7 +961,10 @@ class PlayersController extends Controller
         }
 
         $phoneSanitized = preg_replace('/\D/', '', (string) $request->input('phone', ''));
-        $request->merge(['phone' => $phoneSanitized]);
+        $request->merge(['phone' => $phoneSanitized === '' ? null : $phoneSanitized]);
+
+        $ccRaw = preg_replace('/\D/', '', (string) $request->input('country_code', ''));
+        $request->merge(['country_code' => $ccRaw === '' ? null : $ccRaw]);
 
         $jerseyRaw = $request->input('jersey_number');
         if ($jerseyRaw === '' || $jerseyRaw === null) {
@@ -954,9 +974,9 @@ class PlayersController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'jersey_number' => 'nullable|integer|min:1|max:99999',
-            'country_code' => 'required|string|in:60,65,62,84',
+            'country_code' => ['nullable', 'string', 'in:60,65,62,84'],
             'phone' => [
-                'required',
+                'nullable',
                 'string',
                 'max:20',
                 'regex:/^[0-9]{7,15}$/',
@@ -966,15 +986,15 @@ class PlayersController extends Controller
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:1024',
         ], [
             'phone.unique' => 'This phone number is already registered to another player.',
-            'phone.regex' => 'Enter 7–15 digits only (no spaces).',
+            'phone.regex' => 'Enter 7–15 digits only (no spaces), or leave empty.',
             'market_value.min' => 'Market value must be at least 40.',
             'market_value.max' => 'Market value may not be greater than 150.',
         ]);
 
         $player->name = $validated['name'];
         $player->jersey_number = $validated['jersey_number'] ?? null;
-        $player->country_code = $validated['country_code'];
-        $player->phone = $phoneSanitized;
+        $player->country_code = $validated['country_code'] ?? null;
+        $player->phone = $validated['phone'] ?? null;
         $player->market_value = $validated['market_value'];
 
         if ($request->hasFile('avatar')) {

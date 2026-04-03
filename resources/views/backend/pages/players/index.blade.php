@@ -66,11 +66,6 @@
             font-size: 0.75rem;
             min-height: 1rem;
         }
-        .player-inline-mv {
-            max-width: 5.5rem;
-            margin-left: auto;
-            margin-right: auto;
-        }
     </style>
 @endsection
 
@@ -131,15 +126,15 @@
                             <tbody>
                                @foreach ($players as $player)
                                @php
-                                   $cc = $player->country_code ? preg_replace('/\D/', '', (string) $player->country_code) : '60';
-                                   if (! in_array($cc, ['60', '65', '62', '84'], true)) {
-                                       $cc = '60';
+                                   $cc = $player->country_code ? preg_replace('/\D/', '', (string) $player->country_code) : '';
+                                   if ($cc !== '' && ! in_array($cc, ['60', '65', '62', '84'], true)) {
+                                       $cc = '';
                                    }
                                    $phoneDigits = $player->phone ? preg_replace('/\D/', '', (string) $player->phone) : '';
                                    $mv = $player->market_value !== null ? (int) round((float) $player->market_value) : 40;
                                @endphp
                                <tr class="player-inline-row" data-player-id="{{ $player->id }}" data-inline-url="{{ route('admin.players.inline-update', $player->id) }}">
-                                    <td>{{ $loop->index+1 }}</td>
+                                    <td>{{ $players->firstItem() ? $players->firstItem() + $loop->index : $loop->iteration }}</td>
                                     <td>
                                         @if (auth()->user()->can('players.edit'))
                                             <div class="d-flex flex-column align-items-center">
@@ -179,7 +174,13 @@
                                     </td>
                                     <td>
                                         @if (auth()->user()->can('players.edit'))
-                                            <input type="number" class="form-control form-control-sm js-inline-field player-inline-mv" name="market_value" value="{{ $mv }}" min="40" max="150" step="1" inputmode="numeric" title="{{ __('Between 40 and 150') }}">
+                                            <input type="hidden" name="market_value" class="js-inline-mv-value" value="{{ $mv }}">
+                                            <div class="d-flex flex-column align-items-center">
+                                                <span class="js-mv-display font-weight-bold">{{ $player->market_value !== null ? (int) round((float) $player->market_value) : '—' }}</span>
+                                                <button type="button" class="btn btn-sm btn-outline-secondary mt-1 js-open-mv-modal" data-update-url="{{ route('admin.players.update.market.value', $player->id) }}">
+                                                    {{ __('Edit') }}
+                                                </button>
+                                            </div>
                                         @else
                                             {{ $player->market_value !== null ? (int) round((float) $player->market_value) : '—' }}
                                         @endif
@@ -188,6 +189,7 @@
                                         @if (auth()->user()->can('players.edit'))
                                             <div class="player-inline-phone mx-auto">
                                                 <select class="form-control form-control-sm js-inline-field" name="country_code" title="{{ __('Country') }}">
+                                                    <option value="">{{ __('Optional') }}</option>
                                                     <option value="60" {{ $cc === '60' ? 'selected' : '' }}>+60 MY</option>
                                                     <option value="65" {{ $cc === '65' ? 'selected' : '' }}>+65 SG</option>
                                                     <option value="84" {{ $cc === '84' ? 'selected' : '' }}>+84 VN</option>
@@ -261,6 +263,30 @@
         <!-- data table end -->
     </div>
 </div>
+
+@if (auth()->user()->can('players.edit'))
+<div class="modal fade" id="marketValueModal" tabindex="-1" role="dialog" aria-labelledby="marketValueModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="marketValueModalLabel">{{ __('Edit market value') }}</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="{{ __('Close') }}">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <label for="modal_market_value">{{ __('Value') }} (40–150)</label>
+                <input type="number" class="form-control" id="modal_market_value" min="40" max="150" step="1" inputmode="numeric">
+                <p class="text-muted small mb-0 mt-2">{{ __('Between 40 and 150.') }}</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">{{ __('Cancel') }}</button>
+                <button type="button" class="btn btn-primary" id="modal_market_value_save">{{ __('Save') }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
 @endsection
 
 @section('scripts')
@@ -277,7 +303,11 @@
                 scrollX: true,
                 autoWidth: false,
                 ordering: false,
-                responsive: false
+                responsive: false,
+                paging: false,
+                info: false,
+                searching: false,
+                lengthChange: false
             });
         }
 
@@ -307,7 +337,7 @@
                 if (jn !== '' && jn != null) {
                     fd.append('jersey_number', jn);
                 }
-                fd.append('country_code', $row.find('[name="country_code"]').val());
+                fd.append('country_code', $row.find('[name="country_code"]').val() || '');
                 var $phone = $row.find('[name="phone"]');
                 var phone = String($phone.val() || '').replace(/\D/g, '');
                 $phone.val(phone);
@@ -428,6 +458,73 @@
                     showMsg($row, 'Network error', false);
                 }).finally(function () {
                     $btn.prop('disabled', false);
+                });
+            });
+
+            var mvModalUrl = '';
+            var $mvModalRow = null;
+
+            $(document).on('click', '.js-open-mv-modal', function () {
+                $mvModalRow = $(this).closest('.player-inline-row');
+                mvModalUrl = $(this).data('update-url') || '';
+                var v = $mvModalRow.find('.js-inline-mv-value').val();
+                var n = parseInt(v, 10);
+                if (isNaN(n) || n < 40) {
+                    n = 40;
+                }
+                if (n > 150) {
+                    n = 150;
+                }
+                $('#modal_market_value').val(n);
+                $('#marketValueModal').modal('show');
+            });
+
+            $('#modal_market_value_save').on('click', function () {
+                if (!$mvModalRow || !$mvModalRow.length || !mvModalUrl) {
+                    return;
+                }
+                var mv = parseInt($('#modal_market_value').val(), 10);
+                if (isNaN(mv) || mv < 40 || mv > 150) {
+                    showMsg($mvModalRow, 'Enter a value between 40 and 150.', false);
+                    return;
+                }
+                var $row = $mvModalRow;
+                var $saveBtn = $(this);
+                $saveBtn.prop('disabled', true);
+                var fd = new FormData();
+                fd.append('_token', csrf);
+                fd.append('market_value', String(mv));
+                fetch(mvModalUrl, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': csrf,
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: fd,
+                    credentials: 'same-origin'
+                }).then(function (r) {
+                    return r.json().then(function (data) {
+                        return { ok: r.ok, status: r.status, data: data };
+                    });
+                }).then(function (res) {
+                    if (!res.ok) {
+                        var msg = (res.data && res.data.message) ? res.data.message : 'Could not save.';
+                        if (res.status === 422 && res.data.errors) {
+                            var first = Object.values(res.data.errors)[0];
+                            msg = Array.isArray(first) ? first[0] : String(first);
+                        }
+                        showMsg($row, msg, false);
+                        return;
+                    }
+                    $row.find('.js-inline-mv-value').val(mv);
+                    $row.find('.js-mv-display').text(mv);
+                    $('#marketValueModal').modal('hide');
+                    showMsg($row, (res.data && res.data.message) ? res.data.message : 'Saved', true);
+                }).catch(function () {
+                    showMsg($row, 'Network error', false);
+                }).finally(function () {
+                    $saveBtn.prop('disabled', false);
                 });
             });
         })();

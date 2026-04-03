@@ -267,7 +267,7 @@ $usr = Auth::guard('admin')->user();
                     @endif
 
                     <!-- MATCHES -->
-                    @if ($usr->can('match.create') || $usr->can('match.view') || $usr->can('match.edit') || $usr->can('match.delete'))
+                    @if (! $usr->hasRole('Club Manager') && ($usr->can('match.create') || $usr->can('match.view') || $usr->can('match.edit') || $usr->can('match.delete')))
                     <li>
                         <a href="javascript:void(0)" aria-expanded="true">
                             <i class="fas fa-futbol"></i>
