@@ -776,7 +776,7 @@ class PlayersController extends Controller
                 $player->code = rand(11111111111, 99999999999);
                 $player->referer = auth()->user()->id;
                 $player->password = Hash::make($this->randomPassword(6));
-                $player->status = 'INVITED';
+                $player->status = 'ACTIVE';
                 $player->market_value = 50;
                 $player->save();
 
