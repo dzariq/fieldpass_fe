@@ -117,12 +117,13 @@
                                 <tr>
                                     <th width="4%">{{ __('Sl') }}</th>
                                     <th width="8%">{{ __('Photo') }}</th>
-                                    <th width="14%">{{ __('Name') }}</th>
-                                    <th width="16%">{{ __('ID') }}</th>
-                                    <th width="7%">{{ __('Jersey') }}</th>
-                                    <th width="16%">{{ __('Phone') }}</th>
+                                    <th width="13%">{{ __('Name') }}</th>
+                                    <th width="14%">{{ __('ID') }}</th>
+                                    <th width="6%">{{ __('Jersey') }}</th>
+                                    <th width="7%">{{ __('Value') }}</th>
+                                    <th width="14%">{{ __('Phone') }}</th>
                                     <th width="7%">{{ __('Position') }}</th>
-                                    <th width="12%">{{ __('Clubs') }}</th>
+                                    <th width="11%">{{ __('Clubs') }}</th>
                                     <th width="7%">{{ __('Status') }}</th>
                                     <th width="9%">{{ __('Action') }}</th>
                                 </tr>
