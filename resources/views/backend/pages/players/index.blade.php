@@ -329,6 +329,41 @@
                 }
             }
 
+            /** Read body as text, then JSON if possible — avoids "Network error" when server returns HTML (419/500). */
+            function parseFetchResponse(r) {
+                return r.text().then(function (text) {
+                    var data = {};
+                    if (text) {
+                        try {
+                            data = JSON.parse(text);
+                        } catch (e) {
+                            var plain = String(text).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+                            if (plain.length > 160) {
+                                plain = plain.slice(0, 160) + '…';
+                            }
+                            data = { message: plain || 'Invalid response from server.' };
+                        }
+                    }
+                    return { ok: r.ok, status: r.status, data: data };
+                });
+            }
+
+            function httpErrorHint(status) {
+                if (status === 419) {
+                    return 'Session expired. Refresh the page and try again.';
+                }
+                if (status === 401 || status === 403) {
+                    return 'Not allowed or session ended. Refresh and sign in again.';
+                }
+                if (status === 502 || status === 503) {
+                    return 'Server temporarily unavailable. Try again later.';
+                }
+                if (status >= 500) {
+                    return 'Server error. Try again or contact support if it persists.';
+                }
+                return '';
+            }
+
             function buildFormData($row, file) {
                 var fd = new FormData();
                 fd.append('_token', csrf);
@@ -444,18 +479,24 @@
                     },
                     body: JSON.stringify({ country_code: countryCode, phone: phone }),
                     credentials: 'same-origin'
-                }).then(function (r) {
-                    return r.json().then(function (data) {
-                        return { ok: r.ok, status: r.status, data: data };
-                    });
-                }).then(function (res) {
+                }).then(parseFetchResponse).then(function (res) {
                     if (!res.ok) {
-                        showMsg($row, (res.data && res.data.message) ? res.data.message : 'Could not send invitation.', false);
+                        var hint = httpErrorHint(res.status);
+                        if (res.status === 422 && res.data.errors) {
+                            var first = Object.values(res.data.errors)[0];
+                            showMsg($row, Array.isArray(first) ? first[0] : String(first), false);
+                        } else {
+                            showMsg($row, hint || (res.data && res.data.message) || 'Could not send invitation.', false);
+                        }
                         return;
                     }
                     showMsg($row, (res.data && res.data.message) ? res.data.message : 'Invitation sent.', true);
-                }).catch(function () {
-                    showMsg($row, 'Network error', false);
+                }).catch(function (err) {
+                    var msg = (err && err.message) ? String(err.message) : 'Network error';
+                    if (msg === 'Failed to fetch' || msg.indexOf('NetworkError') !== -1) {
+                        msg = 'Connection failed. Check your network and try again.';
+                    }
+                    showMsg($row, msg, false);
                 }).finally(function () {
                     $btn.prop('disabled', false);
                 });
@@ -503,13 +544,10 @@
                     },
                     body: fd,
                     credentials: 'same-origin'
-                }).then(function (r) {
-                    return r.json().then(function (data) {
-                        return { ok: r.ok, status: r.status, data: data };
-                    });
-                }).then(function (res) {
+                }).then(parseFetchResponse).then(function (res) {
                     if (!res.ok) {
-                        var msg = (res.data && res.data.message) ? res.data.message : 'Could not save.';
+                        var hint = httpErrorHint(res.status);
+                        var msg = hint || (res.data && res.data.message) || 'Could not save.';
                         if (res.status === 422 && res.data.errors) {
                             var first = Object.values(res.data.errors)[0];
                             msg = Array.isArray(first) ? first[0] : String(first);
@@ -521,8 +559,12 @@
                     $row.find('.js-mv-display').text(mv);
                     $('#marketValueModal').modal('hide');
                     showMsg($row, (res.data && res.data.message) ? res.data.message : 'Saved', true);
-                }).catch(function () {
-                    showMsg($row, 'Network error', false);
+                }).catch(function (err) {
+                    var msg = (err && err.message) ? String(err.message) : 'Network error';
+                    if (msg === 'Failed to fetch' || msg.indexOf('NetworkError') !== -1) {
+                        msg = 'Connection failed. Check your network and try again.';
+                    }
+                    showMsg($row, msg, false);
                 }).finally(function () {
                     $saveBtn.prop('disabled', false);
                 });
