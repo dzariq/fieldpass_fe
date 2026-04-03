@@ -133,7 +133,8 @@
                                    $phoneDigits = $player->phone ? preg_replace('/\D/', '', (string) $player->phone) : '';
                                    $mv = $player->market_value !== null ? (int) round((float) $player->market_value) : 40;
                                @endphp
-                               <tr class="player-inline-row" data-player-id="{{ $player->id }}" data-inline-url="{{ route('admin.players.inline-update', $player->id) }}">
+                               {{-- Relative URLs so fetch() uses the current page scheme (avoids mixed-content blocks when APP_URL is http but the site is https). --}}
+                               <tr class="player-inline-row" data-player-id="{{ $player->id }}" data-inline-url="{{ route('admin.players.inline-update', ['id' => $player->id], false) }}">
                                     <td>{{ $players->firstItem() ? $players->firstItem() + $loop->index : $loop->iteration }}</td>
                                     <td>
                                         @if (auth()->user()->can('players.edit'))
@@ -177,7 +178,7 @@
                                             <input type="hidden" name="market_value" class="js-inline-mv-value" value="{{ $mv }}">
                                             <div class="d-flex flex-column align-items-center">
                                                 <span class="js-mv-display font-weight-bold">{{ $player->market_value !== null ? (int) round((float) $player->market_value) : '—' }}</span>
-                                                <button type="button" class="btn btn-sm btn-outline-secondary mt-1 js-open-mv-modal" data-update-url="{{ route('admin.players.update.market.value', $player->id) }}">
+                                                <button type="button" class="btn btn-sm btn-outline-secondary mt-1 js-open-mv-modal" data-update-url="{{ route('admin.players.update.market.value', ['id' => $player->id], false) }}">
                                                     {{ __('Edit') }}
                                                 </button>
                                             </div>
@@ -198,7 +199,7 @@
                                                 <input type="text" class="form-control form-control-sm js-inline-field js-inline-phone" name="phone" value="{{ $phoneDigits }}" inputmode="numeric" pattern="[0-9]*" maxlength="15" placeholder="digits" title="{{ __('Numbers only') }}">
                                             </div>
                                             <div class="player-inline-status js-inline-msg text-muted"></div>
-                                            <button type="button" class="btn btn-sm btn-outline-primary mt-2 js-send-invitation" data-url="{{ route('admin.players.send-invitation', $player->id) }}">
+                                            <button type="button" class="btn btn-sm btn-outline-primary mt-2 js-send-invitation" data-url="{{ route('admin.players.send-invitation', ['id' => $player->id], false) }}">
                                                 {{ __('Send invitation') }}
                                             </button>
                                         @else
