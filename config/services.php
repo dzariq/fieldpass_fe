@@ -34,6 +34,7 @@ return [
         'login_otp_url' => env('N8N_LOGIN_OTP_URL', 'https://n8n.fieldpass.com.my/webhook/login-otp'),
         'verify_otp_url' => env('N8N_VERIFY_OTP_URL', 'https://n8n.fieldpass.com.my/webhook/verify-otp'),
         'admin_invitation_url' => env('N8N_ADMIN_INVITATION_URL', 'https://n8n.fieldpass.com.my/webhook/admin-invitation'),
+        'send_message_url' => env('N8N_SEND_MESSAGE_URL', 'https://n8n.fieldpass.com.my/webhook/send-message'),
     ],
 
     /*

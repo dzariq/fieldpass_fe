@@ -89,7 +89,7 @@ Player Edit - Admin Panel
                                     >
                                     <div>
                                         <input type="file" class="form-control-file" name="avatar" id="avatar" accept="image/*">
-                                        <small class="form-text text-muted">Optional. PNG/JPG/WEBP, max 2MB.</small>
+                                        <small class="form-text text-muted">Optional. PNG/JPG/WEBP, max 1MB.</small>
                                     </div>
                                 </div>
                             </div>

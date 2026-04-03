@@ -12,12 +12,14 @@ use App\Models\Association;
 use App\Models\Club;
 use App\Models\PlayerContract;
 use Illuminate\Contracts\Support\Renderable;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
@@ -67,6 +69,49 @@ class PlayersController extends Controller
         }
 
         return null;
+    }
+
+    /**
+     * Club managers may edit players linked to their clubs; association-wide admins may edit all (same scope as players index).
+     */
+    private function adminMayEditPlayer(Player $player): bool
+    {
+        if (! auth()->user()->can('players.edit')) {
+            return false;
+        }
+        if (auth()->user()->can('association.view')) {
+            return true;
+        }
+        $admin = Admin::findOrFail(auth()->user()->id);
+        $clubIds = $admin->clubs()->pluck('club.id')->toArray();
+        if (count($clubIds) === 0) {
+            return false;
+        }
+
+        return $player->clubs()->wherePivotIn('club_id', $clubIds)->exists();
+    }
+
+    /**
+     * Club name shown on player invitation messages (sender context).
+     */
+    private function resolveClubNameForInvitation(Player $player): string
+    {
+        $admin = Admin::findOrFail(auth()->user()->id);
+        $playerClubs = $player->clubs->sortBy('name')->values();
+
+        if ($playerClubs->isEmpty()) {
+            return 'Fieldpass';
+        }
+
+        $adminClubIds = $admin->clubs()->pluck('club.id')->map(fn ($id) => (int) $id)->all();
+        if (count($adminClubIds) > 0) {
+            $match = $playerClubs->first(fn ($c) => in_array((int) $c->id, $adminClubIds, true));
+            if ($match) {
+                return $match->name;
+            }
+        }
+
+        return $playerClubs->first()->name;
     }
 
     public function index(): Renderable
@@ -343,7 +388,7 @@ class PlayersController extends Controller
 
         if ($request->hasFile('avatar')) {
             $request->validate([
-                'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+                'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:1024',
             ]);
 
             $file = $request->file('avatar');
@@ -885,6 +930,140 @@ class PlayersController extends Controller
             'success' => true,
             'message' => 'Market value updated successfully!',
             'market_value' => ($player->market_value),
+        ]);
+    }
+
+    /**
+     * Inline update from players list (name, jersey, country code, phone, avatar, market_value).
+     */
+    public function updateInline(Request $request, int $id): JsonResponse
+    {
+        $player = Player::findOrFail($id);
+        if (! $this->adminMayEditPlayer($player)) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $phoneSanitized = preg_replace('/\D/', '', (string) $request->input('phone', ''));
+        $request->merge(['phone' => $phoneSanitized]);
+
+        $jerseyRaw = $request->input('jersey_number');
+        if ($jerseyRaw === '' || $jerseyRaw === null) {
+            $request->merge(['jersey_number' => null]);
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'jersey_number' => 'nullable|integer|min:1|max:99999',
+            'country_code' => 'required|string|in:60,65,62,84',
+            'phone' => [
+                'required',
+                'string',
+                'max:20',
+                'regex:/^[0-9]{7,15}$/',
+                Rule::unique('players', 'phone')->ignore($id),
+            ],
+            'market_value' => 'required|integer|min:40|max:150',
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:1024',
+        ], [
+            'phone.unique' => 'This phone number is already registered to another player.',
+            'phone.regex' => 'Enter 7–15 digits only (no spaces).',
+            'market_value.min' => 'Market value must be at least 40.',
+            'market_value.max' => 'Market value may not be greater than 150.',
+        ]);
+
+        $player->name = $validated['name'];
+        $player->jersey_number = $validated['jersey_number'] ?? null;
+        $player->country_code = $validated['country_code'];
+        $player->phone = $phoneSanitized;
+        $player->market_value = $validated['market_value'];
+
+        if ($request->hasFile('avatar')) {
+            $file = $request->file('avatar');
+            $filename = time().'_'.$file->getClientOriginalName();
+            $destination = public_path('avatars');
+            if (! file_exists($destination)) {
+                mkdir($destination, 0755, true);
+            }
+            if ($player->avatar && file_exists(public_path($player->avatar))) {
+                unlink(public_path($player->avatar));
+            }
+            $file->move($destination, $filename);
+            $player->avatar = 'avatars/'.$filename;
+        }
+
+        $player->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Saved.',
+            'avatar_url' => $player->avatar
+                ? asset($player->avatar)
+                : asset('backend/assets/images/default-avatar.png'),
+        ]);
+    }
+
+    /**
+     * POST phone_number + message to n8n (WhatsApp / messaging webhook).
+     */
+    public function sendPlayerInvitation(Request $request, int $id): JsonResponse
+    {
+        $player = Player::with('clubs')->findOrFail($id);
+        if (! $this->adminMayEditPlayer($player)) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $countryCode = preg_replace('/\D/', '', (string) $request->input('country_code', ''));
+        $phoneDigits = preg_replace('/\D/', '', (string) $request->input('phone', ''));
+
+        if (! in_array($countryCode, ['60', '65', '62', '84'], true)) {
+            return response()->json(['message' => 'Select a valid country code.'], 422);
+        }
+
+        if (strlen($phoneDigits) < 7 || strlen($phoneDigits) > 15) {
+            return response()->json(['message' => 'Enter a valid phone number (7–15 digits) before sending.'], 422);
+        }
+
+        $phoneNumber = $countryCode.$phoneDigits;
+
+        $clubName = $this->resolveClubNameForInvitation($player);
+        $message = sprintf(
+            'ask player to login to https://fieldpass.com.my/player/login to update profile - From %s',
+            $clubName
+        );
+
+        $url = (string) config('services.n8n.send_message_url');
+        if ($url === '') {
+            return response()->json(['message' => 'Messaging webhook is not configured.'], 503);
+        }
+
+        try {
+            $response = Http::timeout(45)
+                ->acceptJson()
+                ->post($url, [
+                    'phone_number' => $phoneNumber,
+                    'message' => $message,
+                ]);
+        } catch (\Throwable $e) {
+            Log::error('n8n send-message failed', ['exception' => $e->getMessage(), 'player_id' => $id]);
+
+            return response()->json(['message' => 'Could not reach messaging service. Try again later.'], 502);
+        }
+
+        if (! $response->successful()) {
+            Log::warning('n8n send-message returned error', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+                'player_id' => $id,
+            ]);
+
+            return response()->json([
+                'message' => 'Invitation could not be sent. Please try again.',
+            ], 502);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Invitation sent.',
         ]);
     }
 

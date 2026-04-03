@@ -33,6 +33,10 @@ class Player extends Authenticatable implements Auditable
         'status',
         'email',
         'password',
+        'jersey_number',
+        'country_code',
+        'avatar',
+        'market_value',
     ];
 
     /**

@@ -107,7 +107,7 @@ class PlayerDashboardController extends Controller
 
     if ($request->hasFile('avatar')) {
         $request->validate([
-            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048'
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:1024'
         ]);
 
         $file = $request->file('avatar');

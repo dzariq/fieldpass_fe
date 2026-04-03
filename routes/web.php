@@ -115,6 +115,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.'], function () {
   Route::get('/bulk-upload/template', [PlayersController::class, 'downloadTemplate'])->name('players.bulk.template');
   Route::get('/admin/players/list', [PlayersController::class, 'playersList'])->name('players.list');
   Route::post('/players/{id}/update-market-value', [PlayersController::class, 'updateMarketValue'])->name('players.update.market.value');
+  Route::post('/players/{id}/inline-update', [PlayersController::class, 'updateInline'])->name('players.inline-update');
+  Route::post('/players/{id}/send-invitation', [PlayersController::class, 'sendPlayerInvitation'])->name('players.send-invitation');
 
   Route::resource('fantasy', FantasyController::class);
   Route::resource('clubs', ClubController::class);

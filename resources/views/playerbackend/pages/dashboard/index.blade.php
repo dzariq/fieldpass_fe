@@ -281,7 +281,7 @@ Player Dashboard
                                 <input type="file" class="form-control-file" name="avatar" id="avatar" accept="image/*">
                             </div>
                             <small class="form-text text-muted" style="display: block; margin-top: 15px;">
-                                Click the camera icon to upload a new avatar (Max: 2MB)
+                                Click the camera icon to upload a new avatar (Max: 1MB)
                             </small>
 
                             @if(!empty($currentClub))
