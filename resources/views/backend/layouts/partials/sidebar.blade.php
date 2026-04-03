@@ -146,7 +146,7 @@ $usr = Auth::guard('admin')->user();
                     @endif
 
                     <!-- CLUBS -->
-                    @if ($usr->can('club.create') || $usr->can('club.view') || $usr->can('club.edit') || $usr->can('club.delete'))
+                    @if (! $usr->hasRole('Club Manager') && ($usr->can('club.create') || $usr->can('club.view') || $usr->can('club.edit') || $usr->can('club.delete')))
                     <li>
                         <a href="javascript:void(0)" aria-expanded="true">
                             <i class="fas fa-shield-alt"></i>
