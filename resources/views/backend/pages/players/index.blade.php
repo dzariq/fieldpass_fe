@@ -33,38 +33,94 @@
             background-color: #dc3545;
             color: #fff;
         }
+        #dataTable.table-players-compact td,
+        #dataTable.table-players-compact th {
+            padding: 0.3rem 0.35rem;
+            font-size: 0.78rem;
+            vertical-align: middle;
+        }
+        #dataTable.table-players-compact .badge {
+            font-size: 0.65rem;
+            padding: 0.2rem 0.35rem;
+            font-weight: 600;
+        }
         .player-inline-row .form-control-sm {
             min-width: 0;
-            font-size: 0.8125rem;
-            padding: 0.25rem 0.4rem;
+            font-size: 0.75rem;
+            padding: 0.15rem 0.35rem;
             height: auto;
+            line-height: 1.2;
         }
         .player-inline-row .player-inline-phone {
             display: flex;
-            flex-wrap: wrap;
-            gap: 0.35rem;
+            flex-wrap: nowrap;
+            gap: 0.25rem;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
+            max-width: 100%;
         }
         .player-inline-row .player-inline-phone select {
-            max-width: 7.5rem;
+            max-width: 5.5rem;
+            flex: 0 0 auto;
+        }
+        .player-inline-row .player-inline-phone .player-inline-phone-input-wrap {
+            display: flex;
+            flex: 1 1 auto;
+            align-items: center;
+            gap: 0.2rem;
+            min-width: 0;
         }
         .player-inline-row .player-inline-phone input[type="text"] {
-            flex: 1 1 5rem;
-            min-width: 4rem;
-            max-width: 8rem;
+            flex: 1 1 auto;
+            min-width: 3rem;
+            max-width: 7rem;
+        }
+        .player-inline-row .js-send-invitation {
+            flex: 0 0 auto;
+            line-height: 1;
         }
         .player-inline-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
             object-fit: cover;
             border: 1px solid #e5e7eb;
             vertical-align: middle;
         }
+        .player-inline-photo-meta {
+            font-size: 0.65rem;
+            line-height: 1.1;
+        }
         .player-inline-status {
-            font-size: 0.75rem;
-            min-height: 1rem;
+            font-size: 0.65rem;
+            min-height: 0.85rem;
+            line-height: 1.2;
+            margin-top: 0.15rem;
+            text-align: left;
+        }
+        .player-inline-value-cell {
+            line-height: 1.15;
+        }
+        .player-inline-value-cell .btn-xs-inline {
+            font-size: 0.65rem;
+            padding: 0.1rem 0.35rem;
+            line-height: 1.2;
+        }
+        /* Wide grid: scroll horizontally instead of squashing columns on narrow screens */
+        .players-table-outer {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: auto;
+            overflow-y: visible;
+            -webkit-overflow-scrolling: touch;
+            margin-bottom: 0.5rem;
+        }
+        .players-table-outer #dataTable.table-players-compact {
+            min-width: 1120px;
+            margin-bottom: 0;
+        }
+        .players-table-outer .dataTables_wrapper {
+            margin-bottom: 0;
         }
     </style>
 @endsection
@@ -93,10 +149,10 @@
 <div class="main-content-inner">
     <div class="row">
         <!-- data table start -->
-        <div class="col-12 mt-5">
+        <div class="col-12 mt-4">
             <div class="card">
-                <div class="card-body">
-                    <h4 class="header-title float-left">{{ __('Players') }}</h4>
+                <div class="card-body py-3 px-3">
+                    <h4 class="header-title float-left mb-2">{{ __('Players') }}</h4>
                     <p class="float-right mb-2">
                         @if (auth()->user()->can('players.edit'))
                             <a class="btn btn-primary text-white" href="{{ route('admin.players.create') }}">
@@ -107,20 +163,21 @@
                     <div class="clearfix"></div>
                     <div class="data-tables">
                         @include('backend.layouts.partials.messages')
-                        <table id="dataTable" class="text-center">
+                        <div class="players-table-outer table-responsive">
+                        <table id="dataTable" class="text-center table table-sm table-bordered table-players-compact mb-0">
                             <thead class="bg-light text-capitalize">
                                 <tr>
-                                    <th width="4%">{{ __('Sl') }}</th>
-                                    <th width="8%">{{ __('Photo') }}</th>
-                                    <th width="13%">{{ __('Name') }}</th>
-                                    <th width="14%">{{ __('ID') }}</th>
-                                    <th width="6%">{{ __('Jersey') }}</th>
-                                    <th width="7%">{{ __('Value') }}</th>
-                                    <th width="14%">{{ __('Phone') }}</th>
-                                    <th width="7%">{{ __('Position') }}</th>
-                                    <th width="11%">{{ __('Clubs') }}</th>
-                                    <th width="7%">{{ __('Status') }}</th>
-                                    <th width="9%">{{ __('Action') }}</th>
+                                    <th class="text-nowrap" style="width:2.5%">{{ __('Sl') }}</th>
+                                    <th style="width:7%">{{ __('Photo') }}</th>
+                                    <th style="width:12%">{{ __('Name') }}</th>
+                                    <th style="width:12%">{{ __('ID') }}</th>
+                                    <th style="width:5%">{{ __('Jersey') }}</th>
+                                    <th style="width:6%">{{ __('Value') }}</th>
+                                    <th style="width:16%">{{ __('Phone') }}</th>
+                                    <th style="width:7%">{{ __('Position') }}</th>
+                                    <th style="width:11%">{{ __('Clubs') }}</th>
+                                    <th style="width:6%">{{ __('Status') }}</th>
+                                    <th style="width:9%">{{ __('Action') }}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -138,17 +195,17 @@
                                     <td>{{ $players->firstItem() ? $players->firstItem() + $loop->index : $loop->iteration }}</td>
                                     <td>
                                         @if (auth()->user()->can('players.edit'))
-                                            <div class="d-flex flex-column align-items-center">
+                                            <div class="d-flex flex-column align-items-center text-center player-inline-photo-meta">
                                                 <img
                                                     class="player-inline-avatar js-inline-avatar"
                                                     src="{{ $player->avatar ? asset($player->avatar) : asset('backend/assets/images/default-avatar.png') }}"
                                                     alt=""
                                                 >
-                                                <label class="mb-0 mt-1 small text-primary" style="cursor:pointer;">
+                                                <label class="mb-0 mt-1 text-primary" style="cursor:pointer;">
                                                     <input type="file" class="d-none js-inline-avatar-input" accept="image/jpeg,image/png,image/jpg,image/gif,image/webp">
                                                     {{ __('Change') }}
                                                 </label>
-                                                <span class="small text-muted">{{ __('max 1MB') }}</span>
+                                                <span class="text-muted">1MB</span>
                                             </div>
                                         @else
                                             <img
@@ -188,20 +245,22 @@
                                     </td>
                                     <td>
                                         @if (auth()->user()->can('players.edit'))
-                                            <div class="player-inline-phone mx-auto">
-                                                <select class="form-control form-control-sm js-inline-field" name="country_code" title="{{ __('Country') }}">
+                                            <div class="player-inline-phone mx-auto text-left">
+                                                <select class="form-control form-control-sm js-inline-field js-inline-invite-gate" name="country_code" title="{{ __('Country') }}">
                                                     <option value="">{{ __('Optional') }}</option>
-                                                    <option value="60" {{ $cc === '60' ? 'selected' : '' }}>+60 MY</option>
-                                                    <option value="65" {{ $cc === '65' ? 'selected' : '' }}>+65 SG</option>
-                                                    <option value="84" {{ $cc === '84' ? 'selected' : '' }}>+84 VN</option>
-                                                    <option value="62" {{ $cc === '62' ? 'selected' : '' }}>+62 ID</option>
+                                                    <option value="60" {{ $cc === '60' ? 'selected' : '' }}>+60</option>
+                                                    <option value="65" {{ $cc === '65' ? 'selected' : '' }}>+65</option>
+                                                    <option value="84" {{ $cc === '84' ? 'selected' : '' }}>+84</option>
+                                                    <option value="62" {{ $cc === '62' ? 'selected' : '' }}>+62</option>
                                                 </select>
-                                                <input type="text" class="form-control form-control-sm js-inline-field js-inline-phone" name="phone" value="{{ $phoneDigits }}" inputmode="numeric" pattern="[0-9]*" maxlength="15" placeholder="digits" title="{{ __('Numbers only') }}">
+                                                <div class="player-inline-phone-input-wrap">
+                                                    <input type="text" class="form-control form-control-sm js-inline-field js-inline-phone js-inline-invite-gate" name="phone" value="{{ $phoneDigits }}" inputmode="numeric" pattern="[0-9]*" maxlength="15" placeholder="digits" title="{{ __('Numbers only') }}">
+                                                    <button type="button" class="btn btn-sm btn-outline-primary js-send-invitation" data-url="{{ route('admin.players.send-invitation', ['id' => $player->id], false) }}" title="{{ __('Send invitation') }}" aria-label="{{ __('Send invitation') }}">
+                                                        <i class="fas fa-paper-plane" aria-hidden="true"></i>
+                                                    </button>
+                                                </div>
                                             </div>
                                             <div class="player-inline-status js-inline-msg text-muted"></div>
-                                            <button type="button" class="btn btn-sm btn-outline-primary mt-2 js-send-invitation" data-url="{{ route('admin.players.send-invitation', ['id' => $player->id], false) }}">
-                                                {{ __('Send invitation') }}
-                                            </button>
                                         @else
                                             @if($player->country_code && $player->phone)
                                                 +{{ str_replace('+', '', $player->country_code) }}{{ $player->phone }}
@@ -257,6 +316,7 @@
                                @endforeach
                             </tbody>
                         </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -301,7 +361,7 @@
      <script>
         if ($('#dataTable').length) {
             $('#dataTable').DataTable({
-                scrollX: true,
+                scrollX: false,
                 autoWidth: false,
                 ordering: false,
                 responsive: false,
@@ -406,12 +466,29 @@
                 return fd;
             }
 
-            function saveRow($row, opts) {
+            function phoneInviteReady($row) {
+                var cc = String($row.find('[name="country_code"]').val() || '').replace(/\D/g, '');
+                var phone = String($row.find('[name="phone"]').val() || '').replace(/\D/g, '');
+                return ['60', '65', '62', '84'].indexOf(cc) !== -1 && phone.length >= 7 && phone.length <= 15;
+            }
+
+            function syncInviteButton($row) {
+                var $btn = $row.find('.js-send-invitation');
+                if (!$btn.length) {
+                    return;
+                }
+                $btn.prop('disabled', !phoneInviteReady($row));
+            }
+
+            /** Resolves when inline save succeeds; rejects after showing error (use for invite flow). */
+            function saveRowPromise($row, opts) {
                 opts = opts || {};
                 var url = fetchUrlForPage($row.attr('data-inline-url') || '');
-                if (!url) return;
+                if (!url) {
+                    return Promise.reject(new Error('No save URL'));
+                }
                 var fd = buildFormData($row, opts.file);
-                fetch(url, {
+                return fetch(url, {
                     method: 'POST',
                     headers: {
                         'X-CSRF-TOKEN': csrf,
@@ -423,13 +500,17 @@
                 }).then(parseFetchResponse).then(function (res) {
                     if (!res.ok) {
                         var hint = httpErrorHint(res.status);
+                        var msg;
                         if (res.status === 422 && res.data.errors) {
                             var first = Object.values(res.data.errors)[0];
-                            showMsg($row, Array.isArray(first) ? first[0] : String(first), false);
+                            msg = Array.isArray(first) ? first[0] : String(first);
                         } else {
-                            showMsg($row, hint || (res.data && res.data.message) || 'Save failed', false);
+                            msg = hint || (res.data && res.data.message) || 'Save failed';
                         }
-                        return;
+                        showMsg($row, msg, false);
+                        var err = new Error('inline_save_failed');
+                        err.inlineSaveFailed = true;
+                        throw err;
                     }
                     showMsg($row, (res.data && res.data.message) ? res.data.message : 'Saved', true);
                     if (res.data && res.data.avatar_url) {
@@ -439,13 +520,25 @@
                     if (opts.fileInput) {
                         opts.fileInput.value = '';
                     }
+                    syncInviteButton($row);
+                    return res;
                 }).catch(function (err) {
+                    if (err && err.inlineSaveFailed) {
+                        throw err;
+                    }
                     var msg = (err && err.message) ? String(err.message) : 'Network error';
                     if (msg === 'Failed to fetch' || msg.indexOf('NetworkError') !== -1) {
                         msg = 'Connection failed. Check your network and try again.';
                     }
                     showMsg($row, msg, false);
+                    var wrapped = new Error(msg);
+                    wrapped.saveRowErrorShown = true;
+                    throw wrapped;
                 });
+            }
+
+            function saveRow($row, opts) {
+                saveRowPromise($row, opts).catch(function () {});
             }
 
             function scheduleSave($row) {
@@ -461,10 +554,17 @@
                 if (this.value !== v) {
                     this.value = v;
                 }
+                syncInviteButton($(this).closest('.player-inline-row'));
             });
 
             $(document).on('blur change', '.player-inline-row .js-inline-field', function () {
-                scheduleSave($(this).closest('.player-inline-row'));
+                var $row = $(this).closest('.player-inline-row');
+                scheduleSave($row);
+                syncInviteButton($row);
+            });
+
+            $('.player-inline-row').each(function () {
+                syncInviteButton($(this));
             });
 
             $(document).on('change', '.js-inline-avatar-input', function () {
@@ -483,22 +583,35 @@
             $(document).on('click', '.js-send-invitation', function () {
                 var $btn = $(this);
                 var $row = $btn.closest('.player-inline-row');
-                var url = fetchUrlForPage($btn.attr('data-url') || '');
-                if (!url) return;
+                if ($btn.prop('disabled')) {
+                    return;
+                }
+                var inviteUrl = fetchUrlForPage($btn.attr('data-url') || '');
+                if (!inviteUrl) {
+                    return;
+                }
                 var countryCode = String($row.find('[name="country_code"]').val() || '').replace(/\D/g, '');
                 var phone = String($row.find('[name="phone"]').val() || '').replace(/\D/g, '');
                 $row.find('[name="phone"]').val(phone);
+                if (!phoneInviteReady($row)) {
+                    showMsg($row, 'Select a country code and enter a valid phone (7–15 digits).', false);
+                    return;
+                }
+                var playerId = $row.data('player-id');
+                clearTimeout(timers[playerId]);
                 $btn.prop('disabled', true);
-                fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': csrf,
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: JSON.stringify({ country_code: countryCode, phone: phone }),
-                    credentials: 'same-origin'
+                saveRowPromise($row).then(function () {
+                    return fetch(inviteUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': csrf,
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({ country_code: countryCode, phone: phone }),
+                        credentials: 'same-origin'
+                    });
                 }).then(parseFetchResponse).then(function (res) {
                     if (!res.ok) {
                         var hint = httpErrorHint(res.status);
@@ -512,13 +625,19 @@
                     }
                     showMsg($row, (res.data && res.data.message) ? res.data.message : 'Invitation sent.', true);
                 }).catch(function (err) {
+                    if (err && err.inlineSaveFailed) {
+                        return;
+                    }
+                    if (err && err.saveRowErrorShown) {
+                        return;
+                    }
                     var msg = (err && err.message) ? String(err.message) : 'Network error';
                     if (msg === 'Failed to fetch' || msg.indexOf('NetworkError') !== -1) {
                         msg = 'Connection failed. Check your network and try again.';
                     }
                     showMsg($row, msg, false);
                 }).finally(function () {
-                    $btn.prop('disabled', false);
+                    syncInviteButton($row);
                 });
             });
 
@@ -527,7 +646,7 @@
 
             $(document).on('click', '.js-open-mv-modal', function () {
                 $mvModalRow = $(this).closest('.player-inline-row');
-                mvModalUrl = $(this).data('update-url') || '';
+                mvModalUrl = fetchUrlForPage($(this).attr('data-update-url') || '');
                 var v = $mvModalRow.find('.js-inline-mv-value').val();
                 var n = parseInt(v, 10);
                 if (isNaN(n) || n < 40) {
