@@ -25,7 +25,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        if (env('REDIRECT_HTTPS')) {
+        // Generate https:// URLs when the app is configured for HTTPS (avoids mixed-content fetch() to http:// on an HTTPS site).
+        $appUrl = (string) config('app.url', '');
+        if (env('REDIRECT_HTTPS') || str_starts_with($appUrl, 'https://')) {
             URL::forceScheme('https');
         }
 

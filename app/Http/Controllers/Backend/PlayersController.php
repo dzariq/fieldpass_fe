@@ -92,26 +92,26 @@ class PlayersController extends Controller
     }
 
     /**
-     * Club name shown on player invitation messages (sender context).
+     * Club context for invitation messages (same scope as list edit: admin’s club if linked, else first player club).
      */
-    private function resolveClubNameForInvitation(Player $player): string
+    private function resolveClubForInvitation(Player $player): ?Club
     {
         $admin = Admin::findOrFail(auth()->user()->id);
         $playerClubs = $player->clubs->sortBy('name')->values();
 
         if ($playerClubs->isEmpty()) {
-            return 'Fieldpass';
+            return null;
         }
 
         $adminClubIds = $admin->clubs()->pluck('club.id')->map(fn ($id) => (int) $id)->all();
         if (count($adminClubIds) > 0) {
             $match = $playerClubs->first(fn ($c) => in_array((int) $c->id, $adminClubIds, true));
             if ($match) {
-                return $match->name;
+                return $match;
             }
         }
 
-        return $playerClubs->first()->name;
+        return $playerClubs->first();
     }
 
     public function index(): Renderable
@@ -1045,10 +1045,15 @@ class PlayersController extends Controller
 
         $phoneNumber = $countryCode.$phoneDigits;
 
-        $clubName = $this->resolveClubNameForInvitation($player);
+        $club = $this->resolveClubForInvitation($player);
+        $longName = $club !== null
+            ? (string) (($club->long_name ?? '') !== '' ? $club->long_name : ($club->name ?? 'Fieldpass'))
+            : 'Fieldpass';
+        $loginUrl = route('player.login', [], true);
         $message = sprintf(
-            'ask player to login to https://fieldpass.com.my/player/login to update profile - From %s',
-            $clubName
+            "Login here to update your profile:\n%s - %s",
+            $loginUrl,
+            $longName
         );
 
         $url = (string) config('services.n8n.send_message_url');

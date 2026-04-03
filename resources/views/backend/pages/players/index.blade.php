@@ -365,6 +365,24 @@
                 return '';
             }
 
+            /** If the page is HTTPS but a data-URL is still http://same-host (misconfigured APP_URL), upgrade so fetch is not mixed-content blocked. */
+            function fetchUrlForPage(url) {
+                if (!url || typeof url !== 'string') {
+                    return url;
+                }
+                if (window.location.protocol !== 'https:') {
+                    return url;
+                }
+                try {
+                    var u = new URL(url, window.location.href);
+                    if (u.protocol === 'http:' && u.host === window.location.host) {
+                        u.protocol = 'https:';
+                        return u.href;
+                    }
+                } catch (e) {}
+                return url;
+            }
+
             function buildFormData($row, file) {
                 var fd = new FormData();
                 fd.append('_token', csrf);
@@ -390,7 +408,7 @@
 
             function saveRow($row, opts) {
                 opts = opts || {};
-                var url = $row.data('inline-url');
+                var url = fetchUrlForPage($row.attr('data-inline-url') || '');
                 if (!url) return;
                 var fd = buildFormData($row, opts.file);
                 fetch(url, {
@@ -402,17 +420,14 @@
                     },
                     body: fd,
                     credentials: 'same-origin'
-                }).then(function (r) {
-                    return r.json().then(function (data) {
-                        return { ok: r.ok, status: r.status, data: data };
-                    });
-                }).then(function (res) {
+                }).then(parseFetchResponse).then(function (res) {
                     if (!res.ok) {
+                        var hint = httpErrorHint(res.status);
                         if (res.status === 422 && res.data.errors) {
                             var first = Object.values(res.data.errors)[0];
                             showMsg($row, Array.isArray(first) ? first[0] : String(first), false);
                         } else {
-                            showMsg($row, (res.data && res.data.message) ? res.data.message : 'Save failed', false);
+                            showMsg($row, hint || (res.data && res.data.message) || 'Save failed', false);
                         }
                         return;
                     }
@@ -424,8 +439,12 @@
                     if (opts.fileInput) {
                         opts.fileInput.value = '';
                     }
-                }).catch(function () {
-                    showMsg($row, 'Network error', false);
+                }).catch(function (err) {
+                    var msg = (err && err.message) ? String(err.message) : 'Network error';
+                    if (msg === 'Failed to fetch' || msg.indexOf('NetworkError') !== -1) {
+                        msg = 'Connection failed. Check your network and try again.';
+                    }
+                    showMsg($row, msg, false);
                 });
             }
 
@@ -464,7 +483,7 @@
             $(document).on('click', '.js-send-invitation', function () {
                 var $btn = $(this);
                 var $row = $btn.closest('.player-inline-row');
-                var url = $btn.data('url');
+                var url = fetchUrlForPage($btn.attr('data-url') || '');
                 if (!url) return;
                 var countryCode = String($row.find('[name="country_code"]').val() || '').replace(/\D/g, '');
                 var phone = String($row.find('[name="phone"]').val() || '').replace(/\D/g, '');
@@ -536,7 +555,7 @@
                 var fd = new FormData();
                 fd.append('_token', csrf);
                 fd.append('market_value', String(mv));
-                fetch(mvModalUrl, {
+                fetch(fetchUrlForPage(mvModalUrl), {
                     method: 'POST',
                     headers: {
                         'X-CSRF-TOKEN': csrf,
