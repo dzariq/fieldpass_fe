@@ -96,7 +96,7 @@ Player Training Management - Admin Panel
                         @if(isset($trainingAttributes) && $trainingAttributes->isEmpty())
                             <div class="alert alert-warning">
                                 <h6><i class="fas fa-exclamation-triangle"></i> No Training Attributes Found</h6>
-                                <p class="mb-0">Please <a href="{{ route('admin.training.attributes') }}">configure training attributes</a> first before managing player trainings.</p>
+                                <p class="mb-0">Please <a href="{{ route('admin.training.attributes.show') }}">configure training attributes</a> first before managing player trainings.</p>
                             </div>
                         @elseif(isset($players) && $players->isEmpty())
                             <div class="alert alert-info">

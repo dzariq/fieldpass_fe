@@ -535,8 +535,15 @@ class CompetitionController extends Controller
     {
         $this->checkAuthorization(auth()->user(), ['competition.details']);
 
+        $competition = Competition::with([
+            'association',
+            'clubs' => function ($q) {
+                $q->orderBy('name');
+            },
+        ])->findOrFail($id);
+
         return view('backend.pages.competitions.details', [
-            'competition' => Competition::find($id),
+            'competition' => $competition,
         ]);
     }
 

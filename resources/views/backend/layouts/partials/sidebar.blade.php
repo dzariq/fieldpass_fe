@@ -216,7 +216,7 @@ $usr = Auth::guard('admin')->user();
                             <i class="fas fa-dumbbell"></i>
                             <span>Training</span>
                         </a>
-                        <ul class="collapse {{ Route::is('admin.training.create') || Route::is('admin.training.index') || Route::is('admin.training.attributes.show') || Route::is('admin.training.show') ? 'in' : '' }}">
+                        <ul class="collapse {{ Route::is('admin.training.attributes.show') || Route::is('admin.training.show') ? 'in' : '' }}">
                             <li class="{{ Route::is('admin.training.attributes.show') ? 'active' : '' }}">
                                 <a href="{{ route('admin.training.attributes.show') }}">
                                     <i class="fas fa-chart-bar"></i>
