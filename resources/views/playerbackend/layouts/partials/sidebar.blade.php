@@ -16,11 +16,8 @@
             <nav>
                 <ul class="metismenu" id="menu">
 
-                    <li class="active">
-                        <a href="javascript:void(0)" aria-expanded="true"><i class="ti-dashboard"></i><span>dashboard</span></a>
-                        <ul class="collapse">
-                            <li class="{{ Route::is('player.dashboard') ? 'active' : '' }}"><a href="{{ route('player.dashboard') }}">Dashboard</a></li>
-                        </ul>
+                    <li class="{{ Route::is('player.dashboard') ? 'active' : '' }}">
+                        <a href="{{ route('player.dashboard') }}"><i class="ti-dashboard"></i><span>Dashboard</span></a>
                     </li>
 
                 </ul>

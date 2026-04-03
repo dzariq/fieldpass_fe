@@ -17,21 +17,13 @@ $usr = Auth::guard('admin')->user();
             <nav>
                 <ul class="metismenu" id="menu">
 
-                    <!-- DASHBOARD SECTION -->
+                    <!-- DASHBOARD -->
                     @if ($usr->can('dashboard.view'))
-                    <li class="active">
-                        <a href="javascript:void(0)" aria-expanded="true">
+                    <li class="{{ Route::is('admin.dashboard') ? 'active' : '' }}">
+                        <a href="{{ route('admin.dashboard') }}">
                             <i class="fas fa-tachometer-alt"></i>
                             <span>Dashboard</span>
                         </a>
-                        <ul class="collapse">
-                            <li class="{{ Route::is('admin.dashboard') ? 'active' : '' }}">
-                                <a href="{{ route('admin.dashboard') }}">
-                                    <i class="fas fa-chart-line"></i>
-                                    Dashboard
-                                </a>
-                            </li>
-                        </ul>
                     </li>
                     @endif
 

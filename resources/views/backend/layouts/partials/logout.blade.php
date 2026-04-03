@@ -29,12 +29,13 @@ $headerAvatarSrc = !empty($usr->avatar) ? asset($usr->avatar) : $defaultAvatar;
         @if ($usr->can('competition.details'))
         <div class="header-left">
             <div class="competitions-dropdown">
-                <button class="dropdown-trigger" type="button" data-toggle="dropdown" aria-expanded="false">
-                    <svg class="dropdown-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button class="dropdown-trigger competitions-dropdown-trigger" type="button" data-toggle="dropdown" aria-expanded="false" title="{{ __('Switch competition') }}" aria-label="{{ __('Open competitions menu') }}">
+                    <svg class="dropdown-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
                     </svg>
-                    <span class="dropdown-text">Competitions</span>
-                    <svg class="chevron-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <span class="dropdown-text dropdown-text--full d-none d-md-inline">{{ __('Competitions') }}</span>
+                    <span class="dropdown-text dropdown-text--short d-inline d-md-none">{{ __('Competitions') }}</span>
+                    <svg class="chevron-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                     </svg>
                 </button>
@@ -152,28 +153,46 @@ $headerAvatarSrc = !empty($usr->avatar) ? asset($usr->avatar) : $defaultAvatar;
 }
 
 .dropdown-trigger {
-    display: flex;
+    display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
-    padding: 8px 16px;
-    background: #667eea;
+    min-height: 40px;
+    padding: 10px 18px;
+    background: linear-gradient(135deg, #5b67ea 0%, #764ba2 100%);
     color: #ffffff;
-    border: none;
-    border-radius: 8px;
+    border: 2px solid rgba(255, 255, 255, 0.45);
+    border-radius: 10px;
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 700;
+    letter-spacing: 0.01em;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
     outline: none;
+    box-shadow:
+        0 4px 16px rgba(102, 126, 234, 0.45),
+        0 1px 0 rgba(255, 255, 255, 0.25) inset;
 }
 
 .dropdown-trigger:hover {
-    background: #5a67d8;
+    filter: brightness(1.06);
     transform: translateY(-1px);
+    box-shadow:
+        0 8px 22px rgba(118, 75, 162, 0.5),
+        0 1px 0 rgba(255, 255, 255, 0.3) inset;
 }
 
 .dropdown-trigger:focus {
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+    box-shadow:
+        0 0 0 3px rgba(102, 126, 234, 0.45),
+        0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.dropdown-trigger[aria-expanded="true"] {
+    filter: brightness(1.05);
+    box-shadow:
+        0 0 0 3px rgba(255, 255, 255, 0.35),
+        0 6px 18px rgba(0, 0, 0, 0.15);
 }
 
 .dropdown-icon,
@@ -394,12 +413,9 @@ $headerAvatarSrc = !empty($usr->avatar) ? asset($usr->avatar) : $defaultAvatar;
     }
     
     .dropdown-trigger {
-        padding: 6px 12px;
+        padding: 8px 12px;
+        min-height: 40px;
         font-size: 13px;
-    }
-    
-    .dropdown-text {
-        display: none;
     }
     
     .dropdown-menu {
@@ -413,7 +429,8 @@ $headerAvatarSrc = !empty($usr->avatar) ? asset($usr->avatar) : $defaultAvatar;
     }
     
     .dropdown-trigger {
-        padding: 6px 8px;
+        padding: 8px 10px;
+        gap: 6px;
     }
 }
 
