@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -53,5 +54,9 @@ class Club extends Model
      {
          return $this->belongsToMany(Admin::class, 'admin_club', 'club_id', 'admin_id');
      }
-   
+
+    public function players(): BelongsToMany
+    {
+        return $this->belongsToMany(Player::class, 'player_club', 'club_id', 'player_id');
+    }
 }

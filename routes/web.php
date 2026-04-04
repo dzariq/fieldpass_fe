@@ -142,6 +142,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.'], function () {
   Route::get('/competition/reject/{id}', [CompetitionController::class, 'reject'])->name('competition.invites.reject');
   Route::post('/competition/{id}/force-join', [CompetitionController::class, 'forceJoin'])->name('competition.forceJoin');
   Route::get('/competition/details/{id}', [CompetitionController::class, 'details'])->name('competition.details');
+  Route::get('/competition/{competition}/club/{club}/summary', [CompetitionController::class, 'clubSummaryJson'])->name('competition.club.summary');
 
   Route::get('/notification', [NotificationController::class, 'index'])->name('notifications');
   Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');

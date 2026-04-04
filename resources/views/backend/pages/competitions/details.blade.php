@@ -205,6 +205,26 @@
         color: #64748b;
         margin-bottom: 0.75rem;
     }
+    a.fp-club-summary-trigger {
+        text-decoration: none;
+        cursor: pointer;
+        line-height: 1.3;
+    }
+    a.fp-club-summary-trigger:hover {
+        text-decoration: underline;
+        color: #4338ca !important;
+    }
+    .fp-club-player-photo-col {
+        width: 52px;
+        padding-left: 0.35rem !important;
+        padding-right: 0.35rem !important;
+        vertical-align: middle;
+    }
+    .fp-club-player-thumb {
+        object-fit: cover;
+        display: block;
+        margin: 0 auto;
+    }
     .matchweek-filter {
         display: flex;
         flex-wrap: wrap;
@@ -480,7 +500,11 @@
                                             <tr>
                                                 <td class="fp-num font-weight-bold">{{ $idx + 1 }}</td>
                                                 <td class="text-left fp-standings-club">
-                                                    <div class="font-weight-bold">{{ $row['display_name'] }}</div>
+                                                    <a href="#"
+                                                       class="fp-club-summary-trigger font-weight-bold"
+                                                       role="button"
+                                                       data-url="{{ route('admin.competition.club.summary', ['competition' => $competition->id, 'club' => $row['club']->id], false) }}"
+                                                    >{{ $row['display_name'] }}</a>
                                                     @if($row['short_name'] !== $row['display_name'])
                                                         <div class="small text-muted">{{ $row['short_name'] }}</div>
                                                     @endif
@@ -634,6 +658,22 @@
             </div>
         </div>
     </div>
+
+    <div class="modal fade" id="clubSummaryModal" tabindex="-1" role="dialog" aria-labelledby="clubSummaryModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title font-weight-bold" id="clubSummaryModalLabel">{{ __('Club') }}</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="{{ __('Close') }}">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="clubSummaryModalBody" style="max-height: 70vh; overflow-y: auto;">
+                    <p class="text-muted mb-0">{{ __('Loading…') }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection
 
@@ -678,6 +718,117 @@
         @if(request()->has('matchweek'))
         $('#invites-tab').tab('show');
         @endif
+
+        function fpEsc(s) {
+            return String(s == null ? '' : s)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        function fpClubSummaryFetchUrl(url) {
+            if (!url || window.location.protocol !== 'https:') {
+                return url;
+            }
+            if (url.indexOf('http://') === 0) {
+                try {
+                    var u = new URL(url, window.location.href);
+                    if (u.protocol === 'http:' && u.host === window.location.host) {
+                        u.protocol = 'https:';
+                        return u.href;
+                    }
+                } catch (e) {}
+            }
+            return url;
+        }
+
+        $(document).on('click', '.fp-club-summary-trigger', function (e) {
+            e.preventDefault();
+            var url = fpClubSummaryFetchUrl($(this).attr('data-url') || '');
+            if (!url) {
+                return;
+            }
+            var $modal = $('#clubSummaryModal');
+            var $body = $('#clubSummaryModalBody');
+            var $title = $('#clubSummaryModalLabel');
+            $title.text('{{ __('Club') }}');
+            $body.html('<p class="text-muted mb-0">{{ __('Loading…') }}</p>');
+            $modal.modal('show');
+
+            fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
+            }).then(function (r) {
+                return r.text().then(function (text) {
+                    var data = {};
+                    try {
+                        data = text ? JSON.parse(text) : {};
+                    } catch (err) {
+                        data = { message: text ? text.replace(/<[^>]+>/g, ' ').trim().slice(0, 200) : 'Invalid response' };
+                    }
+                    return { ok: r.ok, status: r.status, data: data };
+                });
+            }).then(function (res) {
+                if (!res.ok) {
+                    $body.html('<p class="text-danger mb-0">' + fpEsc(res.data.message || '{{ __('Could not load club.') }}') + '</p>');
+                    return;
+                }
+                var c = res.data.club || {};
+                var players = res.data.players || [];
+                $title.text(fpEsc(c.display_name || c.name || '{{ __('Club') }}'));
+
+                var html = '';
+                html += '<div class="row mb-3">';
+                html += '<div class="col-sm-4 text-center mb-3 mb-sm-0">';
+                html += '<img src="' + fpEsc(c.avatar_url) + '" alt="" class="rounded border" style="max-width:140px;max-height:140px;object-fit:cover;">';
+                html += '</div>';
+                html += '<div class="col-sm-8">';
+                html += '<dl class="row mb-0 small">';
+                if (c.name && c.name !== c.display_name) {
+                    html += '<dt class="col-sm-4 text-muted">{{ __('Code') }}</dt><dd class="col-sm-8 font-weight-bold">' + fpEsc(c.name) + '</dd>';
+                }
+                if (c.long_name) {
+                    html += '<dt class="col-sm-4 text-muted">{{ __('Long name') }}</dt><dd class="col-sm-8">' + fpEsc(c.long_name) + '</dd>';
+                }
+                if (c.association) {
+                    html += '<dt class="col-sm-4 text-muted">{{ __('Association') }}</dt><dd class="col-sm-8">' + fpEsc(c.association) + '</dd>';
+                }
+                html += '<dt class="col-sm-4 text-muted">{{ __('Status') }}</dt><dd class="col-sm-8"><span class="badge badge-secondary">' + fpEsc(c.status || '—') + '</span></dd>';
+                html += '</dl>';
+                html += '</div></div>';
+
+                html += '<h6 class="font-weight-bold border-bottom pb-2 mb-2">{{ __('Players') }} <span class="badge badge-light text-dark border">' + players.length + '</span></h6>';
+                if (players.length === 0) {
+                    html += '<p class="text-muted small mb-0">{{ __('No players linked to this club yet.') }}</p>';
+                } else {
+                    html += '<div class="table-responsive"><table class="table table-sm table-striped mb-0 fp-club-players-table"><thead class="thead-light"><tr>';
+                    html += '<th class="fp-club-player-photo-col" aria-label="{{ __('Photo') }}"></th><th class="text-left">{{ __('Name') }}</th><th>{{ __('Pos') }}</th><th>{{ __('#') }}</th><th>{{ __('Status') }}</th>';
+                    html += '</tr></thead><tbody>';
+                    for (var i = 0; i < players.length; i++) {
+                        var p = players[i];
+                        var av = p.avatar_url || '';
+                        html += '<tr>';
+                        html += '<td class="align-middle text-center fp-club-player-photo-col">';
+                        html += '<img src="' + fpEsc(av) + '" alt="" class="rounded-circle border fp-club-player-thumb" width="40" height="40">';
+                        html += '</td>';
+                        html += '<td class="text-left font-weight-bold align-middle">' + fpEsc(p.name) + '</td>';
+                        html += '<td class="align-middle">' + fpEsc(p.position || '—') + '</td>';
+                        html += '<td class="align-middle">' + fpEsc(p.jersey != null && p.jersey !== '' ? p.jersey : '—') + '</td>';
+                        html += '<td class="align-middle"><span class="badge badge-info">' + fpEsc(p.status || '—') + '</span></td>';
+                        html += '</tr>';
+                    }
+                    html += '</tbody></table></div>';
+                }
+                $body.html(html);
+            }).catch(function () {
+                $body.html('<p class="text-danger mb-0">{{ __('Connection failed.') }}</p>');
+            });
+        });
     });
 </script>
 @endsection

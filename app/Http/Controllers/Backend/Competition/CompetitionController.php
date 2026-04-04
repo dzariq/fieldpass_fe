@@ -14,6 +14,7 @@ use App\Models\Competition;
 use App\Models\Admin;
 use App\Models\Matches;
 use Illuminate\Contracts\Support\Renderable;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -546,6 +547,57 @@ class CompetitionController extends Controller
         return view('backend.pages.competitions.details', [
             'competition' => $competition,
             'clubStandings' => $this->buildClubStandingsForCompetition($competition),
+        ]);
+    }
+
+    /**
+     * JSON for competition details modal (read-only): club logo, association, roster (player_club).
+     */
+    public function clubSummaryJson(int $competition, int $club): JsonResponse
+    {
+        $this->checkAuthorization(auth()->user(), ['competition.details']);
+
+        $competitionModel = Competition::with('clubs')->findOrFail($competition);
+        $allowedIds = $competitionModel->clubs->pluck('id')->map(fn ($x) => (int) $x)->all();
+        if (! in_array($club, $allowedIds, true)) {
+            return response()->json(['message' => __('Club is not linked to this competition.')], 404);
+        }
+
+        $clubModel = Club::with([
+            'association',
+            'players' => function ($q) {
+                $q->orderBy('name')->limit(250);
+            },
+        ])->findOrFail($club);
+
+        $long = trim((string) ($clubModel->long_name ?? ''));
+        $defaultPlayerAvatar = asset('backend/assets/images/default-avatar.png');
+        $players = $clubModel->players->map(static function ($p) use ($defaultPlayerAvatar) {
+            return [
+                'id' => $p->id,
+                'name' => $p->name,
+                'position' => $p->position,
+                'jersey' => $p->jersey_number,
+                'status' => $p->status,
+                'avatar_url' => $p->avatar
+                    ? asset($p->avatar)
+                    : $defaultPlayerAvatar,
+            ];
+        })->values()->all();
+
+        return response()->json([
+            'club' => [
+                'id' => $clubModel->id,
+                'name' => $clubModel->name,
+                'long_name' => $clubModel->long_name,
+                'display_name' => $long !== '' ? $long : $clubModel->name,
+                'status' => $clubModel->status,
+                'avatar_url' => $clubModel->avatar
+                    ? asset($clubModel->avatar)
+                    : asset('backend/assets/images/default-avatar.png'),
+                'association' => $clubModel->association?->name,
+            ],
+            'players' => $players,
         ]);
     }
 
