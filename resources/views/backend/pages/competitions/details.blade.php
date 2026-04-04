@@ -450,16 +450,6 @@
                         </div>
                     </div>
                 </div>
-                @if($competition->pitch_image)
-                    <div class="card fp-overview-card mt-3">
-                        <div class="card-header py-3">
-                            <i class="fas fa-map-marked-alt mr-2 text-primary"></i>{{ __('Pitch') }}
-                        </div>
-                        <div class="card-body p-0">
-                            <img src="{{ asset($competition->pitch_image) }}" alt="" class="w-100" style="max-height: 220px; object-fit: cover;">
-                        </div>
-                    </div>
-                @endif
             </div>
 
             <div class="tab-pane fade" id="clubs" role="tabpanel" aria-labelledby="clubs-tab">

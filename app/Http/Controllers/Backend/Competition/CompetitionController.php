@@ -311,17 +311,6 @@ class CompetitionController extends Controller
             $competition->banner = 'avatars/' . $filename;
         }
 
-        // Handle pitch image (new upload takes precedence over "clear")
-        if ($redirect = $this->handleCompetitionPublicImageUpload($competition, $request, 'pitch_image', 'pitch_image', 'comp_pitch')) {
-            return $redirect;
-        }
-        if (! $request->hasFile('pitch_image') && $request->boolean('clear_pitch_image')) {
-            if ($competition->pitch_image && file_exists(public_path($competition->pitch_image))) {
-                @unlink(public_path($competition->pitch_image));
-            }
-            $competition->pitch_image = null;
-        }
-
         if ($redirect = $this->handleCompetitionPublicImageUpload($competition, $request, 'pitch_board_1', 'pitch_board_1', 'comp_pboard1')) {
             return $redirect;
         }

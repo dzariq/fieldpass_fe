@@ -104,23 +104,6 @@ $invitedClubs = $competition->clubs->filter(function($club) {
                                     Recommended size: 1200 × 300 px. Upload JPG or PNG file. Max size: 2MB
                                 </small>
                             </div>
-
-                            <div class="form-group col-md-6 col-sm-12">
-                                <label for="pitch_image">Pitch Image</label>
-                                <input type="hidden" name="clear_pitch_image" id="clear_pitch_image_flag" value="0">
-                                <div id="pitch-image-preview-wrap">
-                                    @if($competition->pitch_image)
-                                        <img src="{{ asset($competition->pitch_image) }}" alt="Current Pitch" class="image-preview">
-                                    @endif
-                                </div>
-                                <input type="file" class="form-control-file mt-2" name="pitch_image" id="pitch_image" accept="image/jpeg,image/png,image/jpg,image/gif,image/webp">
-                                @if($competition->pitch_image)
-                                    <button type="button" class="btn btn-sm btn-outline-secondary mt-2 d-block" id="btn-clear-pitch-image">
-                                        Remove current image
-                                    </button>
-                                @endif
-                                <small class="form-text text-muted">Upload JPG or PNG file. Max size: 2MB</small>
-                            </div>
                         </div>
 
                         <div class="form-row">
@@ -315,12 +298,6 @@ $invitedClubs = $competition->clubs->filter(function($club) {
 <script>
     $(document).ready(function() {
         $('.select2').select2();
-
-        $('#btn-clear-pitch-image').on('click', function() {
-            $('#clear_pitch_image_flag').val('1');
-            $('#pitch-image-preview-wrap').hide();
-            $('#pitch_image').val('');
-        });
     });
 </script>
 @endsection
