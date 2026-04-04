@@ -12,6 +12,7 @@ use App\Models\Association;
 use App\Models\Club;
 use App\Models\Competition;
 use App\Models\Admin;
+use App\Models\Matches;
 use Illuminate\Contracts\Support\Renderable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -544,7 +545,114 @@ class CompetitionController extends Controller
 
         return view('backend.pages.competitions.details', [
             'competition' => $competition,
+            'clubStandings' => $this->buildClubStandingsForCompetition($competition),
         ]);
+    }
+
+    /**
+     * Active clubs in the competition with a mini league table from finished matches (3 pts win, 1 draw).
+     *
+     * @return list<array{display_name: string, short_name: string, played: int, won: int, drawn: int, lost: int, gf: int, ga: int, gd: int, points: int, pivot_status: string, club: Club}>
+     */
+    private function buildClubStandingsForCompetition(Competition $competition): array
+    {
+        $activeClubs = $competition->clubs->filter(fn ($c) => ($c->pivot->status ?? '') === 'ACTIVE');
+        $activeClubIds = $activeClubs->pluck('id')->map(fn ($id) => (int) $id)->all();
+
+        if ($activeClubIds === []) {
+            return [];
+        }
+
+        $stats = [];
+        foreach ($activeClubIds as $cid) {
+            $stats[$cid] = [
+                'played' => 0,
+                'won' => 0,
+                'drawn' => 0,
+                'lost' => 0,
+                'gf' => 0,
+                'ga' => 0,
+            ];
+        }
+
+        // Filter finished matches in PHP so invalid enum values in SQL (e.g. COMPLETED vs schema END only) never trigger DB errors.
+        $finishedStatuses = ['END', 'COMPLETED'];
+
+        $matches = Matches::query()
+            ->where('competition_id', $competition->id)
+            ->whereIn('home_club_id', $activeClubIds)
+            ->whereIn('away_club_id', $activeClubIds)
+            ->get(['home_club_id', 'away_club_id', 'home_score', 'away_score', 'status'])
+            ->filter(fn (Matches $m) => in_array((string) $m->status, $finishedStatuses, true));
+
+        foreach ($matches as $match) {
+            $homeId = (int) $match->home_club_id;
+            $awayId = (int) $match->away_club_id;
+            if (! isset($stats[$homeId], $stats[$awayId])) {
+                continue;
+            }
+
+            $hs = (int) $match->home_score;
+            $as = (int) $match->away_score;
+
+            $stats[$homeId]['played']++;
+            $stats[$awayId]['played']++;
+            $stats[$homeId]['gf'] += $hs;
+            $stats[$homeId]['ga'] += $as;
+            $stats[$awayId]['gf'] += $as;
+            $stats[$awayId]['ga'] += $hs;
+
+            if ($hs > $as) {
+                $stats[$homeId]['won']++;
+                $stats[$awayId]['lost']++;
+            } elseif ($hs < $as) {
+                $stats[$homeId]['lost']++;
+                $stats[$awayId]['won']++;
+            } else {
+                $stats[$homeId]['drawn']++;
+                $stats[$awayId]['drawn']++;
+            }
+        }
+
+        $rows = [];
+        foreach ($activeClubs as $club) {
+            $cid = (int) $club->id;
+            $s = $stats[$cid] ?? ['played' => 0, 'won' => 0, 'drawn' => 0, 'lost' => 0, 'gf' => 0, 'ga' => 0];
+            $gd = $s['gf'] - $s['ga'];
+            $pts = $s['won'] * 3 + $s['drawn'];
+            $long = trim((string) ($club->long_name ?? ''));
+            $short = (string) $club->name;
+            $rows[] = [
+                'club' => $club,
+                'display_name' => $long !== '' ? $long : $short,
+                'short_name' => $short,
+                'pivot_status' => (string) ($club->pivot->status ?? ''),
+                'played' => $s['played'],
+                'won' => $s['won'],
+                'drawn' => $s['drawn'],
+                'lost' => $s['lost'],
+                'gf' => $s['gf'],
+                'ga' => $s['ga'],
+                'gd' => $gd,
+                'points' => $pts,
+            ];
+        }
+
+        usort($rows, function (array $a, array $b): int {
+            if ($a['points'] !== $b['points']) {
+                return $b['points'] <=> $a['points'];
+            }
+            if ($a['gd'] !== $b['gd']) {
+                return $b['gd'] <=> $a['gd'];
+            }
+            if ($a['gf'] !== $b['gf']) {
+                return $b['gf'] <=> $a['gf'];
+            }
+
+            return strcasecmp($a['display_name'], $b['display_name']);
+        });
+
+        return $rows;
     }
 
     function sendWAInvitation($data)

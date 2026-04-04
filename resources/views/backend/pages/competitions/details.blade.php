@@ -182,6 +182,29 @@
         letter-spacing: 0.04em;
         color: #64748b;
     }
+    .fp-standings-wrap {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .fp-standings-table th,
+    .fp-standings-table td {
+        vertical-align: middle;
+    }
+    .fp-standings-table th.fp-num,
+    .fp-standings-table td.fp-num {
+        white-space: nowrap;
+    }
+    .fp-standings-table .fp-standings-club {
+        white-space: normal;
+        min-width: 10rem;
+        max-width: 20rem;
+    }
+    .fp-standings-hint {
+        font-size: 0.8rem;
+        color: #64748b;
+        margin-bottom: 0.75rem;
+    }
     .matchweek-filter {
         display: flex;
         flex-wrap: wrap;
@@ -238,6 +261,7 @@
 
 @section('admin-content')
 @php
+    $clubStandings = $clubStandings ?? [];
     $usr = Auth::guard('admin')->user();
     $matchweeks = $competition->matches()->select('matchweek')->distinct()->orderBy('matchweek', 'asc')->pluck('matchweek');
     $currentMatchweek = request()->get('matchweek', $matchweeks->first());
@@ -354,7 +378,7 @@
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" id="clubs-tab" data-toggle="tab" href="#clubs" role="tab" aria-controls="clubs" aria-selected="false">
-                        <i class="fas fa-shield-alt"></i><span>{{ __('Clubs') }}</span>
+                        <i class="fas fa-table"></i><span>{{ __('Table') }}</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -422,34 +446,55 @@
                 <div class="card fp-clubs-card fp-overview-card">
                     <div class="card-header py-3 d-flex align-items-center justify-content-between flex-wrap">
                         <span>
-                            <i class="fas fa-users mr-2 text-primary"></i>{{ __('Participating clubs') }}
+                            <i class="fas fa-table mr-2 text-primary"></i>{{ __('League table') }}
                         </span>
                         <span class="badge badge-primary badge-pill">{{ $activeClubsCount }} {{ __('active') }}</span>
                     </div>
                     <div class="card-body">
                         @include('backend.layouts.partials.messages')
-                        @php
-                            $clubRows = $competition->clubs->filter(fn ($c) => ($c->pivot->status ?? '') === 'ACTIVE');
-                        @endphp
-                        @if($clubRows->isEmpty())
+                        @if(empty($clubStandings))
                             <div class="fp-empty-hint">{{ __('No active clubs in this competition yet.') }}</div>
                         @else
-                            <div class="data-tables">
-                                <table id="dataTable" style="width:100%" class="text-center table table-hover mb-0">
+                            <p class="fp-standings-hint mb-2">
+                                {{ __('Standings from finished matches in this competition (status END or COMPLETED). 3 points for a win, 1 for a draw. Club column uses long name, with short code underneath when different.') }}
+                            </p>
+                            <div class="data-tables fp-standings-wrap">
+                                <table id="dataTable" style="width:100%; min-width: 720px" class="text-center table table-sm table-hover mb-0 fp-standings-table">
                                     <thead class="bg-light text-capitalize">
                                         <tr>
-                                            <th width="8%">{{ __('#') }}</th>
-                                            <th>{{ __('Club') }}</th>
-                                            <th width="20%">{{ __('Status') }}</th>
+                                            <th class="fp-num" width="4%">{{ __('#') }}</th>
+                                            <th class="text-left">{{ __('Club') }}</th>
+                                            <th class="fp-num" title="{{ __('Played') }}">P</th>
+                                            <th class="fp-num" title="{{ __('Won') }}">W</th>
+                                            <th class="fp-num" title="{{ __('Drawn') }}">D</th>
+                                            <th class="fp-num" title="{{ __('Lost') }}">L</th>
+                                            <th class="fp-num" title="{{ __('Goals for') }}">GF</th>
+                                            <th class="fp-num" title="{{ __('Goals against') }}">GA</th>
+                                            <th class="fp-num" title="{{ __('Goal difference') }}">GD</th>
+                                            <th class="fp-num" title="{{ __('Points') }}">{{ __('Pts') }}</th>
+                                            <th width="12%">{{ __('Entry') }}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach ($clubRows as $club)
+                                        @foreach ($clubStandings as $idx => $row)
                                             <tr>
-                                                <td>{{ $loop->iteration }}</td>
-                                                <td class="text-left font-weight-bold">{{ $club->name }}</td>
+                                                <td class="fp-num font-weight-bold">{{ $idx + 1 }}</td>
+                                                <td class="text-left fp-standings-club">
+                                                    <div class="font-weight-bold">{{ $row['display_name'] }}</div>
+                                                    @if($row['short_name'] !== $row['display_name'])
+                                                        <div class="small text-muted">{{ $row['short_name'] }}</div>
+                                                    @endif
+                                                </td>
+                                                <td class="fp-num">{{ $row['played'] }}</td>
+                                                <td class="fp-num">{{ $row['won'] }}</td>
+                                                <td class="fp-num">{{ $row['drawn'] }}</td>
+                                                <td class="fp-num">{{ $row['lost'] }}</td>
+                                                <td class="fp-num">{{ $row['gf'] }}</td>
+                                                <td class="fp-num">{{ $row['ga'] }}</td>
+                                                <td class="fp-num">@if($row['gd'] > 0)+@endif{{ $row['gd'] }}</td>
+                                                <td class="fp-num font-weight-bold">{{ $row['points'] }}</td>
                                                 <td>
-                                                    <span class="badge badge-success">{{ $club->pivot->status }}</span>
+                                                    <span class="badge badge-success">{{ $row['pivot_status'] }}</span>
                                                 </td>
                                             </tr>
                                         @endforeach
@@ -606,8 +651,7 @@
                 paging: false,
                 info: false,
                 searching: false,
-                ordering: true,
-                order: [[1, 'asc']]
+                ordering: false
             });
         }
 
