@@ -29,6 +29,7 @@ class Player extends Authenticatable implements Auditable
     protected $fillable = [
         'name',
         'identity_number',
+        'position',
         'phone',
         'status',
         'email',

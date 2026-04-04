@@ -106,6 +106,14 @@
             padding: 0.1rem 0.35rem;
             line-height: 1.2;
         }
+        .player-inline-identity-input {
+            min-width: 6.5rem;
+            max-width: 10rem;
+        }
+        .player-inline-position-select {
+            min-width: 5.5rem;
+            max-width: 7.5rem;
+        }
         /* Wide grid: scroll horizontally instead of squashing columns on narrow screens */
         .players-table-outer {
             width: 100%;
@@ -116,7 +124,7 @@
             margin-bottom: 0.5rem;
         }
         .players-table-outer #dataTable.table-players-compact {
-            min-width: 1120px;
+            min-width: 1180px;
             margin-bottom: 0;
         }
         .players-table-outer .dataTables_wrapper {
@@ -222,7 +230,13 @@
                                             <a href="{{ route('player.details', ['id' => $player->id]) }}">{{ $player->name }}</a>
                                         @endif
                                     </td>
-                                    <td class="text-left small">{{ $player->identity_number }}</td>
+                                    <td class="text-left small">
+                                        @if (auth()->user()->can('players.edit'))
+                                            <input type="text" class="form-control form-control-sm js-inline-field text-left player-inline-identity-input" name="identity_number" value="{{ $player->identity_number }}" maxlength="50" autocomplete="off" title="{{ __('IC / ID number') }}">
+                                        @else
+                                            {{ $player->identity_number }}
+                                        @endif
+                                    </td>
                                     <td>
                                         @if (auth()->user()->can('players.edit'))
                                             <input type="number" class="form-control form-control-sm js-inline-field" name="jersey_number" value="{{ $player->jersey_number }}" min="1" max="99999" placeholder="—">
@@ -272,7 +286,15 @@
                                         @endif
                                     </td>
                                     <td>
-                                        @if($player->position)
+                                        @if (auth()->user()->can('players.edit'))
+                                            <select class="form-control form-control-sm js-inline-field player-inline-position-select" name="position" title="{{ __('Position') }}">
+                                                <option value="">—</option>
+                                                <option value="Goalkeeper" {{ $player->position === 'Goalkeeper' ? 'selected' : '' }}>Goalkeeper</option>
+                                                <option value="Defender" {{ $player->position === 'Defender' ? 'selected' : '' }}>Defender</option>
+                                                <option value="Midfielder" {{ $player->position === 'Midfielder' ? 'selected' : '' }}>Midfielder</option>
+                                                <option value="Forward" {{ $player->position === 'Forward' ? 'selected' : '' }}>Forward</option>
+                                            </select>
+                                        @elseif($player->position)
                                             @php
                                                 $positionClass = 'position-' . strtolower($player->position);
                                             @endphp
@@ -447,6 +469,14 @@
                 var fd = new FormData();
                 fd.append('_token', csrf);
                 fd.append('name', $row.find('[name="name"]').val() || '');
+                var $idn = $row.find('[name="identity_number"]');
+                if ($idn.length) {
+                    fd.append('identity_number', String($idn.val() || '').trim());
+                }
+                var $pos = $row.find('[name="position"]');
+                if ($pos.length) {
+                    fd.append('position', String($pos.val() || ''));
+                }
                 var jn = $row.find('[name="jersey_number"]').val();
                 if (jn !== '' && jn != null) {
                     fd.append('jersey_number', jn);

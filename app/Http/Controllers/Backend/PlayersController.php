@@ -951,7 +951,7 @@ class PlayersController extends Controller
     }
 
     /**
-     * Inline update from players list (name, jersey, country code, phone, avatar, market_value).
+     * Inline update from players list (name, identity_number, position, jersey, country code, phone, avatar, market_value).
      */
     public function updateInline(Request $request, int $id): JsonResponse
     {
@@ -971,8 +971,20 @@ class PlayersController extends Controller
             $request->merge(['jersey_number' => null]);
         }
 
+        $positionRaw = $request->input('position');
+        $request->merge(['position' => ($positionRaw === '' || $positionRaw === null) ? null : $positionRaw]);
+
+        $request->merge(['identity_number' => trim((string) $request->input('identity_number', ''))]);
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'identity_number' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('players', 'identity_number')->ignore($id),
+            ],
+            'position' => ['nullable', 'string', Rule::in(['Goalkeeper', 'Defender', 'Midfielder', 'Forward'])],
             'jersey_number' => 'nullable|integer|min:1|max:99999',
             'country_code' => ['nullable', 'string', 'in:60,65,62,84'],
             'phone' => [
@@ -985,6 +997,7 @@ class PlayersController extends Controller
             'market_value' => 'required|integer|min:40|max:150',
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:1024',
         ], [
+            'identity_number.unique' => 'This identity number is already registered to another player.',
             'phone.unique' => 'This phone number is already registered to another player.',
             'phone.regex' => 'Enter 7–15 digits only (no spaces), or leave empty.',
             'market_value.min' => 'Market value must be at least 40.',
@@ -992,6 +1005,8 @@ class PlayersController extends Controller
         ]);
 
         $player->name = $validated['name'];
+        $player->identity_number = $validated['identity_number'];
+        $player->position = $validated['position'] ?? null;
         $player->jersey_number = $validated['jersey_number'] ?? null;
         $player->country_code = $validated['country_code'] ?? null;
         $player->phone = $validated['phone'] ?? null;
