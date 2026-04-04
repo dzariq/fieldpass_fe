@@ -27,10 +27,25 @@ use Illuminate\Support\Facades\DB;
 
 class TrainingController extends Controller
 {
+    private function currentAdminClubId(): ?int
+    {
+        $admin = Admin::find(Auth::id());
+
+        return $admin?->primaryClubId();
+    }
 
     public function index(): Renderable
     {
-        $clubId = Auth::user()->club_id ?? 1;
+        $clubId = $this->currentAdminClubId();
+        if ($clubId === null) {
+            return view('backend.training.training', [
+                'players' => collect(),
+                'trainingAttributes' => collect(),
+                'currentTrainings' => collect(),
+                'overdueTrainings' => collect(),
+                'trainingClubMissing' => true,
+            ]);
+        }
 
         // Get all players for this club
         $players = Player::whereHas('clubs', function ($query) use ($clubId) {
@@ -68,19 +83,23 @@ class TrainingController extends Controller
     }
     public function attributes(): Renderable
     {
-        $clubId = Auth::user()->club_id ?? 1; // Adjust based on your auth structure
+        $clubId = $this->currentAdminClubId();
+        $attributes = $clubId === null
+            ? collect()
+            : TrainingAttribute::where('club_id', $clubId)
+                ->orderBy('id')
+                ->get();
 
-        $attributes = TrainingAttribute::where('club_id', $clubId)
-            ->orderBy('id')
-            ->get();
-
-        return view('backend.training.attributes', compact('attributes'));
+        return view('backend.training.attributes', compact('attributes', 'clubId'));
     }
 
     public function submit(PlayerTrainingRequest $request): RedirectResponse
     {
         try {
-            $clubId = Auth::user()->club_id ?? 1;
+            $clubId = $this->currentAdminClubId();
+            if ($clubId === null) {
+                return redirect()->back()->with('error', __('No club is assigned to your account. Training cannot be saved.'));
+            }
 
             DB::transaction(function () use ($request, $clubId) {
                 foreach ($request->input('player_trainings') as $trainingData) {
@@ -113,8 +132,7 @@ class TrainingController extends Controller
 
             return redirect()->back()->with('success', 'Player trainings updated successfully!');
         } catch (\Exception $e) {
-            echo $e->getMessage();die;
-            Log::error('Error updating player trainings: ' . $e->getMessage());
+            Log::error('Error updating player trainings: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
             return redirect()->back()->with('error', 'An error occurred while updating player trainings.');
         }
     }
@@ -122,7 +140,14 @@ class TrainingController extends Controller
     public function attributes_submit(TrainingAttributesRequest $request): RedirectResponse
     {
         try {
-            $clubId = Auth::user()->club_id ?? 1; // Adjust based on your auth structure
+            $clubId = $this->currentAdminClubId();
+            if ($clubId === null) {
+                return redirect()->back()->with('error', __('No valid club is linked to your account. Ask an administrator to assign you to a club in admin_club, or fix a broken link if the club was deleted.'));
+            }
+
+            if (! Club::query()->whereKey($clubId)->exists()) {
+                return redirect()->back()->with('error', __('The club linked to your account was not found. Ask an administrator to update your club assignment.'));
+            }
 
             DB::transaction(function () use ($request, $clubId) {
                 // Check if this is first time (no existing attributes)
@@ -176,8 +201,12 @@ class TrainingController extends Controller
 
             return redirect()->back()->with('success', 'Training attributes updated successfully!');
         } catch (\Exception $e) {
-            Log::error('Error updating training attributes: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'An error occurred while updating training attributes.');
+            Log::error('Error updating training attributes: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            $msg = config('app.debug')
+                ? $e->getMessage()
+                : __('An error occurred while updating training attributes.');
+
+            return redirect()->back()->with('error', $msg);
         }
     }
 }

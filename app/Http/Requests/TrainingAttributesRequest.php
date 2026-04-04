@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Admin;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class TrainingAttributesRequest extends FormRequest
 {
@@ -19,9 +21,16 @@ class TrainingAttributesRequest extends FormRequest
      */
     public function rules(): array
     {
+        $clubId = Admin::find(auth()->id())?->primaryClubId();
+
+        $idRules = ['nullable'];
+        if ($clubId !== null) {
+            $idRules[] = Rule::exists('training_attributes', 'id')->where('club_id', $clubId);
+        }
+
         return [
             'attributes' => 'required|array|max:10',
-            'attributes.*.id' => 'nullable|exists:training_attributes,id',
+            'attributes.*.id' => $idRules,
             'attributes.*.name' => 'required|string|max:255',
             'attributes.*.status' => 'required|in:active,inactive',
         ];

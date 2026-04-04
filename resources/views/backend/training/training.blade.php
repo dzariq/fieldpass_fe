@@ -93,7 +93,12 @@ Player Training Management - Admin Panel
                             </div>
                         @endif
 
-                        @if(isset($trainingAttributes) && $trainingAttributes->isEmpty())
+                        @if(!empty($trainingClubMissing))
+                            <div class="alert alert-warning">
+                                <h6><i class="fas fa-exclamation-triangle"></i> {{ __('No club linked') }}</h6>
+                                <p class="mb-0">{{ __('Your admin account must be linked to a club before you can manage player training.') }}</p>
+                            </div>
+                        @elseif(isset($trainingAttributes) && $trainingAttributes->isEmpty())
                             <div class="alert alert-warning">
                                 <h6><i class="fas fa-exclamation-triangle"></i> No Training Attributes Found</h6>
                                 <p class="mb-0">Please <a href="{{ route('admin.training.attributes.show') }}">configure training attributes</a> first before managing player trainings.</p>

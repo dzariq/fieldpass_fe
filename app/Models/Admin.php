@@ -61,6 +61,20 @@ class Admin extends Authenticatable implements Auditable
         return $this->belongsToMany(Club::class, 'admin_club', 'admin_id', 'club_id');
     }
 
+    /**
+     * First linked club (admins use admin_club; there is no club_id column on admins).
+     */
+    public function primaryClubId(): ?int
+    {
+        foreach ($this->clubs()->orderBy('name')->get() as $club) {
+            if (Club::query()->whereKey($club->id)->exists()) {
+                return (int) $club->id;
+            }
+        }
+
+        return null;
+    }
+
     public static function getpermissionGroups()
     {
         $permission_groups = DB::table('permissions')

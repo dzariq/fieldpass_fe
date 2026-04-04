@@ -25,6 +25,13 @@ Training Attributes - Admin Panel
                 <form id="attributesForm" action="{{ route('admin.training.attributes.submit') }}" method="POST">
                     @csrf
                     <div class="card-body">
+                        @if(($clubId ?? null) === null)
+                            <div class="alert alert-warning">
+                                <strong>{{ __('No club linked') }}</strong>
+                                <p class="mb-0">{{ __('Your admin account is not linked to any club in admin_club. Ask a super admin to assign you to a club before saving training attributes.') }}</p>
+                            </div>
+                        @endif
+
                         @if(session('success'))
                             <div class="alert alert-success alert-dismissible">
                                 <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
@@ -41,7 +48,7 @@ Training Attributes - Admin Panel
 
                         <div class="row mb-3">
                             <div class="col-12">
-                                <button type="button" id="addAttribute" class="btn btn-success">
+                                <button type="button" id="addAttribute" class="btn btn-success" @if(($clubId ?? null) === null) disabled @endif>
                                     <i class="fas fa-plus"></i> Add New Attribute
                                 </button>
                                 <small class="text-muted ml-2">Maximum 10 attributes allowed</small>
@@ -145,7 +152,7 @@ Training Attributes - Admin Panel
                     </div>
                     
                     <div class="card-footer">
-                        <button type="submit" class="btn btn-primary">
+                        <button type="submit" class="btn btn-primary" @if(($clubId ?? null) === null) disabled @endif>
                             <i class="fas fa-save"></i> Save All Attributes
                         </button>
                         <a href="{{ route('admin.dashboard') }}" class="btn btn-secondary ml-2">
