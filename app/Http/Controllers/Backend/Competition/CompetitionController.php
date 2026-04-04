@@ -311,33 +311,22 @@ class CompetitionController extends Controller
             $competition->banner = 'avatars/' . $filename;
         }
 
-        // Handle Pitch Image Upload
-        if ($request->hasFile('pitch_image')) {
-            $request->validate([
-                'pitch_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048'
-            ]);
-
-            $file = $request->file('pitch_image');
-            if ($file && !$file->isValid()) {
-                return back()->withErrors([
-                    'pitch_image' => 'Pitch image upload failed. Please try again with a smaller image.'
-                ])->withInput();
-            }
-            $ext = strtolower($file->getClientOriginalExtension() ?: 'jpg');
-            $filename = 'comp_pitch_' . time() . '_' . Str::lower(Str::random(16)) . '.' . $ext;
-            $destination = public_path('avatars');
-
-            if (!file_exists($destination)) {
-                mkdir($destination, 0755, true);
-            }
-
-            // Delete old pitch image if exists
+        // Handle pitch image (new upload takes precedence over "clear")
+        if ($redirect = $this->handleCompetitionPublicImageUpload($competition, $request, 'pitch_image', 'pitch_image', 'comp_pitch')) {
+            return $redirect;
+        }
+        if (! $request->hasFile('pitch_image') && $request->boolean('clear_pitch_image')) {
             if ($competition->pitch_image && file_exists(public_path($competition->pitch_image))) {
-                unlink(public_path($competition->pitch_image));
+                @unlink(public_path($competition->pitch_image));
             }
+            $competition->pitch_image = null;
+        }
 
-            $file->move($destination, $filename);
-            $competition->pitch_image = 'avatars/' . $filename;
+        if ($redirect = $this->handleCompetitionPublicImageUpload($competition, $request, 'pitch_board_1', 'pitch_board_1', 'comp_pboard1')) {
+            return $redirect;
+        }
+        if ($redirect = $this->handleCompetitionPublicImageUpload($competition, $request, 'pitch_board_2', 'pitch_board_2', 'comp_pboard2')) {
+            return $redirect;
         }
 
         // Handle Avatar Upload
@@ -705,6 +694,45 @@ class CompetitionController extends Controller
         });
 
         return $rows;
+    }
+
+    /**
+     * Store uploaded image under public/avatars and set model path; removes previous file if any.
+     */
+    private function handleCompetitionPublicImageUpload(Competition $competition, Request $request, string $inputName, string $modelAttribute, string $filenamePrefix): ?RedirectResponse
+    {
+        if (! $request->hasFile($inputName)) {
+            return null;
+        }
+
+        $request->validate([
+            $inputName => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+        ]);
+
+        $file = $request->file($inputName);
+        if ($file && ! $file->isValid()) {
+            return back()->withErrors([
+                $inputName => __('Image upload failed. Please try again with a smaller file.'),
+            ])->withInput();
+        }
+
+        $ext = strtolower($file->getClientOriginalExtension() ?: 'jpg');
+        $filename = $filenamePrefix.'_'.time().'_'.Str::lower(Str::random(16)).'.'.$ext;
+        $destination = public_path('avatars');
+
+        if (! file_exists($destination)) {
+            mkdir($destination, 0755, true);
+        }
+
+        $previous = $competition->{$modelAttribute};
+        if ($previous && file_exists(public_path($previous))) {
+            @unlink(public_path($previous));
+        }
+
+        $file->move($destination, $filename);
+        $competition->{$modelAttribute} = 'avatars/'.$filename;
+
+        return null;
     }
 
     function sendWAInvitation($data)

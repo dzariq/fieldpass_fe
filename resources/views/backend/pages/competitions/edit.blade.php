@@ -107,11 +107,42 @@ $invitedClubs = $competition->clubs->filter(function($club) {
 
                             <div class="form-group col-md-6 col-sm-12">
                                 <label for="pitch_image">Pitch Image</label>
+                                <input type="hidden" name="clear_pitch_image" id="clear_pitch_image_flag" value="0">
+                                <div id="pitch-image-preview-wrap">
+                                    @if($competition->pitch_image)
+                                        <img src="{{ asset($competition->pitch_image) }}" alt="Current Pitch" class="image-preview">
+                                    @endif
+                                </div>
+                                <input type="file" class="form-control-file mt-2" name="pitch_image" id="pitch_image" accept="image/jpeg,image/png,image/jpg,image/gif,image/webp">
                                 @if($competition->pitch_image)
-                                    <img src="{{ asset($competition->pitch_image) }}" alt="Current Pitch" class="image-preview">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary mt-2 d-block" id="btn-clear-pitch-image">
+                                        Remove current image
+                                    </button>
                                 @endif
-                                <input type="file" class="form-control-file mt-2" name="pitch_image" id="pitch_image" accept="image/jpeg,image/png,image/jpg">
                                 <small class="form-text text-muted">Upload JPG or PNG file. Max size: 2MB</small>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col-md-6 col-sm-12">
+                                <label for="pitch_board_1">Pitch board 1</label>
+                                @if(!empty($competition->pitch_board_1))
+                                    <img src="{{ asset($competition->pitch_board_1) }}" alt="Current pitch board 1" class="image-preview">
+                                @endif
+                                <input type="file" class="form-control-file mt-2" name="pitch_board_1" id="pitch_board_1" accept="image/jpeg,image/png,image/jpg,image/gif,image/webp">
+                                <small class="form-text text-muted">
+                                    Recommended size: 200 × 100 px. Upload JPG or PNG file. Max size: 2MB
+                                </small>
+                            </div>
+                            <div class="form-group col-md-6 col-sm-12">
+                                <label for="pitch_board_2">Pitch board 2</label>
+                                @if(!empty($competition->pitch_board_2))
+                                    <img src="{{ asset($competition->pitch_board_2) }}" alt="Current pitch board 2" class="image-preview">
+                                @endif
+                                <input type="file" class="form-control-file mt-2" name="pitch_board_2" id="pitch_board_2" accept="image/jpeg,image/png,image/jpg,image/gif,image/webp">
+                                <small class="form-text text-muted">
+                                    Recommended size: 200 × 100 px. Upload JPG or PNG file. Max size: 2MB
+                                </small>
                             </div>
                         </div>
 
@@ -284,6 +315,12 @@ $invitedClubs = $competition->clubs->filter(function($club) {
 <script>
     $(document).ready(function() {
         $('.select2').select2();
+
+        $('#btn-clear-pitch-image').on('click', function() {
+            $('#clear_pitch_image_flag').val('1');
+            $('#pitch-image-preview-wrap').hide();
+            $('#pitch_image').val('');
+        });
     });
 </script>
 @endsection
