@@ -166,7 +166,6 @@ Invite players - Admin Panel
                                             <th>Club</th>
                                             <th>Identity</th>
                                             <th>Position</th>
-                                            <th>Status</th>
                                             @if (auth()->user()->can('players.view') || auth()->user()->can('players.edit'))
                                                 <th>{{ __('History & performance') }}</th>
                                             @endif
@@ -216,6 +215,16 @@ Invite players - Admin Panel
                                     <span class="status-badge" id="playerStatus">-</span>
                                 </div>
                             </div>
+                        </div>
+                        <div class="mt-3 d-none" id="playerAlreadyInClubWrap">
+                            <div class="alert alert-info mb-2 mb-md-3">
+                                {{ __('This player already belongs to a club. Inviting is not available on this screen.') }}
+                            </div>
+                            @if (auth()->user()->can('players.view') || auth()->user()->can('players.edit'))
+                                <button type="button" class="btn btn-info text-white js-club-history-performance d-none" id="singlePlayerClubHistoryBtn" data-url="">
+                                    <i class="fa fa-history"></i> {{ __('Club history & performance') }}
+                                </button>
+                            @endif
                         </div>
                     </div>
 
@@ -479,15 +488,24 @@ Invite players - Admin Panel
                     Swal.close();
 
                     if (response.success) {
-                        // Show player info
                         displayPlayerInfo(response.player);
-                        
-                        // Show invite form
-                        $('#inviteFormSection').addClass('show');
-                        $('#playerId').val(response.player.id);
-                        
-                        // Reset clubs to default (admin's clubs)
-                        $('#clubs').val(defaultClubs).trigger('change');
+                        $('#inviteFormSection').removeClass('show');
+                        $('#playerId').val('');
+                        $('#playerAlreadyInClubWrap').addClass('d-none');
+                        $('#singlePlayerClubHistoryBtn').addClass('d-none').removeData('url').attr('data-url', '');
+
+                        if (response.can_invite) {
+                            $('#inviteFormSection').addClass('show');
+                            $('#playerId').val(response.player.id);
+                            $('#clubs').val(defaultClubs).trigger('change');
+                        } else {
+                            $('#playerAlreadyInClubWrap').removeClass('d-none');
+                            const $hist = $('#singlePlayerClubHistoryBtn');
+                            if ($hist.length) {
+                                $hist.attr('data-url', inviteClubHistoryPerformanceUrl(response.player.id));
+                                $hist.removeClass('d-none');
+                            }
+                        }
                     } else if (response.multiple) {
                         // Multiple players found
                         displayMultiplePlayers(response.players);
@@ -526,9 +544,6 @@ Invite players - Admin Panel
             tbody.empty();
 
             players.forEach(function(player) {
-                const statusClass = player.status === 'ACTIVE' ? 'status-active' :
-                    player.status === 'INACTIVE' ? 'status-inactive' : 'status-invited';
-
                 const $tr = $('<tr>');
                 const photoSrc = player.avatar_url || inviteDefaultPlayerPhoto;
                 const $playerCell = $('<td>');
@@ -548,9 +563,6 @@ Invite players - Admin Panel
                 $tr.append($('<td>').text(player.clubs_display || '—'));
                 $tr.append($('<td>').text(player.identity_number));
                 $tr.append($('<td>').text(player.position || ''));
-                $tr.append($('<td>').append(
-                    $('<span>').addClass('status-badge ' + statusClass).text(player.status)
-                ));
                 if (inviteCanViewClubHistory) {
                     const $histTd = $('<td>');
                     const $histBtn = $('<button type="button" class="btn btn-info text-white btn-sm js-club-history-performance">')
@@ -660,6 +672,8 @@ Invite players - Admin Panel
                 syncSearchByUi();
             }
             $('#playerInfoCard').removeClass('show');
+            $('#playerAlreadyInClubWrap').addClass('d-none');
+            $('#singlePlayerClubHistoryBtn').addClass('d-none').removeData('url').attr('data-url', '');
             $('#inviteFormSection').removeClass('show');
             $('#inviteForm')[0].reset();
             $('#playerId').val('');
