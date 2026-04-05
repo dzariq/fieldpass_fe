@@ -24,6 +24,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
 use Spatie\Permission\Models\Role;
 
@@ -935,19 +936,20 @@ class PlayersController extends Controller
 
     public function searchPlayer(Request $request)
     {
-        $request->validate([
-            'search_value' => 'required|string',
-            'search_type' => 'required|in:identity_number,name',
-            'identity_search_type' => [
-                'nullable',
-                Rule::requiredIf(fn () => $request->input('search_type') === 'identity_number'),
-                'in:malaysia_ic,foreign_id',
-            ],
-        ], [
-            'identity_search_type.required' => 'Please select Malaysia IC or Foreign ID before searching by identity number.',
-        ]);
+        try {
+            $request->validate([
+                'search_value' => 'required|string',
+                'search_type' => 'required|in:identity_number,name',
+                'identity_search_type' => [
+                    'nullable',
+                    Rule::requiredIf(fn () => $request->input('search_type') === 'identity_number'),
+                    'in:malaysia_ic,foreign_id',
+                ],
+            ], [
+                'identity_search_type.required' => 'Please select Malaysia IC or Foreign ID before searching by identity number.',
+            ]);
 
-        $searchType = $request->search_type;
+            $searchType = $request->search_type;
         $searchValue = trim((string) $request->search_value);
 
         if ($searchType === 'identity_number') {
@@ -1019,11 +1021,26 @@ class PlayersController extends Controller
 
         $payload = $this->playerInviteSearchPayload($player);
 
-        return response()->json([
-            'success' => true,
-            'can_invite' => ! $payload['has_club'],
-            'player' => $payload,
-        ]);
+            return response()->json([
+                'success' => true,
+                'can_invite' => ! $payload['has_club'],
+                'player' => $payload,
+            ]);
+        } catch (ValidationException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            report($e);
+
+            $message = 'Search could not be completed. Please try again.';
+            if (config('app.debug') || config('app.show_ajax_error_details')) {
+                $message = $e->getMessage();
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => $message,
+            ], 500);
+        }
     }
 
     public function bulkUploadForm()

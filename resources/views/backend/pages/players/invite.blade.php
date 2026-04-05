@@ -328,6 +328,51 @@ Invite players - Admin Panel
         const inviteClubHistoryUrlTpl = @json(route('admin.players.club-history-performance', ['player' => $inviteClubHistoryPh], false));
         const inviteClubHistoryPh = @json($inviteClubHistoryPh);
         const inviteCanViewClubHistory = @json(auth()->user()->can('players.view') || auth()->user()->can('players.edit'));
+        const showAjaxErrorDetails = @json((bool) (config('app.debug') || config('app.show_ajax_error_details')));
+
+        function escapeHtmlInvite(s) {
+            return $('<div>').text(String(s)).html();
+        }
+
+        function formatInviteSearchAjaxError(xhr, fallbackMessage) {
+            let main = '';
+            if (xhr.responseJSON) {
+                if (xhr.responseJSON.errors) {
+                    const flat = Object.values(xhr.responseJSON.errors).flat();
+                    if (flat.length) {
+                        main = flat.join('\n');
+                    }
+                }
+                if (!main && xhr.responseJSON.message) {
+                    main = String(xhr.responseJSON.message);
+                }
+            }
+            if (!main) {
+                main = fallbackMessage;
+            }
+
+            const parts = [main];
+            if (showAjaxErrorDetails) {
+                parts.unshift('HTTP ' + xhr.status + (xhr.statusText ? ' ' + xhr.statusText : ''));
+                if (xhr.responseJSON && xhr.responseJSON.exception) {
+                    parts.push(String(xhr.responseJSON.exception));
+                }
+                if (xhr.responseJSON) {
+                    try {
+                        parts.push(JSON.stringify(xhr.responseJSON, null, 2));
+                    } catch (e) { /* ignore */ }
+                } else if (xhr.responseText) {
+                    const stripped = String(xhr.responseText).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+                    if (stripped.length) {
+                        parts.push(stripped.slice(0, 2000) + (stripped.length > 2000 ? '…' : ''));
+                    }
+                }
+            } else if (!xhr.responseJSON) {
+                parts.push('HTTP ' + xhr.status + (xhr.statusText ? ' ' + xhr.statusText : ''));
+            }
+
+            return parts.filter(Boolean).join('\n\n');
+        }
 
         function inviteClubHistoryPerformanceUrl(playerId) {
             return inviteClubHistoryUrlTpl.split(String(inviteClubHistoryPh)).join(String(playerId));
@@ -426,6 +471,10 @@ Invite players - Admin Panel
                 url: '{{ route("admin.players.invite.search") }}',
                 method: 'POST',
                 data: postData,
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
                 success: function(response) {
                     Swal.close();
 
@@ -453,17 +502,20 @@ Invite players - Admin Panel
                 },
                 error: function(xhr) {
                     Swal.close();
-                    let errorMessage = 'An error occurred. Please try again.';
-                    
-                    if (xhr.responseJSON && xhr.responseJSON.message) {
-                        errorMessage = xhr.responseJSON.message;
-                    }
-                    
-                    Swal.fire({
+                    const fallback = 'An error occurred. Please try again.';
+                    const detailText = formatInviteSearchAjaxError(xhr, fallback);
+                    const swalOpts = {
                         icon: 'error',
                         title: 'Error',
-                        text: errorMessage,
-                    });
+                        width: showAjaxErrorDetails ? '36rem' : undefined,
+                    };
+                    if (showAjaxErrorDetails) {
+                        swalOpts.html = '<pre style="text-align:left;font-size:12px;max-height:55vh;overflow:auto;white-space:pre-wrap;margin:0">' +
+                            escapeHtmlInvite(detailText) + '</pre>';
+                    } else {
+                        swalOpts.text = detailText;
+                    }
+                    Swal.fire(swalOpts);
                 }
             });
         }

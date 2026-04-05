@@ -52,4 +52,23 @@ class Handler extends ExceptionHandler
     {
         return parent::render($request, $exception);
     }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function convertExceptionToArray(Throwable $e)
+    {
+        if (config('app.debug')) {
+            return parent::convertExceptionToArray($e);
+        }
+
+        if (config('app.show_ajax_error_details')) {
+            return [
+                'message' => $e->getMessage(),
+                'exception' => $e::class,
+            ];
+        }
+
+        return parent::convertExceptionToArray($e);
+    }
 }

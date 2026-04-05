@@ -43,6 +43,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Expose exception messages in JSON for AJAX / API-style requests
+    |--------------------------------------------------------------------------
+    |
+    | When false (default), production JSON errors use a generic "Server Error"
+    | message. Set SHOW_AJAX_ERROR_DETAILS=true temporarily to return the real
+    | exception message in JSON (for debugging). Turn off after diagnosing.
+    |
+    */
+
+    'show_ajax_error_details' => (bool) env('SHOW_AJAX_ERROR_DETAILS', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application URL
     |--------------------------------------------------------------------------
     |
