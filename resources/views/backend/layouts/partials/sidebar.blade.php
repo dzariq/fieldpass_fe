@@ -172,7 +172,7 @@ $usr = Auth::guard('admin')->user();
                             <i class="fas fa-running"></i>
                             <span>Players</span>
                         </a>
-                        <ul class="collapse {{ Route::is('admin.players.create') || Route::is('admin.players.index') || Route::is('admin.players.edit') || Route::is('admin.players.show') || Route::is('admin.player.lineup') ? 'in' : '' }}">
+                        <ul class="collapse {{ Route::is('admin.players.index') || Route::is('admin.players.edit') || Route::is('admin.players.show') || Route::is('admin.players.invite') || Route::is('admin.player.lineup') ? 'in' : '' }}">
                             @if ($usr->can('players.view'))
                             <li class="{{ Route::is('admin.players.index') || Route::is('admin.players.edit') ? 'active' : '' }}">
                                 <a href="{{ route('admin.players.index') }}">
@@ -180,12 +180,10 @@ $usr = Auth::guard('admin')->user();
                                     All Players
                                 </a>
                             </li>
-                            @endif
-                            @if ($usr->can('players.create'))
-                            <li class="{{ Route::is('admin.players.create') ? 'active' : '' }}">
-                                <a href="{{ route('admin.players.create') }}">
+                            <li class="{{ Route::is('admin.players.invite') ? 'active' : '' }}">
+                                <a href="{{ route('admin.players.invite') }}">
                                     <i class="fas fa-user-plus"></i>
-                                    Create Player
+                                    Invite players
                                 </a>
                             </li>
                             @endif

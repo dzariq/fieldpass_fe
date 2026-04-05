@@ -109,10 +109,20 @@ Player Create - Admin Panel
 
                         <div class="form-row">
                             <div class="form-group col-md-6 col-sm-6">
-                                <label for="identity_number" class="required-field">Identity Number (IC)</label>
-                                <input type="text" class="form-control" id="identity_number" name="identity_number" placeholder="XXXXXX-XX-XXXX" required value="{{ old('identity_number') }}" maxlength="14">
-                                <!-- <small class="form-text text-muted">Format: XXXXXX-XX-XXXX (e.g., 900101-01-1234)</small> -->
+                                <label for="identity_type" class="required-field">Identity type</label>
+                                <select class="form-control" name="identity_type" id="identity_type" required>
+                                    <option value="malaysia_ic" {{ old('identity_type', 'malaysia_ic') === 'malaysia_ic' ? 'selected' : '' }}>Malaysia IC</option>
+                                    <option value="foreign_id" {{ old('identity_type') === 'foreign_id' ? 'selected' : '' }}>Foreign ID</option>
+                                </select>
                             </div>
+                            <div class="form-group col-md-6 col-sm-6">
+                                <label for="identity_number" class="required-field"><span id="identity_number_label">Identity number (IC)</span></label>
+                                <input type="text" class="form-control" id="identity_number" name="identity_number" placeholder="XXXXXX-XX-XXXX" required value="{{ old('identity_number') }}" maxlength="14" autocomplete="off">
+                                <small class="form-text text-muted" id="identity_number_hint">Format: 6 digits, 2 digits, 4 digits (dashes optional if you type 12 digits).</small>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
                             <div class="form-group col-md-6 col-sm-6">
                                 <label for="country_code" class="required-field">Country Code</label>
                                 <select name="country_code" id="country_code" class="form-control" required>
@@ -200,33 +210,45 @@ Player Create - Admin Panel
             }
         });
 
-        // Auto-format IC number to XXXXXX-XX-XXXX
-        // $('#identity_number').on('input', function() {
-        //     let value = this.value.replace(/[^0-9]/g, ''); // Remove non-digits
+        function applyIdentityTypeUi() {
+            var t = $('#identity_type').val();
+            var $in = $('#identity_number');
+            if (t === 'malaysia_ic') {
+                $('#identity_number_label').text('Identity number (IC)');
+                $in.attr('placeholder', 'XXXXXX-XX-XXXX');
+                $in.attr('maxlength', '14');
+                $('#identity_number_hint').text('Format: XXXXXX-XX-XXXX — type up to 12 digits; dashes are inserted automatically.');
+            } else {
+                $('#identity_number_label').text('Identity number (foreign ID)');
+                $in.attr('placeholder', 'Passport or national ID');
+                $in.attr('maxlength', '50');
+                $('#identity_number_hint').text('Free text, max 50 characters.');
+            }
+        }
 
-        //     if (value.length > 6) {
-        //         value = value.substring(0, 6) + '-' + value.substring(6);
-        //     }
-        //     if (value.length > 9) {
-        //         value = value.substring(0, 9) + '-' + value.substring(9);
-        //     }
-        //     if (value.length > 14) {
-        //         value = value.substring(0, 14);
-        //     }
+        $('#identity_type').on('change', function () {
+            $('#identity_number').val('');
+            applyIdentityTypeUi();
+        });
+        applyIdentityTypeUi();
 
-        //     this.value = value;
-        // });
-
-        // Validate IC format on blur
-        // $('#identity_number').on('blur', function() {
-        //     let value = this.value;
-        //     let pattern = /^\d{6}-\d{2}-\d{4}$/;
-
-        //     if (value && !pattern.test(value)) {
-        //         alert('Invalid IC format. Please use format: XXXXXX-XX-XXXX (e.g., 900101-01-1234)');
-        //         $(this).focus();
-        //     }
-        // });
+        $('#identity_number').on('input', function () {
+            if ($('#identity_type').val() !== 'malaysia_ic') {
+                return;
+            }
+            var digits = this.value.replace(/\D/g, '').substring(0, 12);
+            var out = '';
+            if (digits.length > 0) {
+                out = digits.substring(0, 6);
+            }
+            if (digits.length > 6) {
+                out += '-' + digits.substring(6, 8);
+            }
+            if (digits.length > 8) {
+                out += '-' + digits.substring(8, 12);
+            }
+            this.value = out;
+        });
 
         // Set start date to today if empty
         if (!$('#start_date').val()) {

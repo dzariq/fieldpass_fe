@@ -144,17 +144,25 @@ Bulk Upload Players - Admin Panel
                                 <ul style="margin-top: 5px;">
                                     <li>Club (dropdown on this page)</li>
                                     <li>Name</li>
-                                    <li>Identity Number (IC/Passport)</li>
+                                    <li><strong>id_type</strong> — enter exactly <code>Malaysia IC</code> or <code>Foreign ID</code> (same as a dropdown choice)</li>
+                                    <li>Identity number — must match the ID type (see below)</li>
                                     <li>Position (Goalkeeper, Defender, Midfielder, Forward)</li>
+                                    <li><strong>market_value</strong> — whole number from <strong>40</strong> to <strong>150</strong></li>
                                 </ul>
                             </li>
                             <li>
-                                <strong>Optional fields:</strong> email, country_code, phone, salary
+                                <strong>Malaysia IC:</strong> use format <code>XXXXXX-XX-XXXX</code> only (six digits, hyphen, two digits, hyphen, four digits); must not already exist in the system.
+                            </li>
+                            <li>
+                                <strong>Foreign ID:</strong> free text (e.g. passport), max 50 characters; must not already exist in the system.
+                            </li>
+                            <li>
+                                <strong>Optional fields:</strong> country_code, phone
                             </li>
                             <li><strong>Country Code:</strong> Enter phone country code (e.g., 60, 62, 65) - <em>optional</em></li>
                             <li><strong>Phone format:</strong> Enter numbers only without country code (e.g., 189932233) - <em>optional</em></li>
                             <li><strong>File format:</strong> CSV only, max size 2MB, max 100 players per upload</li>
-                            <li>Players will be created with status <strong>INVITED</strong></li>
+                            <li>Players will be created with status <strong>ACTIVE</strong></li>
                             <li>Username will be auto-generated automatically</li>
                             <li>Duplicate IC numbers or phone numbers will be skipped</li>
                         </ul>
@@ -220,11 +228,88 @@ Bulk Upload Players - Admin Panel
     (function($) {
         'use strict';
 
+        var BULK_EXPECTED_HEADERS = ['name', 'id_type', 'identity_number', 'country_code', 'phone', 'position', 'market_value'];
+        var BULK_MY_IC_RE = /^\d{6}-\d{2}-\d{4}$/;
+
+        function stripBom(s) {
+            if (!s || !s.length) return s;
+            if (s.charCodeAt(0) === 0xFEFF) return s.slice(1);
+            return s;
+        }
+
+        function parseCsvLine(line) {
+            var result = [];
+            var cur = '';
+            var inQuotes = false;
+            for (var i = 0; i < line.length; i++) {
+                var c = line[i];
+                if (c === '"') {
+                    inQuotes = !inQuotes;
+                    continue;
+                }
+                if (!inQuotes && c === ',') {
+                    result.push(cur);
+                    cur = '';
+                    continue;
+                }
+                cur += c;
+            }
+            result.push(cur);
+            return result.map(function (cell) { return cell.trim(); });
+        }
+
+        function validateBulkCsvText(text) {
+            var errors = [];
+            var lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').filter(function (ln) {
+                return ln.trim() !== '';
+            });
+            if (lines.length < 2) {
+                errors.push('CSV must include a header row and at least one data row.');
+                return errors;
+            }
+            var header = parseCsvLine(stripBom(lines[0])).map(function (h) {
+                return h.replace(/^\uFEFF/, '').trim();
+            });
+            if (header.length !== BULK_EXPECTED_HEADERS.length) {
+                errors.push('Wrong number of columns in header. Download the latest template.');
+                return errors;
+            }
+            for (var h = 0; h < BULK_EXPECTED_HEADERS.length; h++) {
+                if (header[h].toLowerCase() !== BULK_EXPECTED_HEADERS[h]) {
+                    errors.push('Invalid header in column ' + (h + 1) + '. Expected "' + BULK_EXPECTED_HEADERS[h] + '", got "' + header[h] + '".');
+                    return errors;
+                }
+            }
+            for (var r = 1; r < lines.length; r++) {
+                var row = parseCsvLine(lines[r]);
+                if (row.every(function (c) { return c === ''; })) {
+                    continue;
+                }
+                var rowNum = r + 1;
+                var idType = (row[1] || '').trim().replace(/\s+/g, ' ').toLowerCase();
+                var identity = (row[2] || '').replace(/^[\t']+/, '').trim();
+                if (idType === 'malaysia ic' && !BULK_MY_IC_RE.test(identity)) {
+                    errors.push('Row ' + rowNum + ': Malaysia IC must be XXXXXX-XX-XXXX.');
+                }
+                var mvRaw = (row[6] || '').replace(/^[\t']+/, '').trim();
+                if (!/^\d+$/.test(mvRaw)) {
+                    errors.push('Row ' + rowNum + ': market_value must be a whole number between 40 and 150.');
+                } else {
+                    var mv = parseInt(mvRaw, 10);
+                    if (mv < 40 || mv > 150) {
+                        errors.push('Row ' + rowNum + ': market_value must be between 40 and 150.');
+                    }
+                }
+            }
+            return errors;
+        }
+
         $(document).ready(function() {
             var fileInput = document.getElementById('fileInput');
             var fileName = document.getElementById('fileName');
             var uploadBtn = document.getElementById('uploadBtn');
             var clubSelect = document.getElementById('club_id');
+            var uploadForm = document.getElementById('uploadForm');
 
             function updateUploadButtonState() {
                 var hasFile = fileInput.files && fileInput.files.length > 0;
@@ -258,18 +343,39 @@ Bulk Upload Players - Admin Panel
 
             updateUploadButtonState();
 
-            // Form submission
-            document.getElementById('uploadForm').addEventListener('submit', function() {
+            uploadForm.addEventListener('submit', function(e) {
+                e.preventDefault();
                 if (!clubSelect.value) {
                     alert('Please select a club.');
-                    return false;
+                    return;
                 }
-                if (!fileInput.files || fileInput.files.length === 0) {
+                if (!fileInput.files || !fileInput.files.length) {
                     alert('Please select a CSV file to upload.');
-                    return false;
+                    return;
                 }
-                uploadBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Uploading...';
+                var file = fileInput.files[0];
+                var form = uploadForm;
+                var origHtml = uploadBtn.innerHTML;
+                uploadBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Checking...';
                 uploadBtn.disabled = true;
+                var reader = new FileReader();
+                reader.onload = function() {
+                    var errs = validateBulkCsvText(reader.result);
+                    if (errs.length) {
+                        alert(errs.slice(0, 25).join('\n') + (errs.length > 25 ? '\n…' : ''));
+                        uploadBtn.innerHTML = origHtml;
+                        updateUploadButtonState();
+                        return;
+                    }
+                    uploadBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Uploading...';
+                    form.submit();
+                };
+                reader.onerror = function() {
+                    alert('Could not read the CSV file.');
+                    uploadBtn.innerHTML = origHtml;
+                    updateUploadButtonState();
+                };
+                reader.readAsText(file);
             });
         });
 

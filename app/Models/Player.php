@@ -2,16 +2,14 @@
 
 namespace App\Models;
 
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Facades\DB;
-use Spatie\Permission\Traits\HasRoles;
 use OwenIt\Auditing\Contracts\Auditable;
+use Spatie\Permission\Traits\HasRoles;
 
 class Player extends Authenticatable implements Auditable
 {
-    use Notifiable, HasRoles;
+    use HasRoles, Notifiable;
     use \OwenIt\Auditing\Auditable;
 
     /**
@@ -29,6 +27,7 @@ class Player extends Authenticatable implements Auditable
     protected $fillable = [
         'name',
         'identity_number',
+        'identity_type',
         'position',
         'phone',
         'status',
@@ -59,13 +58,44 @@ class Player extends Authenticatable implements Auditable
         'email_verified_at' => 'datetime',
     ];
 
+    protected static function booted(): void
+    {
+        static::saving(function (Player $player): void {
+            $player->identity_type = self::inferIdentityTypeFromIdentityNumber($player->identity_number);
+        });
+    }
+
+    /**
+     * Malaysia IC is stored as XXXXXX-XX-XXXX; anything else is treated as foreign ID.
+     */
+    public static function inferIdentityTypeFromIdentityNumber(?string $identityNumber): string
+    {
+        $num = trim((string) $identityNumber);
+
+        if ($num !== '' && preg_match('/^\d{6}-\d{2}-\d{4}$/', $num)) {
+            return 'malaysia_ic';
+        }
+
+        return 'foreign_id';
+    }
 
     public function clubs()
     {
         return $this->belongsToMany(Club::class, 'player_club');
     }
+
     public function contracts()
     {
         return $this->hasMany(PlayerContract::class);
+    }
+
+    public function terminations()
+    {
+        return $this->hasMany(PlayerTermination::class, 'player_id');
+    }
+
+    public function clubHistories()
+    {
+        return $this->hasMany(PlayerClubHistory::class, 'player_id')->orderByDesc('event_at');
     }
 }

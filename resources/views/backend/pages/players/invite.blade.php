@@ -1,7 +1,7 @@
 @extends('backend.layouts.master')
 
 @section('title')
-Invite Player - Admin Panel
+Invite players - Admin Panel
 @endsection
 
 @section('styles')
@@ -80,6 +80,15 @@ Invite Player - Admin Panel
     .invite-form-section.show {
         display: block;
     }
+    .invite-multiple-player-photo {
+        width: 40px;
+        height: 40px;
+        object-fit: cover;
+        border-radius: 8px;
+        flex-shrink: 0;
+        border: 1px solid #dee2e6;
+        background: #fff;
+    }
 </style>
 @endsection
 
@@ -90,11 +99,11 @@ Invite Player - Admin Panel
     <div class="row align-items-center">
         <div class="col-sm-6">
             <div class="breadcrumbs-area clearfix">
-                <h4 class="page-title pull-left">Invite Player</h4>
+                <h4 class="page-title pull-left">Invite players</h4>
                 <ul class="breadcrumbs pull-left">
                     <li><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
                     <li><a href="{{ route('admin.players.index') }}">All Players</a></li>
-                    <li><span>Invite Player</span></li>
+                    <li><span>Invite players</span></li>
                 </ul>
             </div>
         </div>
@@ -110,7 +119,7 @@ Invite Player - Admin Panel
         <div class="col-12 mt-5">
             <div class="card">
                 <div class="card-body">
-                    <h4 class="header-title">Invite Player to Club</h4>
+                    <h4 class="header-title">Invite players to club</h4>
                     @include('backend.layouts.partials.messages')
 
                     <!-- Search Section -->
@@ -120,34 +129,47 @@ Invite Player - Admin Panel
                             <div class="form-group col-md-3">
                                 <label for="search_type" class="required-field">Search By</label>
                                 <select class="form-control" id="search_type" required>
-                                    <option value="identity_number">IC Number</option>
-                                    <option value="name">Name</option>
+                                    <option value="name" selected>Name</option>
+                                    <option value="identity_number">Identity number</option>
                                 </select>
                             </div>
-                            <div class="form-group col-md-6">
-                                <label for="search_value" class="required-field">
-                                    <span id="searchLabel">Identity Number (IC)</span>
-                                </label>
-                                <input type="text" class="form-control" id="search_value" placeholder="Enter IC Number or Name" required>
+                            <div class="form-group col-md-3" id="identity_search_type_wrap">
+                                <label for="identity_search_type" class="required-field">ID type</label>
+                                <select class="form-control" id="identity_search_type">
+                                    <option value="malaysia_ic">Malaysia IC</option>
+                                    <option value="foreign_id">Foreign ID</option>
+                                </select>
+                                <small class="form-text text-muted">Required when searching by identity number</small>
                             </div>
-                            <div class="form-group col-md-3 d-flex align-items-end">
+                            <div class="form-group col-md-4">
+                                <label for="search_value" class="required-field">
+                                    <span id="searchLabel">Identity number</span>
+                                </label>
+                                <input type="text" class="form-control" id="search_value" placeholder="Enter IC or foreign ID" required>
+                            </div>
+                            <div class="form-group col-md-2 d-flex align-items-end">
                                 <button type="button" class="btn btn-primary btn-block" id="searchBtn">
-                                    <i class="fa fa-search"></i> Search Player
+                                    <i class="fa fa-search"></i> Search
                                 </button>
                             </div>
                         </div>
                         
                         <!-- Multiple Players Result -->
                         <div class="alert alert-info mt-3" id="multiplePlayersAlert" style="display: none;">
-                            <h6 class="mb-3">Multiple players found. Please select one:</h6>
+                            <h6 class="mb-3">Multiple players found</h6>
+                            <p class="small text-muted mb-2">Club shows long name when set. Use <strong>Invite</strong> only for players with no club; others are listed for reference.</p>
                             <div class="table-responsive">
                                 <table class="table table-sm table-bordered" id="multiplePlayersTable">
                                     <thead>
                                         <tr>
-                                            <th>Name</th>
-                                            <th>IC Number</th>
+                                            <th>Player</th>
+                                            <th>Club</th>
+                                            <th>Identity</th>
                                             <th>Position</th>
                                             <th>Status</th>
+                                            @if (auth()->user()->can('players.view') || auth()->user()->can('players.edit'))
+                                                <th>{{ __('History & performance') }}</th>
+                                            @endif
                                             <th>Action</th>
                                         </tr>
                                     </thead>
@@ -175,6 +197,10 @@ Invite Player - Admin Panel
                                     <span class="info-label">Phone:</span>
                                     <span class="info-value" id="playerPhone">-</span>
                                 </div>
+                                <div class="info-item">
+                                    <span class="info-label">Club:</span>
+                                    <span class="info-value" id="playerClubs">-</span>
+                                </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="info-item">
@@ -194,13 +220,13 @@ Invite Player - Admin Panel
                     </div>
 
                     <!-- Invite Form Section -->
-                    <div class="invite-form-section" id="inviteFormSection">
+                    <div class="invite-form-section @if(old('player_id')) show @endif" id="inviteFormSection">
                         <hr class="my-4">
                         <h5 class="mb-3">Step 2: Invite Player</h5>
                         
                         <form action="{{ route('admin.players.invite.send') }}" method="POST" id="inviteForm">
                             @csrf
-                            <input type="hidden" name="player_id" id="playerId">
+                            <input type="hidden" name="player_id" id="playerId" value="{{ old('player_id') }}">
 
                             <div class="form-row">
                                 <div class="form-group col-md-6 col-sm-12">
@@ -235,6 +261,33 @@ Invite Player - Admin Panel
                                 </div>
                             </div>
 
+                            <div class="form-row">
+                                <div class="form-group col-md-6 col-sm-6">
+                                    <label for="invite_country_code">{{ __('Country code') }}</label>
+                                    @php $inviteCc = old('country_code'); @endphp
+                                    <select name="country_code" id="invite_country_code" class="form-control">
+                                        <option value="">{{ __('Optional') }}</option>
+                                        <option value="60" {{ $inviteCc == '60' ? 'selected' : '' }}>+60 (Malaysia)</option>
+                                        <option value="65" {{ $inviteCc == '65' ? 'selected' : '' }}>+65 (Singapore)</option>
+                                        <option value="62" {{ $inviteCc == '62' ? 'selected' : '' }}>+62 (Indonesia)</option>
+                                        <option value="66" {{ $inviteCc == '66' ? 'selected' : '' }}>+66 (Thailand)</option>
+                                        <option value="63" {{ $inviteCc == '63' ? 'selected' : '' }}>+63 (Philippines)</option>
+                                        <option value="84" {{ $inviteCc == '84' ? 'selected' : '' }}>+84 (Vietnam)</option>
+                                        <option value="95" {{ $inviteCc == '95' ? 'selected' : '' }}>+95 (Myanmar)</option>
+                                        <option value="856" {{ $inviteCc == '856' ? 'selected' : '' }}>+856 (Laos)</option>
+                                        <option value="855" {{ $inviteCc == '855' ? 'selected' : '' }}>+855 (Cambodia)</option>
+                                        <option value="673" {{ $inviteCc == '673' ? 'selected' : '' }}>+673 (Brunei)</option>
+                                        <option value="670" {{ $inviteCc == '670' ? 'selected' : '' }}>+670 (East Timor)</option>
+                                    </select>
+                                    <small class="form-text text-muted">{{ __('Optional. Required if you enter a phone number.') }}</small>
+                                </div>
+                                <div class="form-group col-md-6 col-sm-6">
+                                    <label for="invite_phone">{{ __('Phone number') }}</label>
+                                    <input type="text" class="form-control" id="invite_phone" name="phone" value="{{ old('phone') }}" placeholder="{{ __('Optional — 7–15 digits, no country code') }}" inputmode="numeric" maxlength="15" autocomplete="tel-national">
+                                    <small class="form-text text-muted">{{ __('Optional. Digits only, without country code.') }}</small>
+                                </div>
+                            </div>
+
                             <button type="submit" class="btn btn-success mt-3 pr-4 pl-4">
                                 <i class="fa fa-paper-plane"></i> Send Invitation
                             </button>
@@ -247,8 +300,9 @@ Invite Player - Admin Panel
                 </div>
             </div>
         </div>
+        </div>
+        @include('backend.pages.players.partials.club-history-modal')
     </div>
-</div>
 @endsection
 
 @section('scripts')
@@ -265,19 +319,52 @@ Invite Player - Admin Panel
             defaultClubs.push('{{ $club->id }}');
         @endforeach
 
-        // Change label based on search type
-        $('#search_type').on('change', function() {
-            const searchType = $(this).val();
+        const quickInviteAssignUrl = '{{ route("admin.players.invite.quick-assign") }}';
+        const csrfTokenInvite = '{{ csrf_token() }}';
+        const inviteDefaultPlayerPhoto = @json(asset('backend/assets/images/default-avatar.png'));
+        @php
+            $inviteClubHistoryPh = 848474748474;
+        @endphp
+        const inviteClubHistoryUrlTpl = @json(route('admin.players.club-history-performance', ['player' => $inviteClubHistoryPh], false));
+        const inviteClubHistoryPh = @json($inviteClubHistoryPh);
+        const inviteCanViewClubHistory = @json(auth()->user()->can('players.view') || auth()->user()->can('players.edit'));
+
+        function inviteClubHistoryPerformanceUrl(playerId) {
+            return inviteClubHistoryUrlTpl.split(String(inviteClubHistoryPh)).join(String(playerId));
+        }
+
+        function syncSearchByUi() {
+            const searchType = $('#search_type').val();
             if (searchType === 'name') {
-                $('#searchLabel').text('Player Name');
-                $('#search_value').attr('placeholder', 'Enter Player Name');
+                $('#identity_search_type_wrap').addClass('d-none');
+                $('#searchLabel').text('Player name');
+                $('#search_value').attr('placeholder', 'Start of name (matches beginning only)');
             } else {
-                $('#searchLabel').text('Identity Number (IC)');
-                $('#search_value').attr('placeholder', 'Enter IC Number');
+                $('#identity_search_type_wrap').removeClass('d-none');
+                const idt = $('#identity_search_type').val();
+                if (idt === 'foreign_id') {
+                    $('#searchLabel').text('Foreign ID');
+                    $('#search_value').attr('placeholder', 'Passport or national ID');
+                } else {
+                    $('#searchLabel').text('Malaysia IC');
+                    $('#search_value').attr('placeholder', 'XXXXXX-XX-XXXX or 12 digits');
+                }
             }
+        }
+
+        $('#search_type').on('change', function() {
             $('#search_value').val('');
             resetMultipleResults();
+            syncSearchByUi();
         });
+
+        $('#identity_search_type').on('change', function() {
+            $('#search_value').val('');
+            resetMultipleResults();
+            syncSearchByUi();
+        });
+
+        syncSearchByUi();
 
         // Search Player
         $('#searchBtn').on('click', function(e) {
@@ -326,14 +413,19 @@ Invite Player - Admin Panel
                 }
             });
 
+            const postData = {
+                _token: '{{ csrf_token() }}',
+                search_value: searchValue.trim(),
+                search_type: searchType
+            };
+            if (searchType === 'identity_number') {
+                postData.identity_search_type = $('#identity_search_type').val();
+            }
+
             $.ajax({
                 url: '{{ route("admin.players.invite.search") }}',
                 method: 'POST',
-                data: {
-                    _token: '{{ csrf_token() }}',
-                    search_value: searchValue.trim(),
-                    search_type: searchType
-                },
+                data: postData,
                 success: function(response) {
                     Swal.close();
 
@@ -382,38 +474,86 @@ Invite Player - Admin Panel
             tbody.empty();
 
             players.forEach(function(player) {
-                const statusClass = player.status === 'ACTIVE' ? 'status-active' : 
-                                  player.status === 'INACTIVE' ? 'status-inactive' : 'status-invited';
-                
-                const row = `
-                    <tr>
-                        <td>${player.name}</td>
-                        <td>${player.identity_number}</td>
-                        <td>${player.position}</td>
-                        <td><span class="status-badge ${statusClass}">${player.status}</span></td>
-                        <td>
-                            <button type="button" class="btn btn-sm btn-primary select-player-btn" 
-                                    data-ic="${player.identity_number}">
-                                <i class="fa fa-check"></i> Select
-                            </button>
-                        </td>
-                    </tr>
-                `;
-                tbody.append(row);
+                const statusClass = player.status === 'ACTIVE' ? 'status-active' :
+                    player.status === 'INACTIVE' ? 'status-inactive' : 'status-invited';
+
+                const $tr = $('<tr>');
+                const photoSrc = player.avatar_url || inviteDefaultPlayerPhoto;
+                const $playerCell = $('<td>');
+                const $playerRow = $('<div class="d-flex align-items-center">');
+                const $img = $('<img>', {
+                    src: photoSrc,
+                    alt: '',
+                    class: 'invite-multiple-player-photo mr-2'
+                });
+                $img.on('error', function() {
+                    $(this).off('error').attr('src', inviteDefaultPlayerPhoto);
+                });
+                $playerRow.append($img);
+                $playerRow.append($('<span>').text(player.name));
+                $playerCell.append($playerRow);
+                $tr.append($playerCell);
+                $tr.append($('<td>').text(player.clubs_display || '—'));
+                $tr.append($('<td>').text(player.identity_number));
+                $tr.append($('<td>').text(player.position || ''));
+                $tr.append($('<td>').append(
+                    $('<span>').addClass('status-badge ' + statusClass).text(player.status)
+                ));
+                if (inviteCanViewClubHistory) {
+                    const $histTd = $('<td>');
+                    const $histBtn = $('<button type="button" class="btn btn-info text-white btn-sm js-club-history-performance">')
+                        .text(@json(__('Club & stats')))
+                        .attr('data-url', inviteClubHistoryPerformanceUrl(player.id));
+                    $histTd.append($histBtn);
+                    $tr.append($histTd);
+                }
+                const $action = $('<td>');
+                if (!player.has_club) {
+                    const $btn = $('<button type="button" class="btn btn-sm btn-success js-quick-invite-btn">')
+                        .html('<i class="fa fa-user-plus"></i> Invite')
+                        .data('player-id', player.id);
+                    $action.append($btn);
+                } else {
+                    $action.append($('<span class="text-muted">—</span>'));
+                }
+                $tr.append($action);
+                tbody.append($tr);
             });
 
             $('#multiplePlayersAlert').show();
 
-            // Handle select button click
-            $('.select-player-btn').off('click').on('click', function(e) {
+            $('.js-quick-invite-btn').off('click').on('click', function(e) {
                 e.preventDefault();
-                const icNumber = $(this).data('ic');
-                $('#search_type').val('identity_number');
-                $('#search_value').val(icNumber);
-                $('#searchLabel').text('Identity Number (IC)');
-                $('#search_value').attr('placeholder', 'Enter IC Number');
-                resetMultipleResults();
-                searchPlayer();
+                const $btn = $(this);
+                const playerId = $btn.data('player-id');
+                if (!playerId) return;
+                $btn.prop('disabled', true);
+                fetch(quickInviteAssignUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfTokenInvite,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({ _token: csrfTokenInvite, player_id: playerId }),
+                    credentials: 'same-origin'
+                }).then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); })
+                .then(function(res) {
+                    if (!res.ok) {
+                        Swal.fire({ icon: 'error', title: 'Could not invite', text: (res.data && res.data.message) ? res.data.message : 'Request failed.' });
+                        $btn.prop('disabled', false);
+                        return;
+                    }
+                    Swal.fire({ icon: 'success', title: 'Done', text: res.data.message || 'Player added.' });
+                    $btn.closest('tr').remove();
+                    if ($('#multiplePlayersBody tr').length === 0) {
+                        resetMultipleResults();
+                    }
+                }).catch(function() {
+                    Swal.fire({ icon: 'error', title: 'Error', text: 'Network error.' });
+                    $btn.prop('disabled', false);
+                });
             });
         }
 
@@ -427,6 +567,7 @@ Invite Player - Admin Panel
             $('#playerName').text(player.name);
             $('#playerEmail').text(player.email || 'N/A');
             $('#playerPhone').text(player.country_code && player.phone ? '+' + player.country_code + player.phone : (player.phone || 'N/A'));
+            $('#playerClubs').text(player.clubs_display || '—');
             $('#playerIC').text(player.identity_number);
             $('#playerPosition').text(player.position);
             
@@ -444,6 +585,13 @@ Invite Player - Admin Panel
             }
 
             $('#playerInfoCard').addClass('show');
+
+            if (player.country_code) {
+                $('#invite_country_code').val(String(player.country_code));
+            } else {
+                $('#invite_country_code').val('');
+            }
+            $('#invite_phone').val(player.phone ? String(player.phone) : '');
         }
 
         // Reset form - with option to keep search value
@@ -455,9 +603,9 @@ Invite Player - Admin Panel
         function resetForm(clearInput = true) {
             if (clearInput) {
                 $('#search_value').val('');
-                $('#search_type').val('identity_number');
-                $('#searchLabel').text('Identity Number (IC)');
-                $('#search_value').attr('placeholder', 'Enter IC Number');
+                $('#search_type').val('name');
+                $('#identity_search_type').val('malaysia_ic');
+                syncSearchByUi();
             }
             $('#playerInfoCard').removeClass('show');
             $('#inviteFormSection').removeClass('show');
@@ -471,4 +619,5 @@ Invite Player - Admin Panel
         }
     });
 </script>
+@include('backend.pages.players.partials.club-history-modal-script')
 @endsection

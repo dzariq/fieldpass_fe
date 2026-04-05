@@ -321,9 +321,11 @@ All Players - Admin Panel
                             @endif
                         </h4>
                         <div>
+                            @if (! auth()->user()->hasRole('Club Manager'))
                             <a href="{{ route('admin.players.create') }}" class="btn btn-primary btn-sm">
                                 <i class="fa fa-plus"></i> Add Player
                             </a>
+                            @endif
                             <a href="{{ route('admin.players.bulk.form') }}" class="btn btn-success btn-sm">
                                 <i class="fa fa-upload"></i> Bulk Upload
                             </a>

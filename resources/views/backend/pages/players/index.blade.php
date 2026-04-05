@@ -135,6 +135,10 @@
 
 @section('admin-content')
 
+@php
+    $canViewPlayerClubHistory = auth()->user()->can('players.view') || auth()->user()->can('players.edit');
+@endphp
+
 <!-- page title area start -->
 <div class="page-title-area">
     <div class="row align-items-center">
@@ -162,7 +166,7 @@
                 <div class="card-body py-3 px-3">
                     <h4 class="header-title float-left mb-2">{{ __('Players') }}</h4>
                     <p class="float-right mb-2">
-                        @if (auth()->user()->can('players.edit'))
+                        @if (auth()->user()->can('players.edit') && ! auth()->user()->hasRole('Club Manager'))
                             <a class="btn btn-primary text-white" href="{{ route('admin.players.create') }}">
                                 {{ __('Create New Player') }}
                             </a>
@@ -171,6 +175,9 @@
                     <div class="clearfix"></div>
                     <div class="data-tables">
                         @include('backend.layouts.partials.messages')
+                        @php
+                            $playerInlineFullEdit = auth()->user()->can('association.view');
+                        @endphp
                         <div class="players-table-outer table-responsive">
                         <table id="dataTable" class="text-center table table-sm table-bordered table-players-compact mb-0">
                             <thead class="bg-light text-capitalize">
@@ -199,7 +206,7 @@
                                    $mv = $player->market_value !== null ? (int) round((float) $player->market_value) : 40;
                                @endphp
                                {{-- Relative URLs so fetch() uses the current page scheme (avoids mixed-content blocks when APP_URL is http but the site is https). --}}
-                               <tr class="player-inline-row" data-player-id="{{ $player->id }}" data-inline-url="{{ route('admin.players.inline-update', ['id' => $player->id], false) }}">
+                               <tr class="player-inline-row" data-player-id="{{ $player->id }}" data-inline-url="{{ route('admin.players.inline-update', ['id' => $player->id], false) }}" @if ($canViewPlayerClubHistory) data-club-history-url="{{ route('admin.players.club-history-performance', ['player' => $player->id], false) }}" @endif>
                                     <td>{{ $players->firstItem() ? $players->firstItem() + $loop->index : $loop->iteration }}</td>
                                     <td>
                                         @if (auth()->user()->can('players.edit'))
@@ -224,17 +231,19 @@
                                         @endif
                                     </td>
                                     <td>
-                                        @if (auth()->user()->can('players.edit'))
-                                            <input type="text" class="form-control form-control-sm js-inline-field text-left" name="name" value="{{ $player->name }}" maxlength="255" autocomplete="name">
+                                        @if (auth()->user()->can('players.edit') && $playerInlineFullEdit)
+                                            <input type="text" class="form-control form-control-sm js-inline-field text-left js-player-name-inline" name="name" value="{{ $player->name }}" maxlength="255" autocomplete="name" title="{{ __('Double-click for club history & performance') }}">
+                                        @elseif (auth()->user()->can('players.edit'))
+                                            <a href="#" class="js-club-history-performance font-weight-bold text-primary" data-url="{{ route('admin.players.club-history-performance', ['player' => $player->id], false) }}">{{ $player->name }}</a>
                                         @else
                                             <a href="{{ route('player.details', ['id' => $player->id]) }}">{{ $player->name }}</a>
                                         @endif
                                     </td>
                                     <td class="text-left small">
-                                        @if (auth()->user()->can('players.edit'))
+                                        @if (auth()->user()->can('players.edit') && $playerInlineFullEdit)
                                             <input type="text" class="form-control form-control-sm js-inline-field text-left player-inline-identity-input" name="identity_number" value="{{ $player->identity_number }}" maxlength="50" autocomplete="off" title="{{ __('IC / ID number') }}">
                                         @else
-                                            {{ $player->identity_number }}
+                                            <span class="text-monospace">{{ $player->identity_number }}</span>
                                         @endif
                                     </td>
                                     <td>
@@ -286,7 +295,7 @@
                                         @endif
                                     </td>
                                     <td>
-                                        @if (auth()->user()->can('players.edit'))
+                                        @if (auth()->user()->can('players.edit') && $playerInlineFullEdit)
                                             <select class="form-control form-control-sm js-inline-field player-inline-position-select" name="position" title="{{ __('Position') }}">
                                                 <option value="">—</option>
                                                 <option value="Goalkeeper" {{ $player->position === 'Goalkeeper' ? 'selected' : '' }}>Goalkeeper</option>
@@ -294,7 +303,7 @@
                                                 <option value="Midfielder" {{ $player->position === 'Midfielder' ? 'selected' : '' }}>Midfielder</option>
                                                 <option value="Forward" {{ $player->position === 'Forward' ? 'selected' : '' }}>Forward</option>
                                             </select>
-                                        @elseif($player->position)
+                                        @elseif ($player->position)
                                             @php
                                                 $positionClass = 'position-' . strtolower($player->position);
                                             @endphp
@@ -318,6 +327,9 @@
                                         </span>
                                     </td>
                                     <td>
+                                        @if ($canViewPlayerClubHistory)
+                                            <button type="button" class="btn btn-info text-white btn-sm js-club-history-performance mb-1" data-url="{{ route('admin.players.club-history-performance', ['player' => $player->id], false) }}">{{ __('Club & stats') }}</button>
+                                        @endif
                                         @if (auth()->user()->can('players.edit'))
                                             <a class="btn btn-success text-white btn-sm" href="{{ route('admin.players.edit', $player->id) }}">Edit</a>
                                         @endif
@@ -348,6 +360,10 @@
 </div>
 
 @if (auth()->user()->can('players.edit'))
+    @include('backend.pages.players.partials.club-history-modal')
+@endif
+
+@if (auth()->user()->can('players.edit') && auth()->user()->can('association.view'))
 <div class="modal fade" id="marketValueModal" tabindex="-1" role="dialog" aria-labelledby="marketValueModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
@@ -396,6 +412,7 @@
 
         @if (auth()->user()->can('players.edit'))
         (function () {
+            var playerInlineFullEdit = @json(auth()->user()->can('association.view'));
             var csrf = document.querySelector('meta[name="csrf-token"]');
             csrf = csrf ? csrf.getAttribute('content') : '';
             var timers = {};
@@ -675,6 +692,9 @@
             var $mvModalRow = null;
 
             $(document).on('click', '.js-open-mv-modal', function () {
+                if (!playerInlineFullEdit) {
+                    return;
+                }
                 $mvModalRow = $(this).closest('.player-inline-row');
                 mvModalUrl = fetchUrlForPage($(this).attr('data-update-url') || '');
                 var v = $mvModalRow.find('.js-inline-mv-value').val();
@@ -741,4 +761,7 @@
         })();
         @endif
      </script>
+@if ($canViewPlayerClubHistory)
+    @include('backend.pages.players.partials.club-history-modal-script')
+@endif
 @endsection

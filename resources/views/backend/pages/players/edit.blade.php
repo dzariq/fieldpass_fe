@@ -5,8 +5,6 @@ Player Edit - Admin Panel
 @endsection
 
 @section('styles')
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/css/select2.min.css" rel="stylesheet" />
-
 <style>
     .form-check-label {
         text-transform: capitalize;
@@ -43,6 +41,10 @@ Player Edit - Admin Panel
 @endsection
 
 @section('admin-content')
+@php
+    $allowFullPlayerFieldEdit = $allowFullPlayerFieldEdit ?? true;
+    $clubsForTermination = $clubsForTermination ?? collect();
+@endphp
 
 <!-- page title area start -->
 <div class="page-title-area">
@@ -70,7 +72,12 @@ Player Edit - Admin Panel
         <div class="col-12 mt-5">
             <div class="card">
                 <div class="card-body">
-                    <h4 class="header-title">Edit Player - {{ $player->name }}</h4>
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-2">
+                        <h4 class="header-title mb-0">Edit Player - {{ $player->name }}</h4>
+                        @if (auth()->user()->can('players.edit'))
+                            <button type="button" class="btn btn-info btn-sm text-white js-club-history-performance mt-2 mt-sm-0" data-url="{{ route('admin.players.club-history-performance', ['player' => $player->id], false) }}">{{ __('Club history & performance') }}</button>
+                        @endif
+                    </div>
                     @include('backend.layouts.partials.messages')
 
                     <form action="{{ route('admin.players.update', $player->id) }}" method="POST" enctype="multipart/form-data">
@@ -98,7 +105,11 @@ Player Edit - Admin Panel
                         <div class="form-row">
                             <div class="form-group col-md-6 col-sm-12">
                                 <label for="name" class="required-field">Player Name</label>
-                                <input type="text" class="form-control" id="name" name="name" placeholder="Enter Name" value="{{ old('name', $player->name) }}" required autofocus>
+                                @if ($allowFullPlayerFieldEdit)
+                                    <input type="text" class="form-control" id="name" name="name" placeholder="Enter Name" value="{{ old('name', $player->name) }}" required autofocus>
+                                @else
+                                    <p class="form-control-plaintext border rounded px-3 py-2 bg-light mb-0">{{ $player->name }}</p>
+                                @endif
                             </div>
                             <div class="form-group col-md-6 col-sm-12">
                                 <label for="email">Player Email</label>
@@ -116,18 +127,10 @@ Player Edit - Admin Panel
                         </div>
 
                         <div class="form-row">
-                            <div class="form-group col-md-6 col-sm-6">
+                            <div class="form-group col-md-12 col-sm-12">
                                 <label for="username">Admin Username</label>
                                 <input type="text" class="form-control bg-light" id="username" name="username" placeholder="Username" value="{{ old('username', $player->username) }}" readonly>
                                 <small class="form-text text-muted">Username cannot be changed</small>
-                            </div>
-                            <div class="form-group col-md-6 col-sm-6">
-                                <label for="clubs">Assign Clubs</label>
-                                <select name="club_ids[]" id="clubs" class="form-control select2" multiple>
-                                    @foreach ($clubs as $club)
-                                    <option value="{{ $club->id }}" {{ (old('club_ids') ? in_array($club->id, old('club_ids')) : $player->clubs->contains('id', $club->id)) ? 'selected' : '' }}>{{ $club->name }}</option>
-                                    @endforeach
-                                </select>
                             </div>
                         </div>
 
@@ -140,22 +143,47 @@ Player Edit - Admin Panel
 
                             <div class="form-group col-md-6 col-sm-6">
                                 <label for="position" class="required-field">Position</label>
-                                <select class="form-control" name="position" id="position" required>
-                                    <option value="">{{ __('Select Position') }}</option>
-                                    <option value="Goalkeeper" {{ old('position', $player->position) == 'Goalkeeper' ? 'selected' : '' }}>Goalkeeper</option>
-                                    <option value="Defender" {{ old('position', $player->position) == 'Defender' ? 'selected' : '' }}>Defender</option>
-                                    <option value="Midfielder" {{ old('position', $player->position) == 'Midfielder' ? 'selected' : '' }}>Midfielder</option>
-                                    <option value="Forward" {{ old('position', $player->position) == 'Forward' ? 'selected' : '' }}>Forward</option>
-                                </select>
+                                @if ($allowFullPlayerFieldEdit)
+                                    <select class="form-control" name="position" id="position" required>
+                                        <option value="">{{ __('Select Position') }}</option>
+                                        <option value="Goalkeeper" {{ old('position', $player->position) == 'Goalkeeper' ? 'selected' : '' }}>Goalkeeper</option>
+                                        <option value="Defender" {{ old('position', $player->position) == 'Defender' ? 'selected' : '' }}>Defender</option>
+                                        <option value="Midfielder" {{ old('position', $player->position) == 'Midfielder' ? 'selected' : '' }}>Midfielder</option>
+                                        <option value="Forward" {{ old('position', $player->position) == 'Forward' ? 'selected' : '' }}>Forward</option>
+                                    </select>
+                                @else
+                                    <p class="form-control-plaintext border rounded px-3 py-2 bg-light mb-0">{{ $player->position ?: '—' }}</p>
+                                @endif
                             </div>
                         </div>
 
                         <div class="form-row">
                             <div class="form-group col-md-6 col-sm-6">
-                                <label for="identity_number" class="required-field">Identity Number (IC)</label>
-                                <input type="text" class="form-control" id="identity_number" name="identity_number" placeholder="XXXXXX-XX-XXXX" required value="{{ old('identity_number', $player->identity_number) }}" maxlength="14">
-                                <!-- <small class="form-text text-muted">Format: XXXXXX-XX-XXXX (e.g., 900101-01-1234)</small> -->
+                                <label for="identity_type" class="required-field">Identity type</label>
+                                @if ($allowFullPlayerFieldEdit)
+                                    <select class="form-control" name="identity_type" id="identity_type" required>
+                                        @php $idt = old('identity_type', $player->identity_type ?? 'malaysia_ic'); @endphp
+                                        <option value="malaysia_ic" {{ $idt === 'malaysia_ic' ? 'selected' : '' }}>Malaysia IC</option>
+                                        <option value="foreign_id" {{ $idt === 'foreign_id' ? 'selected' : '' }}>Foreign ID</option>
+                                    </select>
+                                @else
+                                    <p class="form-control-plaintext border rounded px-3 py-2 bg-light mb-0">
+                                        {{ ($player->identity_type ?? 'malaysia_ic') === 'foreign_id' ? 'Foreign ID' : 'Malaysia IC' }}
+                                    </p>
+                                @endif
                             </div>
+                            <div class="form-group col-md-6 col-sm-6">
+                                <label for="identity_number" class="required-field"><span id="identity_number_label">Identity number</span></label>
+                                @if ($allowFullPlayerFieldEdit)
+                                    <input type="text" class="form-control" id="identity_number" name="identity_number" placeholder="XXXXXX-XX-XXXX" required value="{{ old('identity_number', $player->identity_number) }}" maxlength="14" autocomplete="off">
+                                    <small class="form-text text-muted" id="identity_number_hint"></small>
+                                @else
+                                    <p class="form-control-plaintext border rounded px-3 py-2 bg-light mb-0 text-monospace">{{ $player->identity_number }}</p>
+                                @endif
+                            </div>
+                        </div>
+
+                        <div class="form-row">
                             <div class="form-group col-md-6 col-sm-6">
                                 <label for="country_code">Country Code</label>
                                 <select name="country_code" id="country_code" class="form-control">
@@ -228,6 +256,61 @@ Player Edit - Admin Panel
                         @csrf
                     </form>
                     @endif
+
+                    @if ($clubsForTermination->isNotEmpty())
+                    <hr class="my-4">
+                    <div class="d-flex flex-wrap align-items-center">
+                        <button type="button" class="btn btn-outline-danger" data-toggle="modal" data-target="#terminateContractModal">
+                            <i class="fa fa-user-times"></i> Terminate Contract
+                        </button>
+                        <small class="text-muted ml-3">Remove the player from a club, record a remark, and mark the club contract as terminated.</small>
+                    </div>
+
+                    <div class="modal fade" id="terminateContractModal" tabindex="-1" role="dialog" aria-labelledby="terminateContractModalLabel" aria-hidden="true">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <form action="{{ route('admin.players.terminate-contract', $player->id) }}" method="POST">
+                                    @csrf
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="terminateContractModalLabel">Terminate contract</h5>
+                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
+                                    </div>
+                                    <div class="modal-body">
+                                        @if ($clubsForTermination->count() === 1)
+                                            @php $termClub = $clubsForTermination->first(); @endphp
+                                            <p class="mb-2">Club: <strong>{{ $termClub->name }}</strong></p>
+                                            <input type="hidden" name="club_id" value="{{ $termClub->id }}">
+                                        @else
+                                            <div class="form-group">
+                                                <label for="terminate_club_id" class="required-field">Club</label>
+                                                <select name="club_id" id="terminate_club_id" class="form-control" required>
+                                                    <option value="">— Select club —</option>
+                                                    @foreach ($clubsForTermination as $c)
+                                                        <option value="{{ $c->id }}">{{ $c->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                        @endif
+                                        <div class="form-group mb-0">
+                                            <label for="terminate_remark" class="required-field">Remark</label>
+                                            <textarea name="remark" id="terminate_remark" class="form-control" rows="4" required maxlength="5000" placeholder="Reason or notes for this termination">{{ old('remark') }}</textarea>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                                        <button type="submit" class="btn btn-danger">Confirm termination</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+
+                    @if (auth()->user()->can('players.edit'))
+                        @include('backend.pages.players.partials.club-history-modal')
+                    @endif
                 </div>
             </div>
         </div>
@@ -238,38 +321,46 @@ Player Edit - Admin Panel
 @endsection
 
 @section('scripts')
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/js/select2.min.js"></script>
 <script>
     $(document).ready(function() {
-        $('.select2').select2();
-
-        // Auto-format IC number to XXXXXX-XX-XXXX
-        // $('#identity_number').on('input', function() {
-        //     let value = this.value.replace(/[^0-9]/g, ''); // Remove non-digits
-            
-        //     if (value.length > 6) {
-        //         value = value.substring(0, 6) + '-' + value.substring(6);
-        //     }
-        //     if (value.length > 9) {
-        //         value = value.substring(0, 9) + '-' + value.substring(9);
-        //     }
-        //     if (value.length > 14) {
-        //         value = value.substring(0, 14);
-        //     }
-            
-        //     this.value = value;
-        // });
-
-        // Validate IC format on blur
-        $('#identity_number').on('blur', function() {
-            // let value = this.value;
-            // let pattern = /^\d{6}-\d{2}-\d{4}$/;
-            
-            // if (value && !pattern.test(value)) {
-            //     alert('Invalid IC format. Please use format: XXXXXX-XX-XXXX (e.g., 900101-01-1234)');
-            //     $(this).focus();
-            // }
+        @if ($allowFullPlayerFieldEdit)
+        function applyIdentityTypeUi() {
+            var t = $('#identity_type').val();
+            var $in = $('#identity_number');
+            if (t === 'malaysia_ic') {
+                $('#identity_number_label').text('Identity number (IC)');
+                $in.attr('placeholder', 'XXXXXX-XX-XXXX');
+                $in.attr('maxlength', '14');
+                $('#identity_number_hint').text('Format: XXXXXX-XX-XXXX — type up to 12 digits; dashes are inserted automatically.');
+            } else {
+                $('#identity_number_label').text('Identity number (foreign ID)');
+                $in.attr('placeholder', 'Passport or national ID');
+                $in.attr('maxlength', '50');
+                $('#identity_number_hint').text('Free text, max 50 characters.');
+            }
+        }
+        $('#identity_type').on('change', function () {
+            applyIdentityTypeUi();
         });
+        applyIdentityTypeUi();
+        $('#identity_number').on('input', function () {
+            if ($('#identity_type').val() !== 'malaysia_ic') {
+                return;
+            }
+            var digits = this.value.replace(/\D/g, '').substring(0, 12);
+            var out = '';
+            if (digits.length > 0) {
+                out = digits.substring(0, 6);
+            }
+            if (digits.length > 6) {
+                out += '-' + digits.substring(6, 8);
+            }
+            if (digits.length > 8) {
+                out += '-' + digits.substring(8, 12);
+            }
+            this.value = out;
+        });
+        @endif
 
         // Validate phone number (numbers only)
         $('#phone').on('input', function() {
@@ -288,4 +379,7 @@ Player Edit - Admin Panel
         });
     });
 </script>
+@if (auth()->user()->can('players.edit'))
+    @include('backend.pages.players.partials.club-history-modal-script')
+@endif
 @endsection
