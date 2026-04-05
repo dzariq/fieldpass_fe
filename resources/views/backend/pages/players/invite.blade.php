@@ -319,7 +319,7 @@ Invite players - Admin Panel
             defaultClubs.push('{{ $club->id }}');
         @endforeach
 
-        const quickInviteAssignUrl = '{{ route("admin.players.invite.quick-assign") }}';
+        const quickInviteAssignUrl = @json(route('admin.players.invite.quick-assign', [], false));
         const csrfTokenInvite = '{{ csrf_token() }}';
         const inviteDefaultPlayerPhoto = @json(asset('backend/assets/images/default-avatar.png'));
         @php
@@ -468,7 +468,7 @@ Invite players - Admin Panel
             }
 
             $.ajax({
-                url: '{{ route("admin.players.invite.search") }}',
+                url: @json(route('admin.players.invite.search', [], false)),
                 method: 'POST',
                 data: postData,
                 headers: {
