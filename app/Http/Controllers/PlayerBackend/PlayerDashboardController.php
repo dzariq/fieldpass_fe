@@ -7,6 +7,7 @@ namespace App\Http\Controllers\PlayerBackend;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PlayerRequest;
 use App\Models\Player;
+use App\Services\PlayerClubHistoryPerformanceService;
 use App\Models\PlayerClubHistory;
 use App\Models\PlayerContract;
 use Illuminate\Http\RedirectResponse;
@@ -44,6 +45,14 @@ class PlayerDashboardController extends Controller
 
         $currentContract = null;
         $currentClub = null;
+        $clubHistoryRows = [];
+        $matchPerformance = [
+            'available' => false,
+            'totals' => [],
+            'recent' => [],
+            'message' => '',
+        ];
+
         if ($player) {
             $currentContract = PlayerContract::query()
                 ->with('club')
@@ -58,6 +67,10 @@ class PlayerDashboardController extends Controller
                 // Fallback when contract isn't present (legacy data)
                 $currentClub = $player->clubs()->first();
             }
+
+            $perfSvc = app(PlayerClubHistoryPerformanceService::class);
+            $clubHistoryRows = $perfSvc->clubHistoryForPlayer($player->id);
+            $matchPerformance = $perfSvc->matchPerformanceSummary($player->id);
         }
 
         return view(
@@ -66,6 +79,8 @@ class PlayerDashboardController extends Controller
                 'player' => $player,
                 'currentClub' => $currentClub,
                 'currentContract' => $currentContract,
+                'clubHistoryRows' => $clubHistoryRows,
+                'matchPerformance' => $matchPerformance,
             ]
         );
     }

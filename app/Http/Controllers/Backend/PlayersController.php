@@ -12,6 +12,7 @@ use App\Models\Player;
 use App\Models\PlayerClubHistory;
 use App\Models\PlayerContract;
 use App\Models\PlayerTermination;
+use App\Services\PlayerClubHistoryPerformanceService;
 use Illuminate\Contracts\Support\Renderable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -1831,128 +1832,16 @@ class PlayersController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $history = PlayerClubHistory::query()
-            ->where('player_id', $playerModel->id)
-            ->with(['club:id,name', 'admin:id,name'])
-            ->orderByDesc('event_at')
-            ->limit(200)
-            ->get()
-            ->map(function (PlayerClubHistory $h) {
-                $label = match ($h->event_type) {
-                    'assigned' => __('Joined club'),
-                    'terminated' => __('Contract terminated'),
-                    'removed' => __('Removed from club'),
-                    default => $h->event_type,
-                };
-
-                return [
-                    'event_type' => $h->event_type,
-                    'event_label' => $label,
-                    'club_name' => $h->club?->name ?? '—',
-                    'event_at' => $h->event_at?->format('Y-m-d H:i'),
-                    'remark' => $h->remark,
-                    'admin_name' => $h->admin?->name,
-                ];
-            });
+        $svc = app(PlayerClubHistoryPerformanceService::class);
 
         return response()->json([
             'player' => [
                 'id' => $playerModel->id,
                 'name' => $playerModel->name,
             ],
-            'history' => $history,
-            'performance' => $this->buildPlayerMatchPerformanceSummary($playerModel->id),
+            'history' => $svc->clubHistoryForPlayer($playerModel->id),
+            'performance' => $svc->matchPerformanceSummary($playerModel->id),
         ]);
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function buildPlayerMatchPerformanceSummary(int $playerId): array
-    {
-        if (! Schema::hasTable('match_events') || ! Schema::hasTable('match') || ! Schema::hasTable('club')) {
-            return [
-                'available' => false,
-                'totals' => [],
-                'recent' => [],
-                'message' => __('Match statistics are not available.'),
-            ];
-        }
-
-        $totals = DB::table('match_events')
-            ->where('player_id', $playerId)
-            ->selectRaw('event_type, COUNT(*) as c')
-            ->groupBy('event_type')
-            ->pluck('c', 'event_type')
-            ->all();
-
-        $select = [
-            'me.event_type',
-            'me.minute_in_match',
-            'm.date',
-            'm.home_club_id',
-            'm.away_club_id',
-            'me.club_id',
-            'hc.name as home_name',
-            'ac.name as away_name',
-        ];
-
-        $query = DB::table('match_events as me')
-            ->join('match as m', 'm.id', '=', 'me.match_id')
-            ->leftJoin('club as hc', 'hc.id', '=', 'm.home_club_id')
-            ->leftJoin('club as ac', 'ac.id', '=', 'm.away_club_id')
-            ->where('me.player_id', $playerId)
-            ->orderByDesc('m.date')
-            ->orderByDesc('me.minute_in_match')
-            ->limit(40);
-
-        if (Schema::hasTable('competition')) {
-            $query->leftJoin('competition as comp', 'comp.id', '=', 'm.competition_id');
-            $select[] = 'comp.name as competition_name';
-        }
-
-        $recent = $query->select($select)->get()->map(function ($row) {
-            $opponent = '—';
-            $cid = (int) $row->club_id;
-            if ($cid === (int) $row->home_club_id) {
-                $opponent = (string) ($row->away_name ?? '—');
-            } elseif ($cid === (int) $row->away_club_id) {
-                $opponent = (string) ($row->home_name ?? '—');
-            }
-
-            $ts = $row->date;
-            $matchDate = null;
-            if (is_numeric($ts)) {
-                $matchDate = date('Y-m-d', (int) $ts);
-            } elseif (is_string($ts) && $ts !== '') {
-                $parsed = strtotime($ts);
-                $matchDate = $parsed ? date('Y-m-d', $parsed) : null;
-            }
-
-            $eventLabel = match ($row->event_type) {
-                'goal' => __('Goal'),
-                'assist' => __('Assist'),
-                'sub_in' => __('Substituted in'),
-                'sub_out' => __('Substituted out'),
-                'own_goal' => __('Own goal'),
-                default => (string) $row->event_type,
-            };
-
-            return [
-                'event_type' => $row->event_type,
-                'event_label' => $eventLabel,
-                'minute_in_match' => $row->minute_in_match,
-                'match_date' => $matchDate,
-                'competition' => isset($row->competition_name) ? $row->competition_name : null,
-                'opponent' => $opponent,
-            ];
-        });
-
-        return [
-            'available' => true,
-            'totals' => $totals,
-            'recent' => $recent->values()->all(),
-        ];
     }
 
     public function destroy(int $id): RedirectResponse

@@ -8,6 +8,15 @@
     var $err = $('#playerClubHistoryModalError');
     var $content = $('#playerClubHistoryModalContent');
 
+    function destroyClubHistoryPerfChart() {
+        if (window.clubHistoryPerfChart) {
+            try {
+                window.clubHistoryPerfChart.destroy();
+            } catch (e) { /* ignore */ }
+            window.clubHistoryPerfChart = null;
+        }
+    }
+
     function fetchUrlForPage(url) {
         if (!url || typeof url !== 'string') {
             return url;
@@ -42,6 +51,7 @@
             return;
         }
         $err.hide().text('');
+        destroyClubHistoryPerfChart();
         $content.hide().empty();
         $load.show();
         $modal.modal('show');
@@ -95,6 +105,12 @@
                     });
                 }
                 html += (parts.length ? parts.join(', ') : '—') + '</p>';
+                var chart = perf.points_by_month_chart;
+                if (typeof Chart !== 'undefined' && chart && chart.labels && chart.labels.length && chart.datasets && chart.datasets.length) {
+                    html += '<h6 class="text-secondary border-bottom pb-1 mt-3">' + @json(__('Match events by month')) + '</h6>';
+                    html += '<p class="text-muted small mb-2">' + @json(__('Count of recorded events per calendar month (match date). Up to 10 event types by total volume.')) + '</p>';
+                    html += '<div class="player-club-history-chart-wrap mb-3" style="position:relative;height:260px;max-width:100%;"><canvas id="playerClubHistoryPerfChart"></canvas></div>';
+                }
                 if (perf.recent && perf.recent.length) {
                     html += '<div class="table-responsive"><table class="table table-sm table-bordered"><thead><tr><th>' + @json(__('Date')) + '</th><th>' + @json(__('Competition')) + '</th><th>' + @json(__('Opponent')) + '</th><th>' + @json(__('Event')) + '</th><th>' + @json(__('Min')) + '</th></tr></thead><tbody>';
                     perf.recent.forEach(function (r) {
@@ -106,6 +122,47 @@
                 }
             }
             $content.html(html).show();
+            var chartCfg = d.performance && d.performance.points_by_month_chart;
+            if (typeof Chart !== 'undefined' && chartCfg && chartCfg.labels && chartCfg.labels.length && chartCfg.datasets && chartCfg.datasets.length) {
+                var canvas = document.getElementById('playerClubHistoryPerfChart');
+                if (canvas) {
+                    var mapped = (chartCfg.datasets || []).map(function (ds) {
+                        return {
+                            label: ds.label,
+                            data: ds.data,
+                            borderColor: ds.borderColor || '#4e73df',
+                            backgroundColor: 'transparent',
+                            fill: false,
+                            lineTension: 0.2,
+                            pointRadius: 3,
+                            pointHitRadius: 10
+                        };
+                    });
+                    window.clubHistoryPerfChart = new Chart(canvas.getContext('2d'), {
+                        type: 'line',
+                        data: {
+                            labels: chartCfg.labels,
+                            datasets: mapped
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            legend: {
+                                position: 'bottom',
+                                labels: { boxWidth: 12, fontSize: 11 }
+                            },
+                            scales: {
+                                xAxes: [{
+                                    gridLines: { display: false }
+                                }],
+                                yAxes: [{
+                                    ticks: { beginAtZero: true }
+                                }]
+                            }
+                        }
+                    });
+                }
+            }
         }).catch(function () {
             $load.hide();
             $err.text(@json(__('Network error'))).show();

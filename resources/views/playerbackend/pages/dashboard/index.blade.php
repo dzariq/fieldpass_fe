@@ -396,6 +396,8 @@ Player Dashboard
                     </form>
                 </div>
             </div>
+
+            @include('playerbackend.pages.dashboard.partials.club-history-performance')
         </div>
     </div>
 </div>
@@ -415,4 +417,49 @@ Player Dashboard
         }
     });
 </script>
+@if(!empty($matchPerformance['points_by_month_chart']['labels']) && !empty($matchPerformance['points_by_month_chart']['datasets']))
+<script>
+(function () {
+    var chartCfg = @json($matchPerformance['points_by_month_chart']);
+    if (typeof Chart === 'undefined' || !chartCfg || !chartCfg.labels || !chartCfg.labels.length) {
+        return;
+    }
+    var canvas = document.getElementById('playerDashboardPerfChart');
+    if (!canvas) {
+        return;
+    }
+    var mapped = (chartCfg.datasets || []).map(function (ds) {
+        return {
+            label: ds.label,
+            data: ds.data,
+            borderColor: ds.borderColor || '#667eea',
+            backgroundColor: 'transparent',
+            fill: false,
+            lineTension: 0.2,
+            pointRadius: 3,
+            pointHitRadius: 10
+        };
+    });
+    new Chart(canvas.getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: chartCfg.labels,
+            datasets: mapped
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            legend: {
+                position: 'bottom',
+                labels: { boxWidth: 12, fontSize: 11 }
+            },
+            scales: {
+                xAxes: [{ gridLines: { display: false } }],
+                yAxes: [{ ticks: { beginAtZero: true } }]
+            }
+        }
+    });
+})();
+</script>
+@endif
 @endsection
