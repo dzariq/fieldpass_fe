@@ -288,6 +288,89 @@ Match Events
         border: 1px solid #e5e7eb;
     }
 
+    .action-player-select__head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+
+    .action-player-select__head .action-type-badge {
+        margin-bottom: 0;
+    }
+
+    .action-player-select__actions {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+    }
+
+    .btn-fp-undo-section {
+        display: none;
+        width: 40px;
+        height: 36px;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+        background: #f9fafb;
+        cursor: pointer;
+        font-size: 1.1rem;
+        line-height: 1;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+        padding: 0;
+    }
+
+    .btn-fp-undo-section:hover {
+        background: #f3f4f6;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+    }
+
+    .action-player-select.fp-action-section--dirty .btn-fp-undo-section {
+        display: flex;
+    }
+
+    .btn-fp-save-section {
+        flex-shrink: 0;
+        width: 40px;
+        height: 36px;
+        border-radius: 8px;
+        border: 1px solid #c7d2fe;
+        background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+        cursor: pointer;
+        font-size: 1.05rem;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .btn-fp-save-section:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
+    }
+
+    .action-player-select.fp-action-section--dirty {
+        border-color: #f59e0b;
+        box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.35), 0 4px 14px rgba(245, 158, 11, 0.12);
+        background: linear-gradient(180deg, #fffbeb 0%, #ffffff 48px);
+    }
+
+    .action-player-select.fp-action-section--dirty .btn-fp-save-section {
+        border-color: #f59e0b;
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        animation: fp-save-pulse 1.6s ease-in-out infinite;
+    }
+
+    @keyframes fp-save-pulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.35); }
+        50% { box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.12); }
+    }
+
     .action-type-badge {
         display: inline-flex;
         align-items: center;
@@ -348,7 +431,7 @@ Match Events
 
     .action-row {
         display: grid;
-        grid-template-columns: 2fr 1fr 36px;
+        grid-template-columns: 2fr 1fr;
         gap: 8px;
         margin-bottom: 8px;
         align-items: end;
@@ -356,7 +439,7 @@ Match Events
 
     .substitution-row {
         display: grid;
-        grid-template-columns: 1.5fr 1.5fr 1fr 36px;
+        grid-template-columns: 1.5fr 1.5fr 1fr;
         gap: 8px;
         margin-bottom: 8px;
         align-items: end;
@@ -440,45 +523,46 @@ Match Events
         transform: translateY(-1px);
     }
 
-    .btn-remove-action {
-        background: #fee2e2;
-        border: 1px solid #fecaca;
-        color: #991b1b;
-        padding: 8px;
-        border-radius: 6px;
-        font-weight: 600;
-        font-size: 0.875rem;
-        transition: all 0.2s ease;
-        cursor: pointer;
-        height: 36px;
-        width: 36px;
-        display: flex;
+    .fp-event-save-mask {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 10050;
         align-items: center;
         justify-content: center;
+        background: rgba(15, 23, 42, 0.4);
+        backdrop-filter: blur(2px);
     }
 
-    .btn-remove-action:hover {
-        background: #fecaca;
+    .fp-event-save-mask.fp-event-save-mask--active {
+        display: flex;
     }
 
-    .btn-save-actions {
-        background: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
-        border: none;
-        color: white;
-        padding: 12px 32px;
-        border-radius: 10px;
-        font-size: 0.938rem;
+    .fp-event-save-mask__panel {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 20px 28px;
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
+        border: 1px solid #e5e7eb;
         font-weight: 600;
-        transition: all 0.2s ease;
-        box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
-        margin-top: 16px;
-        border: 1px solid #6366f1;
+        font-size: 0.938rem;
+        color: #111827;
     }
 
-    .btn-save-actions:hover {
-        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    .fp-event-save-mask__spinner {
+        width: 22px;
+        height: 22px;
+        border: 3px solid #e5e7eb;
+        border-top-color: #6366f1;
+        border-radius: 50%;
+        animation: fp-event-save-spin 0.7s linear infinite;
+    }
+
+    @keyframes fp-event-save-spin {
+        to { transform: rotate(360deg); }
     }
 
     .sub-direction-label {
@@ -578,11 +662,6 @@ Match Events
             grid-template-columns: 1fr;
         }
 
-        .btn-remove-action {
-            width: 100%;
-            margin-top: 4px;
-        }
-
         .page-title-area {
             padding: 12px 14px;
             border-radius: 14px;
@@ -617,23 +696,88 @@ Match Events
             font-size: 0.78rem;
             margin-bottom: 10px;
         }
-
-        /* Keep Save always reachable during match */
-        .btn-save-actions {
-            width: 100%;
-            position: sticky;
-            bottom: 10px;
-            z-index: 30;
-        }
-        .tab-content {
-            padding-bottom: 72px; /* room for sticky save button */
-        }
     }
 
     @media (min-width: 1200px) {
         .actions-grid {
             grid-template-columns: repeat(3, 1fr);
         }
+    }
+
+    .possession-timer-panel {
+        background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+        border: 1px solid #93c5fd;
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 20px;
+    }
+
+    .possession-timer-panel h5 {
+        margin: 0 0 4px;
+        font-size: 1rem;
+        font-weight: 700;
+        color: #1e3a8a;
+    }
+
+    .possession-timer-panel .possession-sub {
+        color: #475569;
+        font-size: 0.8125rem;
+        margin-bottom: 12px;
+    }
+
+    .match-timer-display {
+        font-size: 1.75rem;
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+        color: #1d4ed8;
+        letter-spacing: 0.02em;
+        line-height: 1.2;
+    }
+
+    .possession-btn-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 14px;
+        align-items: center;
+    }
+
+    .possession-btn-row form {
+        margin: 0;
+    }
+
+    .btn-possession-home,
+    .btn-possession-away {
+        min-width: 160px;
+        font-weight: 600;
+        padding: 10px 16px;
+        border-radius: 10px;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-possession-home {
+        background: #2563eb;
+        color: #fff;
+    }
+
+    .btn-possession-away {
+        background: #7c3aed;
+        color: #fff;
+    }
+
+    .btn-possession-home:disabled,
+    .btn-possession-away:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+    }
+
+    .possession-mini-stats {
+        font-size: 0.8125rem;
+        color: #334155;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid #bfdbfe;
     }
 </style>
 @endsection
@@ -734,10 +878,25 @@ $subIdsAway = $existingLineupAway ? [
 </div>
 
 <div class="main-content-inner">
+    @include('backend.layouts.partials.messages')
+
     @if ($deadlinePassed)
     <div class="deadline-warning">
         🚫 {{ __('Submission closed. Deadline was ') . $submissionDeadline->format('d M Y H:i') }}
     </div>
+    @endif
+
+    @if (!empty($possessionMatch))
+        @include('backend.pages.matches.partials.match-possession-ajax-panel', [
+            'possessionMatch' => $possessionMatch,
+            'homeClubId' => (int) $match->home_club_id,
+            'awayClubId' => (int) $match->away_club_id,
+            'homeName' => $match->home_club_name,
+            'awayName' => $match->away_club_name,
+            'possessionSummary' => $possessionSummary ?? [],
+            'canEdit' => true,
+            'showFullLogLink' => true,
+        ])
     @endif
 
     <ul class="nav nav-tabs" id="teamTabs" role="tablist">
@@ -752,268 +911,9 @@ $subIdsAway = $existingLineupAway ? [
             </a>
         </li>
     </ul>
-  @if(isset($matchEvents) && count($matchEvents) > 0)
-                <details class="recorded-events" open>
-                    <summary>
-                        <span>📋 {{ __('Recorded Events') }}</span>
-                        <span class="fp-summary-right">
-                            {{ count($matchEvents) }}
-                            <span class="fp-chevron">⌄</span>
-                        </span>
-                    </summary>
-                    <div class="fp-recorded-body">
-
-                    @php
-                    $eventsByType = collect($matchEvents)->groupBy(function($event) {
-                        return $event->additional_data['type'] ?? $event->event_type;
-                    });
-                    @endphp
-
-                    @if($eventsByType->has('goal'))
-                    <div class="event-type-section">
-                        <div class="event-type-header goals">
-                            <span>⚽</span>
-                            {{ __('Goals') }} ({{ $eventsByType['goal']->count() }})
-                        </div>
-                        @foreach($eventsByType['goal'] as $event)
-                        <div class="event-row-display">
-                            <div class="event-info">
-                                <div class="event-minute">{{ $event->minute_in_match }}'</div>
-                                <div class="player-details">
-                                    <div class="player-name">{{ $event->player_name }}</div>
-                                    <div class="club-name">{{ $event->club_name  }}</div>
-                                </div>
-                            </div>
-                            <form action="{{ route('admin.match.deleteEvent') }}" method="POST" style="margin: 0;" onsubmit="return confirm('Delete this goal?');">
-                                @csrf
-                                <input type="hidden" name="event_id" value="{{ $event->event_id }}">
-                                <button type="submit" class="btn-delete">🗑️ Delete</button>
-                            </form>
-                        </div>
-                        @endforeach
-                    </div>
-                    @endif
-
-                    @if($eventsByType->has('assist'))
-                    <div class="event-type-section">
-                        <div class="event-type-header assists">
-                            <span>🎯</span>
-                            {{ __('Assists') }} ({{ $eventsByType['assist']->count() }})
-                        </div>
-                        @foreach($eventsByType['assist'] as $event)
-                        <div class="event-row-display">
-                            <div class="event-info">
-                                <div class="event-minute">{{ $event->minute_in_match }}'</div>
-                                <div class="player-details">
-                                    <div class="player-name">{{ $event->player_name }}</div>
-                                    <div class="club-name">{{ $event->club_name  }}</div>
-                                </div>
-                            </div>
-                            <form action="{{ route('admin.match.deleteEvent') }}" method="POST" style="margin: 0;" onsubmit="return confirm('Delete this assist?');">
-                                @csrf
-                                <input type="hidden" name="event_id" value="{{ $event->event_id }}">
-                                <button type="submit" class="btn-delete">🗑️ Delete</button>
-                            </form>
-                        </div>
-                        @endforeach
-                    </div>
-                    @endif
-
-                    @if($eventsByType->has('sub_out') || $eventsByType->has('sub_in'))
-                    <div class="event-type-section">
-                        <div class="event-type-header substitutions">
-                            <span>🔄</span>
-                            {{ __('Substitutions') }} ({{ ($eventsByType->get('sub_out', collect())->count() + $eventsByType->get('sub_in', collect())->count()) / 2 }})
-                        </div>
-                        @php
-                        $subOutEvents = $eventsByType->get('sub_out', collect());
-                        $subInEvents = $eventsByType->get('sub_in', collect());
-                        $substitutionsByMinute = [];
-
-                        foreach($subOutEvents as $subOut) {
-                            $minute = $subOut->minute_in_match;
-                            if (!isset($substitutionsByMinute[$minute])) {
-                                $substitutionsByMinute[$minute] = ['out' => [], 'in' => []];
-                            }
-                            $substitutionsByMinute[$minute]['out'][] = $subOut;
-                        }
-
-                        foreach($subInEvents as $subIn) {
-                            $minute = $subIn->minute_in_match;
-                            if (!isset($substitutionsByMinute[$minute])) {
-                                $substitutionsByMinute[$minute] = ['out' => [], 'in' => []];
-                            }
-                            $substitutionsByMinute[$minute]['in'][] = $subIn;
-                        }
-
-                        ksort($substitutionsByMinute);
-                        @endphp
-
-                        @foreach($substitutionsByMinute as $minute => $subs)
-                            @if(count($subs['out']) > 0 && count($subs['in']) > 0)
-                                @foreach($subs['out'] as $index => $subOut)
-                                    @php $subIn = $subs['in'][$index] ?? null; @endphp
-                                    @if($subIn)
-                                    <div class="event-row-display">
-                                        <div class="event-info">
-                                            <div class="event-minute">{{ $minute }}'</div>
-                                            <div class="player-details">
-                                                <div class="player-name" style="color: #ef4444;">↓ {{ $subOut->player_name }}</div>
-                                                <div class="club-name">{{ $subOut->club_name ?? $match->home_club_name }}</div>
-                                            </div>
-                                            <span style="color: #6b7280; margin: 0 8px;">→</span>
-                                            <div class="player-details">
-                                                <div class="player-name" style="color: #10b981;">↑ {{ $subIn->player_name }}</div>
-                                                <div class="club-name">{{ $subIn->club_name ?? $match->home_club_name }}</div>
-                                            </div>
-                                        </div>
-                                        <div style="display: flex; gap: 4px;">
-                                            <form action="{{ route('admin.match.deleteEvent') }}" method="POST" style="margin: 0;" onsubmit="return confirm('Delete SUB OUT?');">
-                                                @csrf
-                                                <input type="hidden" name="event_id" value="{{ $subOut->event_id }}">
-                                                <button type="submit" class="btn-delete" style="font-size: 0.688rem; padding: 4px 8px;">Out</button>
-                                            </form>
-                                            <form action="{{ route('admin.match.deleteEvent') }}" method="POST" style="margin: 0;" onsubmit="return confirm('Delete SUB IN?');">
-                                                @csrf
-                                                <input type="hidden" name="event_id" value="{{ $subIn->event_id }}">
-                                                <button type="submit" class="btn-delete" style="font-size: 0.688rem; padding: 4px 8px;">In</button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                    @endif
-                                @endforeach
-                            @endif
-                        @endforeach
-                    </div>
-                    @endif
-
-                    @if($eventsByType->has('yellow_card'))
-                    <div class="event-type-section">
-                        <div class="event-type-header yellow">
-                            <span>🟨</span>
-                            {{ __('Yellow Cards') }} ({{ $eventsByType['yellow_card']->count() }})
-                        </div>
-                        @foreach($eventsByType['yellow_card'] as $event)
-                        <div class="event-row-display">
-                            <div class="event-info">
-                                <div class="event-minute">{{ $event->minute_in_match }}'</div>
-                                <div class="player-details">
-                                    <div class="player-name">{{ $event->player_name }}</div>
-                                    <div class="club-name">{{ $event->club_name }}</div>
-                                </div>
-                            </div>
-                            <form action="{{ route('admin.match.deleteEvent') }}" method="POST" style="margin: 0;" onsubmit="return confirm('Delete this card?');">
-                                @csrf
-                                <input type="hidden" name="event_id" value="{{ $event->event_id }}">
-                                <button type="submit" class="btn-delete">🗑️ Delete</button>
-                            </form>
-                        </div>
-                        @endforeach
-                    </div>
-                    @endif
-
-                    @if($eventsByType->has('red_card'))
-                    <div class="event-type-section">
-                        <div class="event-type-header red">
-                            <span>🟥</span>
-                            {{ __('Red Cards') }} ({{ $eventsByType['red_card']->count() }})
-                        </div>
-                        @foreach($eventsByType['red_card'] as $event)
-                        <div class="event-row-display">
-                            <div class="event-info">
-                                <div class="event-minute">{{ $event->minute_in_match }}'</div>
-                                <div class="player-details">
-                                    <div class="player-name">{{ $event->player_name }}</div>
-                                    <div class="club-name">{{ $event->club_name }}</div>
-                                </div>
-                            </div>
-                            <form action="{{ route('admin.match.deleteEvent') }}" method="POST" style="margin: 0;" onsubmit="return confirm('Delete this card?');">
-                                @csrf
-                                <input type="hidden" name="event_id" value="{{ $event->event_id }}">
-                                <button type="submit" class="btn-delete">🗑️ Delete</button>
-                            </form>
-                        </div>
-                        @endforeach
-                    </div>
-                    @endif
-
-                    @if($eventsByType->has('penalty_missed'))
-                    <div class="event-type-section">
-                        <div class="event-type-header penalty-missed">
-                            <span>❌</span>
-                            {{ __('Penalties Missed') }} ({{ $eventsByType['penalty_missed']->count() }})
-                        </div>
-                        @foreach($eventsByType['penalty_missed'] as $event)
-                        <div class="event-row-display">
-                            <div class="event-info">
-                                <div class="event-minute">{{ $event->minute_in_match }}'</div>
-                                <div class="player-details">
-                                    <div class="player-name">{{ $event->player_name }}</div>
-                                    <div class="club-name">{{ $event->club_name }}</div>
-                                </div>
-                            </div>
-                            <form action="{{ route('admin.match.deleteEvent') }}" method="POST" style="margin: 0;" onsubmit="return confirm('Delete this event?');">
-                                @csrf
-                                <input type="hidden" name="event_id" value="{{ $event->event_id }}">
-                                <button type="submit" class="btn-delete">🗑️ Delete</button>
-                            </form>
-                        </div>
-                        @endforeach
-                    </div>
-                    @endif
-
-                    @if($eventsByType->has('penalty_saved'))
-                    <div class="event-type-section">
-                        <div class="event-type-header penalty-saved">
-                            <span>🧤</span>
-                            {{ __('Penalties Saved') }} ({{ $eventsByType['penalty_saved']->count() }})
-                        </div>
-                        @foreach($eventsByType['penalty_saved'] as $event)
-                        <div class="event-row-display">
-                            <div class="event-info">
-                                <div class="event-minute">{{ $event->minute_in_match }}'</div>
-                                <div class="player-details">
-                                    <div class="player-name">{{ $event->player_name }}</div>
-                                    <div class="club-name">{{ $event->club_name }}</div>
-                                </div>
-                            </div>
-                            <form action="{{ route('admin.match.deleteEvent') }}" method="POST" style="margin: 0;" onsubmit="return confirm('Delete this event?');">
-                                @csrf
-                                <input type="hidden" name="event_id" value="{{ $event->event_id }}">
-                                <button type="submit" class="btn-delete">🗑️ Delete</button>
-                            </form>
-                        </div>
-                        @endforeach
-                    </div>
-                    @endif
-
-                    @if($eventsByType->has('own_goal'))
-                    <div class="event-type-section">
-                        <div class="event-type-header own-goal">
-                            <span>⚠️</span>
-                            {{ __('Own Goals') }} ({{ $eventsByType['own_goal']->count() }})
-                        </div>
-                        @foreach($eventsByType['own_goal'] as $event)
-                        <div class="event-row-display">
-                            <div class="event-info">
-                                <div class="event-minute">{{ $event->minute_in_match }}'</div>
-                                <div class="player-details">
-                                    <div class="player-name">{{ $event->player_name }}</div>
-                                    <div class="club-name">{{ $event->club_name }}</div>
-                                </div>
-                            </div>
-                            <form action="{{ route('admin.match.deleteEvent') }}" method="POST" style="margin: 0;" onsubmit="return confirm('Delete this event?');">
-                                @csrf
-                                <input type="hidden" name="event_id" value="{{ $event->event_id }}">
-                                <button type="submit" class="btn-delete">🗑️ Delete</button>
-                            </form>
-                        </div>
-                        @endforeach
-                    </div>
-                    @endif
-                    </div>
-                </details>
-                @endif
+    <div id="fp-recorded-events-wrap">
+        @include('backend.pages.matches.partials.recorded-events-block', ['match' => $match, 'matchEvents' => $matchEvents ?? []])
+    </div>
     <div class="tab-content">
         <!-- HOME TEAM TAB -->
         <div class="tab-pane fade show active" id="home-team" role="tabpanel">
@@ -1036,7 +936,13 @@ $subIdsAway = $existingLineupAway ? [
                     <div class="actions-grid">
                         <!-- Goals HOME -->
                         <div class="action-player-select">
-                            <div class="action-type-badge goal">⚽ {{ __('Goals') }}</div>
+                            <div class="action-player-select__head">
+                                <div class="action-type-badge goal">⚽ {{ __('Goals') }}</div>
+                                <div class="action-player-select__actions">
+                                    <button type="button" class="btn-fp-undo-section" title="{{ __('Discard unsaved changes in this section') }}" aria-label="{{ __('Undo') }}">↩</button>
+                                    <button type="button" class="btn-fp-save-section" title="{{ __('Save entries in this section') }}" aria-label="{{ __('Save') }}">💾</button>
+                                </div>
+                            </div>
                             <div id="goals-container-home">
                                 <div class="action-row">
                                     <div>
@@ -1050,17 +956,22 @@ $subIdsAway = $existingLineupAway ? [
                                     </div>
                                     <div class="minute-input-group">
                                         <label>{{ __('Minute') }}</label>
-                                        <input type="number" name="goals[0][minute]" class="form-control action-input" placeholder="45" min="1" max="120">
+                                        <input type="number" name="goals[0][minute]" class="form-control action-input js-match-minute-sync" placeholder="45" min="1" max="120" title="{{ __('Follows live match clock; change anytime to override.') }}">
                                     </div>
-                                    <button type="button" class="btn-remove-action" onclick="removeActionRow(this)" style="display: none;">✕</button>
                                 </div>
                             </div>
-                            <button type="button" class="btn-add-action" onclick="addActionRow('goals', 'home')">+ {{ __('Add Goal') }}</button>
+                            <button type="button" class="btn-add-action" data-fp-team="home" data-fp-row="goals">+ {{ __('Add Goal') }}</button>
                         </div>
 
                         <!-- Assists HOME -->
                         <div class="action-player-select">
-                            <div class="action-type-badge assist">🎯 {{ __('Assists') }}</div>
+                            <div class="action-player-select__head">
+                                <div class="action-type-badge assist">🎯 {{ __('Assists') }}</div>
+                                <div class="action-player-select__actions">
+                                    <button type="button" class="btn-fp-undo-section" title="{{ __('Discard unsaved changes in this section') }}" aria-label="{{ __('Undo') }}">↩</button>
+                                    <button type="button" class="btn-fp-save-section" title="{{ __('Save entries in this section') }}" aria-label="{{ __('Save') }}">💾</button>
+                                </div>
+                            </div>
                             <div id="assists-container-home">
                                 <div class="action-row">
                                     <div>
@@ -1074,17 +985,22 @@ $subIdsAway = $existingLineupAway ? [
                                     </div>
                                     <div class="minute-input-group">
                                         <label>{{ __('Minute') }}</label>
-                                        <input type="number" name="assists[0][minute]" class="form-control action-input" placeholder="45" min="1" max="120">
+                                        <input type="number" name="assists[0][minute]" class="form-control action-input js-match-minute-sync" placeholder="45" min="1" max="120" title="{{ __('Follows live match clock; change anytime to override.') }}">
                                     </div>
-                                    <button type="button" class="btn-remove-action" onclick="removeActionRow(this)" style="display: none;">✕</button>
                                 </div>
                             </div>
-                            <button type="button" class="btn-add-action" onclick="addActionRow('assists', 'home')">+ {{ __('Add Assist') }}</button>
+                            <button type="button" class="btn-add-action" data-fp-team="home" data-fp-row="assists">+ {{ __('Add Assist') }}</button>
                         </div>
 
                         <!-- Substitutions HOME -->
                         <div class="action-player-select" style="grid-column: 1 / -1;">
-                            <div class="action-type-badge substitution">🔄 {{ __('Substitutions') }}</div>
+                            <div class="action-player-select__head">
+                                <div class="action-type-badge substitution">🔄 {{ __('Substitutions') }}</div>
+                                <div class="action-player-select__actions">
+                                    <button type="button" class="btn-fp-undo-section" title="{{ __('Discard unsaved changes in this section') }}" aria-label="{{ __('Undo') }}">↩</button>
+                                    <button type="button" class="btn-fp-save-section" title="{{ __('Save entries in this section') }}" aria-label="{{ __('Save') }}">💾</button>
+                                </div>
+                            </div>
                             <div id="substitutions-container-home">
                                 <div class="substitution-row">
                                     <div>
@@ -1111,17 +1027,22 @@ $subIdsAway = $existingLineupAway ? [
                                     </div>
                                     <div class="minute-input-group">
                                         <label>{{ __('Minute') }}</label>
-                                        <input type="number" name="substitutions[0][minute]" class="form-control action-input" placeholder="45" min="1" max="120">
+                                        <input type="number" name="substitutions[0][minute]" class="form-control action-input js-match-minute-sync" placeholder="45" min="1" max="120" title="{{ __('Follows live match clock; change anytime to override.') }}">
                                     </div>
-                                    <button type="button" class="btn-remove-action" onclick="removeActionRow(this)" style="display: none;">✕</button>
                                 </div>
                             </div>
-                            <button type="button" class="btn-add-action" onclick="addSubstitutionRow('home')">+ {{ __('Add Substitution') }}</button>
+                            <button type="button" class="btn-add-action" data-fp-team="home" data-fp-substitution="1">+ {{ __('Add Substitution') }}</button>
                         </div>
 
                         <!-- Yellow Cards HOME -->
                         <div class="action-player-select">
-                            <div class="action-type-badge yellow">🟨 {{ __('Yellow Cards') }}</div>
+                            <div class="action-player-select__head">
+                                <div class="action-type-badge yellow">🟨 {{ __('Yellow Cards') }}</div>
+                                <div class="action-player-select__actions">
+                                    <button type="button" class="btn-fp-undo-section" title="{{ __('Discard unsaved changes in this section') }}" aria-label="{{ __('Undo') }}">↩</button>
+                                    <button type="button" class="btn-fp-save-section" title="{{ __('Save entries in this section') }}" aria-label="{{ __('Save') }}">💾</button>
+                                </div>
+                            </div>
                             <div id="yellow_cards-container-home">
                                 <div class="action-row">
                                     <div>
@@ -1135,17 +1056,22 @@ $subIdsAway = $existingLineupAway ? [
                                     </div>
                                     <div class="minute-input-group">
                                         <label>{{ __('Minute') }}</label>
-                                        <input type="number" name="yellow_cards[0][minute]" class="form-control action-input" placeholder="45" min="1" max="120">
+                                        <input type="number" name="yellow_cards[0][minute]" class="form-control action-input js-match-minute-sync" placeholder="45" min="1" max="120" title="{{ __('Follows live match clock; change anytime to override.') }}">
                                     </div>
-                                    <button type="button" class="btn-remove-action" onclick="removeActionRow(this)" style="display: none;">✕</button>
                                 </div>
                             </div>
-                            <button type="button" class="btn-add-action" onclick="addActionRow('yellow_cards', 'home')">+ {{ __('Add Yellow Card') }}</button>
+                            <button type="button" class="btn-add-action" data-fp-team="home" data-fp-row="yellow_cards">+ {{ __('Add Yellow Card') }}</button>
                         </div>
 
                         <!-- Red Cards HOME -->
                         <div class="action-player-select">
-                            <div class="action-type-badge red">🟥 {{ __('Red Cards') }}</div>
+                            <div class="action-player-select__head">
+                                <div class="action-type-badge red">🟥 {{ __('Red Cards') }}</div>
+                                <div class="action-player-select__actions">
+                                    <button type="button" class="btn-fp-undo-section" title="{{ __('Discard unsaved changes in this section') }}" aria-label="{{ __('Undo') }}">↩</button>
+                                    <button type="button" class="btn-fp-save-section" title="{{ __('Save entries in this section') }}" aria-label="{{ __('Save') }}">💾</button>
+                                </div>
+                            </div>
                             <div id="red_cards-container-home">
                                 <div class="action-row">
                                     <div>
@@ -1159,17 +1085,22 @@ $subIdsAway = $existingLineupAway ? [
                                     </div>
                                     <div class="minute-input-group">
                                         <label>{{ __('Minute') }}</label>
-                                        <input type="number" name="red_cards[0][minute]" class="form-control action-input" placeholder="45" min="1" max="120">
+                                        <input type="number" name="red_cards[0][minute]" class="form-control action-input js-match-minute-sync" placeholder="45" min="1" max="120" title="{{ __('Follows live match clock; change anytime to override.') }}">
                                     </div>
-                                    <button type="button" class="btn-remove-action" onclick="removeActionRow(this)" style="display: none;">✕</button>
                                 </div>
                             </div>
-                            <button type="button" class="btn-add-action" onclick="addActionRow('red_cards', 'home')">+ {{ __('Add Red Card') }}</button>
+                            <button type="button" class="btn-add-action" data-fp-team="home" data-fp-row="red_cards">+ {{ __('Add Red Card') }}</button>
                         </div>
 
                         <!-- Penalty Missed HOME -->
                         <div class="action-player-select">
-                            <div class="action-type-badge penalty-missed">❌ {{ __('Penalty Missed') }}</div>
+                            <div class="action-player-select__head">
+                                <div class="action-type-badge penalty-missed">❌ {{ __('Penalty Missed') }}</div>
+                                <div class="action-player-select__actions">
+                                    <button type="button" class="btn-fp-undo-section" title="{{ __('Discard unsaved changes in this section') }}" aria-label="{{ __('Undo') }}">↩</button>
+                                    <button type="button" class="btn-fp-save-section" title="{{ __('Save entries in this section') }}" aria-label="{{ __('Save') }}">💾</button>
+                                </div>
+                            </div>
                             <div id="penalty_missed-container-home">
                                 <div class="action-row">
                                     <div>
@@ -1183,17 +1114,22 @@ $subIdsAway = $existingLineupAway ? [
                                     </div>
                                     <div class="minute-input-group">
                                         <label>{{ __('Minute') }}</label>
-                                        <input type="number" name="penalty_missed[0][minute]" class="form-control action-input" placeholder="45" min="1" max="120">
+                                        <input type="number" name="penalty_missed[0][minute]" class="form-control action-input js-match-minute-sync" placeholder="45" min="1" max="120" title="{{ __('Follows live match clock; change anytime to override.') }}">
                                     </div>
-                                    <button type="button" class="btn-remove-action" onclick="removeActionRow(this)" style="display: none;">✕</button>
                                 </div>
                             </div>
-                            <button type="button" class="btn-add-action" onclick="addActionRow('penalty_missed', 'home')">+ {{ __('Add Penalty Missed') }}</button>
+                            <button type="button" class="btn-add-action" data-fp-team="home" data-fp-row="penalty_missed">+ {{ __('Add Penalty Missed') }}</button>
                         </div>
 
                         <!-- Penalty Saved HOME -->
                         <div class="action-player-select">
-                            <div class="action-type-badge penalty-saved">🧤 {{ __('Penalty Saved') }}</div>
+                            <div class="action-player-select__head">
+                                <div class="action-type-badge penalty-saved">🧤 {{ __('Penalty Saved') }}</div>
+                                <div class="action-player-select__actions">
+                                    <button type="button" class="btn-fp-undo-section" title="{{ __('Discard unsaved changes in this section') }}" aria-label="{{ __('Undo') }}">↩</button>
+                                    <button type="button" class="btn-fp-save-section" title="{{ __('Save entries in this section') }}" aria-label="{{ __('Save') }}">💾</button>
+                                </div>
+                            </div>
                             <div id="penalty_saved-container-home">
                                 <div class="action-row">
                                     <div>
@@ -1207,17 +1143,22 @@ $subIdsAway = $existingLineupAway ? [
                                     </div>
                                     <div class="minute-input-group">
                                         <label>{{ __('Minute') }}</label>
-                                        <input type="number" name="penalty_saved[0][minute]" class="form-control action-input" placeholder="45" min="1" max="120">
+                                        <input type="number" name="penalty_saved[0][minute]" class="form-control action-input js-match-minute-sync" placeholder="45" min="1" max="120" title="{{ __('Follows live match clock; change anytime to override.') }}">
                                     </div>
-                                    <button type="button" class="btn-remove-action" onclick="removeActionRow(this)" style="display: none;">✕</button>
                                 </div>
                             </div>
-                            <button type="button" class="btn-add-action" onclick="addActionRow('penalty_saved', 'home')">+ {{ __('Add Penalty Saved') }}</button>
+                            <button type="button" class="btn-add-action" data-fp-team="home" data-fp-row="penalty_saved">+ {{ __('Add Penalty Saved') }}</button>
                         </div>
 
                         <!-- Own Goals HOME -->
                         <div class="action-player-select">
-                            <div class="action-type-badge own-goal">⚠️ {{ __('Own Goal') }}</div>
+                            <div class="action-player-select__head">
+                                <div class="action-type-badge own-goal">⚠️ {{ __('Own Goal') }}</div>
+                                <div class="action-player-select__actions">
+                                    <button type="button" class="btn-fp-undo-section" title="{{ __('Discard unsaved changes in this section') }}" aria-label="{{ __('Undo') }}">↩</button>
+                                    <button type="button" class="btn-fp-save-section" title="{{ __('Save entries in this section') }}" aria-label="{{ __('Save') }}">💾</button>
+                                </div>
+                            </div>
                             <div id="own_goals-container-home">
                                 <div class="action-row">
                                     <div>
@@ -1231,16 +1172,13 @@ $subIdsAway = $existingLineupAway ? [
                                     </div>
                                     <div class="minute-input-group">
                                         <label>{{ __('Minute') }}</label>
-                                        <input type="number" name="own_goals[0][minute]" class="form-control action-input" placeholder="45" min="1" max="120">
+                                        <input type="number" name="own_goals[0][minute]" class="form-control action-input js-match-minute-sync" placeholder="45" min="1" max="120" title="{{ __('Follows live match clock; change anytime to override.') }}">
                                     </div>
-                                    <button type="button" class="btn-remove-action" onclick="removeActionRow(this)" style="display: none;">✕</button>
                                 </div>
                             </div>
-                            <button type="button" class="btn-add-action" onclick="addActionRow('own_goals', 'home')">+ {{ __('Add Own Goal') }}</button>
+                            <button type="button" class="btn-add-action" data-fp-team="home" data-fp-row="own_goals">+ {{ __('Add Own Goal') }}</button>
                         </div>
                     </div>
-
-                    <button type="submit" class="btn-save-actions">💾 {{ __('Save Match Actions') }}</button>
                 </form>
             </div>
             @else
@@ -1268,7 +1206,13 @@ $subIdsAway = $existingLineupAway ? [
                     <div class="actions-grid">
                         <!-- Goals AWAY -->
                         <div class="action-player-select">
-                            <div class="action-type-badge goal">⚽ {{ __('Goals') }}</div>
+                            <div class="action-player-select__head">
+                                <div class="action-type-badge goal">⚽ {{ __('Goals') }}</div>
+                                <div class="action-player-select__actions">
+                                    <button type="button" class="btn-fp-undo-section" title="{{ __('Discard unsaved changes in this section') }}" aria-label="{{ __('Undo') }}">↩</button>
+                                    <button type="button" class="btn-fp-save-section" title="{{ __('Save entries in this section') }}" aria-label="{{ __('Save') }}">💾</button>
+                                </div>
+                            </div>
                             <div id="goals-container-away">
                                 <div class="action-row">
                                     <div>
@@ -1282,17 +1226,22 @@ $subIdsAway = $existingLineupAway ? [
                                     </div>
                                     <div class="minute-input-group">
                                         <label>{{ __('Minute') }}</label>
-                                        <input type="number" name="goals[0][minute]" class="form-control action-input" placeholder="45" min="1" max="120">
+                                        <input type="number" name="goals[0][minute]" class="form-control action-input js-match-minute-sync" placeholder="45" min="1" max="120" title="{{ __('Follows live match clock; change anytime to override.') }}">
                                     </div>
-                                    <button type="button" class="btn-remove-action" onclick="removeActionRow(this)" style="display: none;">✕</button>
                                 </div>
                             </div>
-                            <button type="button" class="btn-add-action" onclick="addActionRow('goals', 'away')">+ {{ __('Add Goal') }}</button>
+                            <button type="button" class="btn-add-action" data-fp-team="away" data-fp-row="goals">+ {{ __('Add Goal') }}</button>
                         </div>
 
                         <!-- Assists AWAY -->
                         <div class="action-player-select">
-                            <div class="action-type-badge assist">🎯 {{ __('Assists') }}</div>
+                            <div class="action-player-select__head">
+                                <div class="action-type-badge assist">🎯 {{ __('Assists') }}</div>
+                                <div class="action-player-select__actions">
+                                    <button type="button" class="btn-fp-undo-section" title="{{ __('Discard unsaved changes in this section') }}" aria-label="{{ __('Undo') }}">↩</button>
+                                    <button type="button" class="btn-fp-save-section" title="{{ __('Save entries in this section') }}" aria-label="{{ __('Save') }}">💾</button>
+                                </div>
+                            </div>
                             <div id="assists-container-away">
                                 <div class="action-row">
                                     <div>
@@ -1306,17 +1255,22 @@ $subIdsAway = $existingLineupAway ? [
                                     </div>
                                     <div class="minute-input-group">
                                         <label>{{ __('Minute') }}</label>
-                                        <input type="number" name="assists[0][minute]" class="form-control action-input" placeholder="45" min="1" max="120">
+                                        <input type="number" name="assists[0][minute]" class="form-control action-input js-match-minute-sync" placeholder="45" min="1" max="120" title="{{ __('Follows live match clock; change anytime to override.') }}">
                                     </div>
-                                    <button type="button" class="btn-remove-action" onclick="removeActionRow(this)" style="display: none;">✕</button>
                                 </div>
                             </div>
-                            <button type="button" class="btn-add-action" onclick="addActionRow('assists', 'away')">+ {{ __('Add Assist') }}</button>
+                            <button type="button" class="btn-add-action" data-fp-team="away" data-fp-row="assists">+ {{ __('Add Assist') }}</button>
                         </div>
 
                         <!-- Substitutions AWAY -->
                         <div class="action-player-select" style="grid-column: 1 / -1;">
-                            <div class="action-type-badge substitution">🔄 {{ __('Substitutions') }}</div>
+                            <div class="action-player-select__head">
+                                <div class="action-type-badge substitution">🔄 {{ __('Substitutions') }}</div>
+                                <div class="action-player-select__actions">
+                                    <button type="button" class="btn-fp-undo-section" title="{{ __('Discard unsaved changes in this section') }}" aria-label="{{ __('Undo') }}">↩</button>
+                                    <button type="button" class="btn-fp-save-section" title="{{ __('Save entries in this section') }}" aria-label="{{ __('Save') }}">💾</button>
+                                </div>
+                            </div>
                             <div id="substitutions-container-away">
                                 <div class="substitution-row">
                                     <div>
@@ -1343,17 +1297,22 @@ $subIdsAway = $existingLineupAway ? [
                                     </div>
                                     <div class="minute-input-group">
                                         <label>{{ __('Minute') }}</label>
-                                        <input type="number" name="substitutions[0][minute]" class="form-control action-input" placeholder="45" min="1" max="120">
+                                        <input type="number" name="substitutions[0][minute]" class="form-control action-input js-match-minute-sync" placeholder="45" min="1" max="120" title="{{ __('Follows live match clock; change anytime to override.') }}">
                                     </div>
-                                    <button type="button" class="btn-remove-action" onclick="removeActionRow(this)" style="display: none;">✕</button>
                                 </div>
                             </div>
-                            <button type="button" class="btn-add-action" onclick="addSubstitutionRow('away')">+ {{ __('Add Substitution') }}</button>
+                            <button type="button" class="btn-add-action" data-fp-team="away" data-fp-substitution="1">+ {{ __('Add Substitution') }}</button>
                         </div>
 
                         <!-- Yellow Cards AWAY -->
                         <div class="action-player-select">
-                            <div class="action-type-badge yellow">🟨 {{ __('Yellow Cards') }}</div>
+                            <div class="action-player-select__head">
+                                <div class="action-type-badge yellow">🟨 {{ __('Yellow Cards') }}</div>
+                                <div class="action-player-select__actions">
+                                    <button type="button" class="btn-fp-undo-section" title="{{ __('Discard unsaved changes in this section') }}" aria-label="{{ __('Undo') }}">↩</button>
+                                    <button type="button" class="btn-fp-save-section" title="{{ __('Save entries in this section') }}" aria-label="{{ __('Save') }}">💾</button>
+                                </div>
+                            </div>
                             <div id="yellow_cards-container-away">
                                 <div class="action-row">
                                     <div>
@@ -1367,17 +1326,22 @@ $subIdsAway = $existingLineupAway ? [
                                     </div>
                                     <div class="minute-input-group">
                                         <label>{{ __('Minute') }}</label>
-                                        <input type="number" name="yellow_cards[0][minute]" class="form-control action-input" placeholder="45" min="1" max="120">
+                                        <input type="number" name="yellow_cards[0][minute]" class="form-control action-input js-match-minute-sync" placeholder="45" min="1" max="120" title="{{ __('Follows live match clock; change anytime to override.') }}">
                                     </div>
-                                    <button type="button" class="btn-remove-action" onclick="removeActionRow(this)" style="display: none;">✕</button>
                                 </div>
                             </div>
-                            <button type="button" class="btn-add-action" onclick="addActionRow('yellow_cards', 'away')">+ {{ __('Add Yellow Card') }}</button>
+                            <button type="button" class="btn-add-action" data-fp-team="away" data-fp-row="yellow_cards">+ {{ __('Add Yellow Card') }}</button>
                         </div>
 
                         <!-- Red Cards AWAY -->
                         <div class="action-player-select">
-                            <div class="action-type-badge red">🟥 {{ __('Red Cards') }}</div>
+                            <div class="action-player-select__head">
+                                <div class="action-type-badge red">🟥 {{ __('Red Cards') }}</div>
+                                <div class="action-player-select__actions">
+                                    <button type="button" class="btn-fp-undo-section" title="{{ __('Discard unsaved changes in this section') }}" aria-label="{{ __('Undo') }}">↩</button>
+                                    <button type="button" class="btn-fp-save-section" title="{{ __('Save entries in this section') }}" aria-label="{{ __('Save') }}">💾</button>
+                                </div>
+                            </div>
                             <div id="red_cards-container-away">
                                 <div class="action-row">
                                     <div>
@@ -1391,17 +1355,22 @@ $subIdsAway = $existingLineupAway ? [
                                     </div>
                                     <div class="minute-input-group">
                                         <label>{{ __('Minute') }}</label>
-                                        <input type="number" name="red_cards[0][minute]" class="form-control action-input" placeholder="45" min="1" max="120">
+                                        <input type="number" name="red_cards[0][minute]" class="form-control action-input js-match-minute-sync" placeholder="45" min="1" max="120" title="{{ __('Follows live match clock; change anytime to override.') }}">
                                     </div>
-                                    <button type="button" class="btn-remove-action" onclick="removeActionRow(this)" style="display: none;">✕</button>
                                 </div>
                             </div>
-                            <button type="button" class="btn-add-action" onclick="addActionRow('red_cards', 'away')">+ {{ __('Add Red Card') }}</button>
+                            <button type="button" class="btn-add-action" data-fp-team="away" data-fp-row="red_cards">+ {{ __('Add Red Card') }}</button>
                         </div>
 
                         <!-- Penalty Missed AWAY -->
                         <div class="action-player-select">
-                            <div class="action-type-badge penalty-missed">❌ {{ __('Penalty Missed') }}</div>
+                            <div class="action-player-select__head">
+                                <div class="action-type-badge penalty-missed">❌ {{ __('Penalty Missed') }}</div>
+                                <div class="action-player-select__actions">
+                                    <button type="button" class="btn-fp-undo-section" title="{{ __('Discard unsaved changes in this section') }}" aria-label="{{ __('Undo') }}">↩</button>
+                                    <button type="button" class="btn-fp-save-section" title="{{ __('Save entries in this section') }}" aria-label="{{ __('Save') }}">💾</button>
+                                </div>
+                            </div>
                             <div id="penalty_missed-container-away">
                                 <div class="action-row">
                                     <div>
@@ -1415,17 +1384,22 @@ $subIdsAway = $existingLineupAway ? [
                                     </div>
                                     <div class="minute-input-group">
                                         <label>{{ __('Minute') }}</label>
-                                        <input type="number" name="penalty_missed[0][minute]" class="form-control action-input" placeholder="45" min="1" max="120">
+                                        <input type="number" name="penalty_missed[0][minute]" class="form-control action-input js-match-minute-sync" placeholder="45" min="1" max="120" title="{{ __('Follows live match clock; change anytime to override.') }}">
                                     </div>
-                                    <button type="button" class="btn-remove-action" onclick="removeActionRow(this)" style="display: none;">✕</button>
                                 </div>
                             </div>
-                            <button type="button" class="btn-add-action" onclick="addActionRow('penalty_missed', 'away')">+ {{ __('Add Penalty Missed') }}</button>
+                            <button type="button" class="btn-add-action" data-fp-team="away" data-fp-row="penalty_missed">+ {{ __('Add Penalty Missed') }}</button>
                         </div>
 
                         <!-- Penalty Saved AWAY -->
                         <div class="action-player-select">
-                            <div class="action-type-badge penalty-saved">🧤 {{ __('Penalty Saved') }}</div>
+                            <div class="action-player-select__head">
+                                <div class="action-type-badge penalty-saved">🧤 {{ __('Penalty Saved') }}</div>
+                                <div class="action-player-select__actions">
+                                    <button type="button" class="btn-fp-undo-section" title="{{ __('Discard unsaved changes in this section') }}" aria-label="{{ __('Undo') }}">↩</button>
+                                    <button type="button" class="btn-fp-save-section" title="{{ __('Save entries in this section') }}" aria-label="{{ __('Save') }}">💾</button>
+                                </div>
+                            </div>
                             <div id="penalty_saved-container-away">
                                 <div class="action-row">
                                     <div>
@@ -1439,17 +1413,22 @@ $subIdsAway = $existingLineupAway ? [
                                     </div>
                                     <div class="minute-input-group">
                                         <label>{{ __('Minute') }}</label>
-                                        <input type="number" name="penalty_saved[0][minute]" class="form-control action-input" placeholder="45" min="1" max="120">
+                                        <input type="number" name="penalty_saved[0][minute]" class="form-control action-input js-match-minute-sync" placeholder="45" min="1" max="120" title="{{ __('Follows live match clock; change anytime to override.') }}">
                                     </div>
-                                    <button type="button" class="btn-remove-action" onclick="removeActionRow(this)" style="display: none;">✕</button>
                                 </div>
                             </div>
-                            <button type="button" class="btn-add-action" onclick="addActionRow('penalty_saved', 'away')">+ {{ __('Add Penalty Saved') }}</button>
+                            <button type="button" class="btn-add-action" data-fp-team="away" data-fp-row="penalty_saved">+ {{ __('Add Penalty Saved') }}</button>
                         </div>
 
                         <!-- Own Goals AWAY -->
                         <div class="action-player-select">
-                            <div class="action-type-badge own-goal">⚠️ {{ __('Own Goal') }}</div>
+                            <div class="action-player-select__head">
+                                <div class="action-type-badge own-goal">⚠️ {{ __('Own Goal') }}</div>
+                                <div class="action-player-select__actions">
+                                    <button type="button" class="btn-fp-undo-section" title="{{ __('Discard unsaved changes in this section') }}" aria-label="{{ __('Undo') }}">↩</button>
+                                    <button type="button" class="btn-fp-save-section" title="{{ __('Save entries in this section') }}" aria-label="{{ __('Save') }}">💾</button>
+                                </div>
+                            </div>
                             <div id="own_goals-container-away">
                                 <div class="action-row">
                                     <div>
@@ -1463,16 +1442,13 @@ $subIdsAway = $existingLineupAway ? [
                                     </div>
                                     <div class="minute-input-group">
                                         <label>{{ __('Minute') }}</label>
-                                        <input type="number" name="own_goals[0][minute]" class="form-control action-input" placeholder="45" min="1" max="120">
+                                        <input type="number" name="own_goals[0][minute]" class="form-control action-input js-match-minute-sync" placeholder="45" min="1" max="120" title="{{ __('Follows live match clock; change anytime to override.') }}">
                                     </div>
-                                    <button type="button" class="btn-remove-action" onclick="removeActionRow(this)" style="display: none;">✕</button>
                                 </div>
                             </div>
-                            <button type="button" class="btn-add-action" onclick="addActionRow('own_goals', 'away')">+ {{ __('Add Own Goal') }}</button>
+                            <button type="button" class="btn-add-action" data-fp-team="away" data-fp-row="own_goals">+ {{ __('Add Own Goal') }}</button>
                         </div>
                     </div>
-
-                    <button type="submit" class="btn-save-actions">💾 {{ __('Save Match Actions') }}</button>
                 </form>
             </div>
             @else
@@ -1480,6 +1456,13 @@ $subIdsAway = $existingLineupAway ? [
                 ⚠️ {{ __('No lineup submitted for') }} {{ $match->away_club_name }}
             </div>
             @endif
+        </div>
+    </div>
+
+    <div id="fp-event-save-mask" class="fp-event-save-mask" role="status" aria-live="polite" aria-hidden="true">
+        <div class="fp-event-save-mask__panel">
+            <span class="fp-event-save-mask__spinner" aria-hidden="true"></span>
+            <span class="fp-event-save-mask__text">{{ __('Saving…') }}</span>
         </div>
     </div>
 </div>
@@ -1491,6 +1474,47 @@ $subIdsAway = $existingLineupAway ? [
 @if($match)
 @section('scripts')
 <script>
+(function () {
+    function fpMinuteFromPlayingSeconds(s) {
+        if (s == null || s < 0) return null;
+        var m = Math.floor(s / 60) + 1;
+        if (m < 1) m = 1;
+        if (m > 120) m = 120;
+        return String(m);
+    }
+    function fpBindMatchMinuteInputs() {
+        document.querySelectorAll('input.js-match-minute-sync').forEach(function (el) {
+            if (el.dataset.fpMinuteListen) return;
+            el.dataset.fpMinuteListen = '1';
+            el.addEventListener('input', function () {
+                el.dataset.fpMinuteUserEdited = '1';
+            });
+            el.addEventListener('change', function () {
+                el.dataset.fpMinuteUserEdited = '1';
+            });
+        });
+    }
+    function fpSyncMatchMinuteInputs(playingSeconds) {
+        fpBindMatchMinuteInputs();
+        var m = fpMinuteFromPlayingSeconds(playingSeconds);
+        if (m === null) return;
+        document.querySelectorAll('input.js-match-minute-sync').forEach(function (el) {
+            if (el.dataset.fpMinuteUserEdited === '1') return;
+            if (document.activeElement === el) return;
+            el.value = m;
+        });
+    }
+    window.addEventListener('fp-match-playing-seconds', function (e) {
+        var sec = e.detail ? e.detail.seconds : null;
+        window.__fpLastPlayingSecondsForMinutes = sec;
+        fpSyncMatchMinuteInputs(sec);
+    });
+})();
+
+    @if (!empty($possessionMatch))
+        @include('backend.pages.matches.partials.match-possession-ajax-script')
+    @endif
+
     let actionCounters = {
         goals: 1,
         assists: 1,
@@ -1518,8 +1542,138 @@ $subIdsAway = $existingLineupAway ? [
         return in_array($player->id, $subIdsAway);
     })->values() ?? []);
 
+    function fpUndoActionKeyFromContainerId(containerId) {
+        var m = String(containerId || '').match(/^([a-z_]+)-container-(home|away)$/);
+        return m ? m[1] : null;
+    }
+
+    function fpRecalculateActionCounter(actionKey) {
+        if (!actionKey || !Object.prototype.hasOwnProperty.call(actionCounters, actionKey)) return;
+        var esc = actionKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        var re = new RegExp('^' + esc + '\\[(\\d+)\\]');
+        var maxI = -1;
+        document.querySelectorAll('.player-actions-section select[name]').forEach(function (sel) {
+            var mm = sel.name.match(re);
+            if (mm) maxI = Math.max(maxI, parseInt(mm[1], 10));
+        });
+        if (maxI >= 0) {
+            actionCounters[actionKey] = maxI + 1;
+        }
+    }
+
+    function fpEnsureSectionUndoBaseline(section) {
+        if (!section || section._fpUndoBaseline) return;
+        var inner = section.querySelector('[id$="-container-home"], [id$="-container-away"]');
+        if (!inner || !inner.id) return;
+        var key = fpUndoActionKeyFromContainerId(inner.id);
+        if (!key) return;
+        section._fpUndoBaseline = {
+            containerId: inner.id,
+            html: inner.innerHTML,
+            counterKey: key
+        };
+    }
+
+    function fpApplySectionUndo(btn) {
+        var section = btn.closest('.action-player-select');
+        if (!section || !section._fpUndoBaseline) return;
+        var b = section._fpUndoBaseline;
+        var inner = document.getElementById(b.containerId);
+        if (!inner) return;
+        inner.innerHTML = b.html;
+        fpRecalculateActionCounter(b.counterKey);
+        delete section._fpUndoBaseline;
+        section.classList.remove('fp-action-section--dirty');
+        if (typeof window.dispatchEvent === 'function' && window.__fpLastPlayingSecondsForMinutes !== undefined) {
+            window.dispatchEvent(new CustomEvent('fp-match-playing-seconds', { detail: { seconds: window.__fpLastPlayingSecondsForMinutes } }));
+        }
+    }
+
+    var FP_ADD_ACTION_ROW_MSG = @json(__('Select a player and a valid minute (1–120) for the current row before adding another.'));
+    var FP_ADD_SUB_ROW_MSG = @json(__('Select both players and a valid minute (1–120) before adding another substitution.'));
+    var FP_ADD_WHILE_EMPTY_ROW_MSG = @json(__('Use the current row first: select a player and a minute before adding another row.'));
+    var FP_ADD_WHILE_EMPTY_SUB_MSG = @json(__('Use the current substitution row first: both players and a minute before adding another.'));
+
+    function fpMinuteFieldState(row) {
+        var minuteInput = row.querySelector('input[type="number"].js-match-minute-sync') || row.querySelector('input[type="number"]');
+        var raw = minuteInput ? String(minuteInput.value).trim() : '';
+        if (raw === '') {
+            return { touched: false, valid: false };
+        }
+        var n = parseInt(raw, 10);
+        return { touched: true, valid: Number.isFinite(n) && n >= 1 && n <= 120 };
+    }
+
+    function fpActionRowIsIncomplete(row) {
+        if (row.classList.contains('substitution-row')) {
+            var outSel = row.querySelector('select[name*="[player_out_id]"]');
+            var inSel = row.querySelector('select[name*="[player_in_id]"]');
+            var outSet = outSel && String(outSel.value).trim() !== '';
+            var inSet = inSel && String(inSel.value).trim() !== '';
+            var mv = fpMinuteFieldState(row);
+            var any = outSet || inSet || mv.touched;
+            if (!any) return false;
+            var outId = outSet ? parseInt(String(outSel.value).trim(), 10) : NaN;
+            var inId = inSet ? parseInt(String(inSel.value).trim(), 10) : NaN;
+            var complete = Number.isFinite(outId) && outId >= 1 && Number.isFinite(inId) && inId >= 1 && mv.valid;
+            return !complete;
+        }
+        var pSel = row.querySelector('select[name*="[player_id]"]');
+        var playerSet = pSel && String(pSel.value).trim() !== '';
+        var mv = fpMinuteFieldState(row);
+        var any = playerSet || mv.touched;
+        if (!any) return false;
+        var pid = playerSet ? parseInt(String(pSel.value).trim(), 10) : NaN;
+        var complete = Number.isFinite(pid) && pid >= 1 && mv.valid;
+        return !complete;
+    }
+
+    function fpContainerHasIncompleteRow(container) {
+        if (!container) return false;
+        var rows = container.querySelectorAll('.action-row, .substitution-row');
+        for (var i = 0; i < rows.length; i++) {
+            if (fpActionRowIsIncomplete(rows[i])) return true;
+        }
+        return false;
+    }
+
+    /** True when player(s) and minute are all unset (cannot append another blank row). */
+    function fpActionRowIsFullyEmpty(row) {
+        var mv = fpMinuteFieldState(row);
+        var minuteEmpty = !mv.touched;
+        if (row.classList.contains('substitution-row')) {
+            var outSel = row.querySelector('select[name*="[player_out_id]"]');
+            var inSel = row.querySelector('select[name*="[player_in_id]"]');
+            var outEmpty = !outSel || String(outSel.value).trim() === '';
+            var inEmpty = !inSel || String(inSel.value).trim() === '';
+            return outEmpty && inEmpty && minuteEmpty;
+        }
+        var pSel = row.querySelector('select[name*="[player_id]"]');
+        var playerEmpty = !pSel || String(pSel.value).trim() === '';
+        return playerEmpty && minuteEmpty;
+    }
+
+    function fpContainerHasFullyEmptyRow(container) {
+        if (!container) return false;
+        var rows = container.querySelectorAll('.action-row, .substitution-row');
+        for (var j = 0; j < rows.length; j++) {
+            if (fpActionRowIsFullyEmpty(rows[j])) return true;
+        }
+        return false;
+    }
+
     function addActionRow(actionType, team) {
         const container = document.getElementById(`${actionType}-container-${team}`);
+        var secAdd = container ? container.closest('.action-player-select') : null;
+        fpEnsureSectionUndoBaseline(secAdd);
+        if (fpContainerHasIncompleteRow(container)) {
+            window.alert(FP_ADD_ACTION_ROW_MSG);
+            return;
+        }
+        if (fpContainerHasFullyEmptyRow(container)) {
+            window.alert(FP_ADD_WHILE_EMPTY_ROW_MSG);
+            return;
+        }
         const index = actionCounters[actionType];
         const players = team === 'home' ? @json($playersHome ?? []) : @json($playersAway ?? []);
 
@@ -1538,19 +1692,30 @@ $subIdsAway = $existingLineupAway ? [
                 </div>
                 <div class="minute-input-group">
                     <label>Minute</label>
-                    <input type="number" name="${actionType}[${index}][minute]" class="form-control action-input" placeholder="45" min="1" max="120">
+                    <input type="number" name="${actionType}[${index}][minute]" class="form-control action-input js-match-minute-sync" placeholder="45" min="1" max="120" title="{{ __('Follows live match clock; change anytime to override.') }}">
                 </div>
-                <button type="button" class="btn-remove-action" onclick="removeActionRow(this)">✕</button>
             </div>
         `;
 
         container.insertAdjacentHTML('beforeend', rowHtml);
         actionCounters[actionType]++;
-        updateRemoveButtons(actionType, team);
+        if (typeof window.dispatchEvent === 'function' && window.__fpLastPlayingSecondsForMinutes !== undefined) {
+            window.dispatchEvent(new CustomEvent('fp-match-playing-seconds', { detail: { seconds: window.__fpLastPlayingSecondsForMinutes } }));
+        }
     }
 
     function addSubstitutionRow(team) {
         const container = document.getElementById(`substitutions-container-${team}`);
+        var secSub = container ? container.closest('.action-player-select') : null;
+        fpEnsureSectionUndoBaseline(secSub);
+        if (fpContainerHasIncompleteRow(container)) {
+            window.alert(FP_ADD_SUB_ROW_MSG);
+            return;
+        }
+        if (fpContainerHasFullyEmptyRow(container)) {
+            window.alert(FP_ADD_WHILE_EMPTY_SUB_MSG);
+            return;
+        }
         const index = actionCounters.substitutions;
         const starterPlayers = team === 'home' ? starterPlayersHome : starterPlayersAway;
         const subPlayers = team === 'home' ? subPlayersHome : subPlayersAway;
@@ -1581,35 +1746,301 @@ $subIdsAway = $existingLineupAway ? [
                 </div>
                 <div class="minute-input-group">
                     <label>Minute</label>
-                    <input type="number" name="substitutions[${index}][minute]" class="form-control action-input" placeholder="45" min="1" max="120">
+                    <input type="number" name="substitutions[${index}][minute]" class="form-control action-input js-match-minute-sync" placeholder="45" min="1" max="120" title="{{ __('Follows live match clock; change anytime to override.') }}">
                 </div>
-                <button type="button" class="btn-remove-action" onclick="removeActionRow(this)">✕</button>
             </div>
         `;
 
         container.insertAdjacentHTML('beforeend', rowHtml);
         actionCounters.substitutions++;
-        updateRemoveButtons('substitutions', team);
+        if (typeof window.dispatchEvent === 'function' && window.__fpLastPlayingSecondsForMinutes !== undefined) {
+            window.dispatchEvent(new CustomEvent('fp-match-playing-seconds', { detail: { seconds: window.__fpLastPlayingSecondsForMinutes } }));
+        }
     }
 
-    function removeActionRow(button) {
-        button.closest('.action-row, .substitution-row').remove();
+    var FP_EVENT_SAVE_URL = @json(route('admin.match.event_save'));
+    var FP_FORM_PREFIX_TO_ACTION = {
+        goals: 'goal',
+        assists: 'assist',
+        yellow_cards: 'yellow_card',
+        red_cards: 'red_card',
+        penalty_missed: 'penalty_missed',
+        penalty_saved: 'penalty_saved',
+        own_goals: 'own_goal',
+        substitutions: 'substitution'
+    };
+
+    function fpGetCsrfToken() {
+        var m = document.querySelector('meta[name="csrf-token"]');
+        return m ? m.getAttribute('content') : '';
     }
 
-    function updateRemoveButtons(actionType, team) {
-        const container = document.getElementById(`${actionType}-container-${team}`);
-        if (!container) return;
+    function fpBumpEventSaveMask(delta) {
+        window.__fpActiveEventSaves = Math.max(0, (window.__fpActiveEventSaves || 0) + delta);
+        var el = document.getElementById('fp-event-save-mask');
+        if (!el) return;
+        if (window.__fpActiveEventSaves > 0) {
+            el.classList.add('fp-event-save-mask--active');
+            el.setAttribute('aria-hidden', 'false');
+        } else {
+            el.classList.remove('fp-event-save-mask--active');
+            el.setAttribute('aria-hidden', 'true');
+        }
+    }
 
-        const rows = container.querySelectorAll('.action-row, .substitution-row');
-        rows.forEach((row) => {
-            const removeBtn = row.querySelector('.btn-remove-action');
-            if (rows.length > 1) {
-                removeBtn.style.display = 'flex';
-            } else {
-                removeBtn.style.display = 'none';
+    function fpApplyMatchSnapshot(data) {
+        if (!data) return;
+        var scoreEl = document.querySelector('.match-score span');
+        if (scoreEl) scoreEl.textContent = String(data.home_score) + ' - ' + String(data.away_score);
+        var titleEl = document.querySelector('.page-title-area .page-title');
+        if (titleEl && data.page_title) titleEl.textContent = data.page_title;
+        var infoEl = document.querySelector('.page-title-area .match-info');
+        if (infoEl && data.match_info) infoEl.textContent = data.match_info;
+        var wrap = document.getElementById('fp-recorded-events-wrap');
+        if (wrap && data.recorded_events_html !== undefined) wrap.innerHTML = data.recorded_events_html;
+    }
+
+    function fpResetRowAfterSave(row) {
+        row.querySelectorAll('select').forEach(function (s) { s.selectedIndex = 0; });
+        var minInput = row.querySelector('input[type="number"]');
+        if (minInput) {
+            minInput.value = '';
+            delete minInput.dataset.fpMinuteUserEdited;
+        }
+        if (typeof window.dispatchEvent === 'function' && window.__fpLastPlayingSecondsForMinutes !== undefined) {
+            window.dispatchEvent(new CustomEvent('fp-match-playing-seconds', { detail: { seconds: window.__fpLastPlayingSecondsForMinutes } }));
+        }
+    }
+
+    function fpGetFormPrefixFromRow(row) {
+        var sel = row.querySelector('select[name]');
+        if (!sel || !sel.name) return null;
+        var m = sel.name.match(/^([a-z_]+)\[\d+\]\[/);
+        return m ? m[1] : null;
+    }
+
+    var FP_SECTION_NOTHING_TO_SAVE_MSG = @json(__('Nothing to save in this section. Select a player and a valid minute first.'));
+
+    function fpRowMinuteState(row) {
+        var minuteInput = row.querySelector('input[type="number"].js-match-minute-sync') || row.querySelector('input[type="number"]');
+        var raw = minuteInput ? minuteInput.value : '';
+        var empty = raw === '' || raw === null;
+        var num = empty ? NaN : parseInt(raw, 10);
+        var valid = !isNaN(num) && num >= 1 && num <= 120;
+        return { minuteInput: minuteInput, empty: empty, num: num, valid: valid };
+    }
+
+    function fpBuildPayloadForRow(row, form) {
+        if (!row || !form) return null;
+        var prefix = fpGetFormPrefixFromRow(row);
+        if (!prefix || !FP_FORM_PREFIX_TO_ACTION[prefix]) return null;
+        var action = FP_FORM_PREFIX_TO_ACTION[prefix];
+        var matchIdInput = form.querySelector('input[name="match_id"]');
+        var clubIdInput = form.querySelector('input[name="club_id"]');
+        var lineupInput = form.querySelector('input[name="lineup_id"]');
+        if (!matchIdInput || !clubIdInput) return null;
+        var outSel = row.querySelector('select[name*="[player_out_id]"]');
+        var inSel = row.querySelector('select[name*="[player_in_id]"]');
+        var pSel = row.querySelector('select[name*="[player_id]"]');
+        var outId = outSel && String(outSel.value).trim() !== '' ? parseInt(String(outSel.value).trim(), 10) : NaN;
+        var inId = inSel && String(inSel.value).trim() !== '' ? parseInt(String(inSel.value).trim(), 10) : NaN;
+        var playerIdParsed = pSel && String(pSel.value).trim() !== '' ? parseInt(String(pSel.value).trim(), 10) : NaN;
+        var subReady = action === 'substitution' && Number.isFinite(outId) && outId >= 1 && Number.isFinite(inId) && inId >= 1;
+        var playerReady = action !== 'substitution' && Number.isFinite(playerIdParsed) && playerIdParsed >= 1;
+        var ms = fpRowMinuteState(row);
+        if (!ms.valid || ms.empty) return null;
+        if (action === 'substitution') {
+            if (!subReady) return null;
+        } else {
+            if (!playerReady || !pSel) return null;
+        }
+        var payload = {
+            match_id: parseInt(matchIdInput.value, 10),
+            club_id: parseInt(clubIdInput.value, 10),
+            action: action,
+            minute: ms.num
+        };
+        if (lineupInput && lineupInput.value) payload.lineup_id = lineupInput.value;
+        if (action === 'substitution') {
+            payload.player_out_id = outId;
+            payload.player_in_id = inId;
+        } else {
+            payload.player_id = playerIdParsed;
+        }
+        return payload;
+    }
+
+    function fpPerformRowSave(row, form, payload) {
+        return new Promise(function (resolve, reject) {
+            if (row.dataset.fpSaving === '1') {
+                resolve({ skipped: true });
+                return;
             }
+            row.dataset.fpSaving = '1';
+            fpBumpEventSaveMask(1);
+            fetch(FP_EVENT_SAVE_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': fpGetCsrfToken(),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify(payload)
+            })
+                .then(function (r) {
+                    var ct = r.headers.get('content-type') || '';
+                    if (ct.indexOf('application/json') === -1) {
+                        return r.text().then(function () {
+                            throw Object.assign(new Error('Unexpected response from server.'), { fpAlerted: true });
+                        });
+                    }
+                    return r.json().then(function (body) {
+                        return { ok: r.ok, status: r.status, body: body };
+                    });
+                })
+                .then(function (res) {
+                    if (!res.ok || !res.body.success) {
+                        var msg = (res.body && res.body.message) ? res.body.message : 'Save failed';
+                        if (res.body && res.body.errors && typeof res.body.errors === 'object') {
+                            var keys = Object.keys(res.body.errors);
+                            if (keys.length && res.body.errors[keys[0]] && res.body.errors[keys[0]][0]) {
+                                msg = res.body.errors[keys[0]][0];
+                            }
+                        }
+                        window.alert(msg);
+                        throw Object.assign(new Error(msg), { fpAlerted: true });
+                    }
+                    fpApplyMatchSnapshot(res.body);
+                    fpResetRowAfterSave(row);
+                    resolve({ ok: true });
+                })
+                .catch(function (err) {
+                    if (!err || !err.fpAlerted) {
+                        window.alert((err && err.message) ? err.message : 'Network error');
+                    }
+                    reject(err);
+                })
+                .finally(function () {
+                    fpBumpEventSaveMask(-1);
+                    delete row.dataset.fpSaving;
+                });
         });
     }
+
+    function fpSaveReadyRowsSequentially(rows, form, index, onAllDone) {
+        if (index >= rows.length) {
+            if (typeof onAllDone === 'function') onAllDone();
+            return;
+        }
+        var row = rows[index];
+        var payload = fpBuildPayloadForRow(row, form);
+        if (!payload) {
+            fpSaveReadyRowsSequentially(rows, form, index + 1, onAllDone);
+            return;
+        }
+        fpPerformRowSave(row, form, payload).then(function (res) {
+            if (res && res.ok) {
+                fpSaveReadyRowsSequentially(rows, form, index + 1, onAllDone);
+            }
+        }).catch(function () {});
+    }
+
+    function fpManualSaveActionSection(btn) {
+        var section = btn.closest('.action-player-select');
+        if (!section) return;
+        var form = section.closest('form');
+        if (!form || !form.closest('.player-actions-section')) return;
+        var inner = section.querySelector('[id$="-container-home"], [id$="-container-away"]');
+        if (!inner) return;
+        var rows = inner.querySelectorAll('.action-row, .substitution-row');
+        var isSubSection = inner.id.indexOf('substitutions-container') === 0;
+        var incMsg = isSubSection ? FP_ADD_SUB_ROW_MSG : FP_ADD_ACTION_ROW_MSG;
+        var i;
+        for (i = 0; i < rows.length; i++) {
+            if (fpActionRowIsIncomplete(rows[i])) {
+                window.alert(incMsg);
+                return;
+            }
+        }
+        var ready = [];
+        for (i = 0; i < rows.length; i++) {
+            if (fpBuildPayloadForRow(rows[i], form)) ready.push(rows[i]);
+        }
+        if (ready.length === 0) {
+            window.alert(FP_SECTION_NOTHING_TO_SAVE_MSG);
+            var allEmpty = true;
+            for (i = 0; i < rows.length; i++) {
+                if (!fpActionRowIsFullyEmpty(rows[i])) {
+                    allEmpty = false;
+                    break;
+                }
+            }
+            if (allEmpty) {
+                delete section._fpUndoBaseline;
+                section.classList.remove('fp-action-section--dirty');
+            }
+            return;
+        }
+        fpSaveReadyRowsSequentially(ready, form, 0, function () {
+            delete section._fpUndoBaseline;
+            section.classList.remove('fp-action-section--dirty');
+        });
+    }
+
+    function fpMarkActionSectionDirty(ev) {
+        var t = ev.target;
+        if (!t || !t.closest('.player-actions-section')) return;
+        if (t.tagName !== 'SELECT' && !(t.matches && t.matches('input[type="number"].js-match-minute-sync'))) return;
+        var section = t.closest('.action-player-select');
+        if (section) section.classList.add('fp-action-section--dirty');
+    }
+
+    document.addEventListener('change', fpMarkActionSectionDirty, false);
+    document.addEventListener('input', fpMarkActionSectionDirty, false);
+
+    document.addEventListener('focusin', function (ev) {
+        var t = ev.target;
+        if (!t || !t.closest('.player-actions-section')) return;
+        if (t.tagName !== 'SELECT' && !(t.matches && t.matches('input[type="number"].js-match-minute-sync'))) return;
+        var secF = t.closest('.action-player-select');
+        fpEnsureSectionUndoBaseline(secF);
+    }, true);
+
+    document.addEventListener('click', function (e) {
+        var sec = e.target.closest('.player-actions-section');
+        if (!sec) return;
+        var addBtn = e.target.closest('.btn-add-action');
+        if (addBtn && sec.contains(addBtn)) {
+            if (addBtn.getAttribute('data-fp-substitution') === '1') {
+                var tsub = addBtn.getAttribute('data-fp-team');
+                if (tsub) addSubstitutionRow(tsub);
+            } else {
+                var t = addBtn.getAttribute('data-fp-team');
+                var r = addBtn.getAttribute('data-fp-row');
+                if (t && r) addActionRow(r, t);
+            }
+            return;
+        }
+        var undoBtn = e.target.closest('.btn-fp-undo-section');
+        if (undoBtn && sec.contains(undoBtn)) {
+            e.preventDefault();
+            fpApplySectionUndo(undoBtn);
+            return;
+        }
+        var saveBtn = e.target.closest('.btn-fp-save-section');
+        if (saveBtn && sec.contains(saveBtn)) {
+            e.preventDefault();
+            fpManualSaveActionSection(saveBtn);
+        }
+    }, false);
+
+    document.querySelectorAll('.player-actions-section form').forEach(function (form) {
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+        });
+    });
 </script>
 @endsection
 @endif

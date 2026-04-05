@@ -118,6 +118,12 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.'], function () {
 
     Route::resource('fantasy', FantasyController::class);
     Route::resource('clubs', ClubController::class);
+    Route::get('matches/{match}/details', [MatchesController::class, 'details'])->name('matches.details');
+    Route::post('matches/{match}/record-start', [MatchesController::class, 'recordMatchStart'])->name('matches.record-start');
+    Route::post('matches/{match}/record-possession', [MatchesController::class, 'recordPossession'])->name('matches.record-possession');
+    Route::post('matches/{match}/timer-pause', [MatchesController::class, 'pauseMatchTimer'])->name('matches.timer-pause');
+    Route::post('matches/{match}/timer-resume', [MatchesController::class, 'resumeMatchTimer'])->name('matches.timer-resume');
+    Route::post('matches/{match}/possession-reset', [MatchesController::class, 'resetMatchPossession'])->name('matches.possession-reset');
     Route::resource('matches', MatchesController::class);
 
     Route::get('/invite', [PlayersController::class, 'inviteForm'])->name('players.invite');
@@ -132,6 +138,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.'], function () {
     Route::get('/match/checkin_list', [MatchesController::class, 'checkin_list'])->name('match.checkin_list');
     Route::post('/match/checkin_verify', [MatchesController::class, 'checkinVerify'])->name('match.checkin_verify');
     Route::post('/match/event', [MatchUpdateController::class, 'event_save'])->name('match.event_save');
+    Route::get('/match/event/snapshot', [MatchUpdateController::class, 'event_snapshot'])->name('match.event_snapshot');
     Route::get('/match/event', [MatchUpdateController::class, 'match_info'])->name('match.match_info');
     Route::post('/match/delete-event', [MatchUpdateController::class, 'event_delete'])->name('match.deleteEvent');
 

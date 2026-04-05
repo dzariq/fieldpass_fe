@@ -102,7 +102,9 @@
                                         <a class="btn btn-success text-white" href="{{ route('admin.matches.edit', $match->id) }}">Edit</a>
                                         @endif
 
-                                     
+                                        @if (auth()->user()->can('match.details'))
+                                        <a class="btn btn-primary text-white" href="{{ route('admin.matches.details', $match->id) }}">{{ __('View') }}</a>
+                                        @endif
 
                                         @if (auth()->user()->can('match.delete'))
                                         <a class="btn btn-danger text-white" href="javascript:void(0);"
@@ -174,6 +176,12 @@
                                                 <a class="btn btn-outline-primary btn-block"
                                                    href="{{ route('admin.player.lineup', ['id' => $match->id, 'club_id' => $match->away_club_id]) }}">
                                                     <i class="fas fa-users"></i> Away Lineup
+                                                </a>
+                                            @endcan
+                                            @can('match.details')
+                                                <a class="btn btn-primary btn-block text-white"
+                                                   href="{{ route('admin.matches.details', $match->id) }}">
+                                                    <i class="fas fa-eye"></i> {{ __('View details') }}
                                                 </a>
                                             @endcan
                                             @can('match.edit')

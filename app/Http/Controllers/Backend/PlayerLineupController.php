@@ -23,6 +23,7 @@ use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use App\Services\MatchN8nLineupService;
 
 
 class PlayerLineupController extends Controller
@@ -535,7 +536,7 @@ class PlayerLineupController extends Controller
             MatchPlayer::create($data);
         }
 
-        $this->sendLineupToN8n($matchId);
+        MatchN8nLineupService::notifyConfirmLineupForClub((int) $matchId, (int) $clubId);
 
         if(auth()->user()->can('club.create')){
             return redirect()->route('admin.competition.details', ['id' => $competitionObj->id])->with('success', '✅ Lineup saved successfully.');
@@ -544,80 +545,13 @@ class PlayerLineupController extends Controller
     }
 
 
-    private function sendLineupToN8n($matchId)
-    {
-        $lineup = MatchPlayer::where('match_id', $matchId)->first();
-        $matchData = DB::table('match')
-            ->join('club as home_club', 'match.home_club_id', '=', 'home_club.id')
-            ->join('club as away_club', 'match.away_club_id', '=', 'away_club.id')
-            ->join('competition', 'match.competition_id', '=', 'competition.id')
-            ->select(
-                'match.id',
-                'match.date',
-                'match.matchweek',
-                'match.home_club_id',
-                'match.away_club_id',
-                'home_club.name as home_club_name',
-                'home_club.avatar as home_club_avatar',
-                'away_club.name as away_club_name',
-                'away_club.avatar as away_club_avatar',
-                'competition.name as competition_name',
-                'competition.type as competition_type',
-                'competition.id as competition_id'
-            )
-            ->where('match.id', $matchId)->first();
-
-        if (!$lineup) {
-            return response()->json(['error' => 'Lineup not found.'], 404);
-        }
-
-        $playerIds = [
-            $lineup->gk,
-            $lineup->player1,
-            $lineup->player2,
-            $lineup->player3,
-            $lineup->player4,
-            $lineup->player5,
-            $lineup->player6,
-            $lineup->player7,
-            $lineup->player8,
-            $lineup->player9,
-            $lineup->player10,
-            $lineup->sub1,
-            $lineup->sub2,
-            $lineup->sub3,
-            $lineup->sub4,
-            $lineup->sub5,
-            $lineup->sub6,
-            $lineup->sub7,
-        ];
-
-        $players = Player::whereIn('id', $playerIds)->get();
-        $payload = [
-            'match_id' => $lineup->match_id,
-            'club_id' => $lineup->club_id,
-            'code' => $lineup->code,
-            'text' => 'You have been selected to play in the Match: ' . $matchData->home_club_name . ' vs ' . $matchData->away_club_name . ' on ' . date('jS F Y', ($matchData->date)) . '. Show this QrCode when entering the field',
-            'players' => $players->map(function ($player) {
-                return [
-                    'id' => $player->id,
-                    'name' => $player->name,
-                    'phone' => $player->phone,
-                    'position' => $player->position,
-                    'email' => $player->email,
-                ];
-            })->values(),
-        ];
-
-        $response = Http::withHeaders([
-            'Content-Type' => 'application/json',
-        ])->post('https://n8n.fieldpass.com.my/webhook/confirm_lineup', $payload);
-
-        return $response->json();
-    }
-
     private function playerUpdate($player_id, $matchId)
     {
+        $status = DB::table('match')->where('id', $matchId)->value('status');
+        if (! MatchN8nLineupService::statusAllowsFantasyPlayerEventsSync($status)) {
+            return null;
+        }
+
         $payload = [
             'player_id' => $player_id,
             'match_id' => $matchId,

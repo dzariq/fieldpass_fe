@@ -2,16 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Facades\DB;
-use Spatie\Permission\Traits\HasRoles;
 
 class Matches extends Model
 {
-
     /**
      * Set the default guard for this model.
      *
@@ -25,13 +19,11 @@ class Matches extends Model
      * @var array
      */
 
-
     /**
      * The attributes that should be hidden for arrays.
      *
      * @var array
      */
-
 
     /**
      * The attributes that should be cast to native types.
@@ -51,6 +43,36 @@ class Matches extends Model
     public function competition()
     {
         return $this->belongsTo(Competition::class, 'competition_id');
+    }
+
+    public function possessions()
+    {
+        return $this->hasMany(MatchPosession::class, 'match_id')->orderBy('event_at');
+    }
+
+    protected $casts = [
+        'started_at' => 'datetime',
+        'timer_pause_started_at' => 'datetime',
+    ];
+
+    /**
+     * Match clock elapsed seconds (wall time since kickoff minus paused intervals).
+     */
+    public function playingElapsedSeconds(): ?int
+    {
+        if (! $this->started_at) {
+            return null;
+        }
+
+        $now = now();
+        $raw = (int) $this->started_at->diffInSeconds($now);
+        $pausedStored = (int) ($this->timer_paused_seconds ?? 0);
+        $currentPause = 0;
+        if ($this->timer_pause_started_at) {
+            $currentPause = (int) $this->timer_pause_started_at->diffInSeconds($now);
+        }
+
+        return max(0, $raw - $pausedStored - $currentPause);
     }
 
     // Custom Scopes (these were missing!)

@@ -1,0 +1,97 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
+
+class MatchPosession extends Model
+{
+    protected $table = 'match_posession';
+
+    protected $fillable = [
+        'match_id',
+        'club_id',
+        'event_at',
+        'admin_id',
+    ];
+
+    protected $casts = [
+        'event_at' => 'datetime',
+    ];
+
+    public function match(): BelongsTo
+    {
+        return $this->belongsTo(Matches::class, 'match_id');
+    }
+
+    public function club(): BelongsTo
+    {
+        return $this->belongsTo(Club::class, 'club_id');
+    }
+
+    public function admin(): BelongsTo
+    {
+        return $this->belongsTo(Admin::class, 'admin_id');
+    }
+
+    /**
+     * @return array{
+     *     home_seconds: int,
+     *     away_seconds: int,
+     *     unknown_seconds: int,
+     *     home_pct: float|null,
+     *     away_pct: float|null
+     * }
+     */
+    public static function summarizeForMatch(Matches $match): array
+    {
+        $homeId = (int) $match->home_club_id;
+        $awayId = (int) $match->away_club_id;
+        $started = $match->started_at;
+        $rows = static::query()->where('match_id', $match->id)->orderBy('event_at')->get();
+
+        $homeSec = 0;
+        $awaySec = 0;
+        $unknownSec = 0;
+
+        if ($started && $rows->isNotEmpty()) {
+            $firstAt = $rows->first()->event_at;
+            if ($firstAt->gt($started)) {
+                $unknownSec = (int) $started->diffInSeconds($firstAt);
+            }
+        }
+
+        $now = Carbon::now();
+
+        foreach ($rows as $i => $row) {
+            $from = $row->event_at;
+            $next = $rows[$i + 1] ?? null;
+            $to = $next ? $next->event_at : $now;
+            if ($from >= $to) {
+                continue;
+            }
+            $seconds = (int) $from->diffInSeconds($to);
+            $cid = (int) $row->club_id;
+            if ($cid === $homeId) {
+                $homeSec += $seconds;
+            } elseif ($cid === $awayId) {
+                $awaySec += $seconds;
+            }
+        }
+
+        $tracked = $homeSec + $awaySec;
+        $totalForPct = $tracked > 0 ? $tracked : 0;
+
+        return [
+            'home_seconds' => $homeSec,
+            'away_seconds' => $awaySec,
+            'unknown_seconds' => $unknownSec,
+            'home_pct' => $totalForPct > 0 ? round(100 * $homeSec / $totalForPct, 1) : null,
+            'away_pct' => $totalForPct > 0 ? round(100 * $awaySec / $totalForPct, 1) : null,
+        ];
+    }
+}

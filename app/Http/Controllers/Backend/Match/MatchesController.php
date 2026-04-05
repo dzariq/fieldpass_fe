@@ -4,27 +4,27 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Backend\match;
 
-use App\Models\Competition;
-use App\Models\MatchPlayerList;
-use App\Models\MatchPlayer;
-use App\Models\Player;
-use Illuminate\Http\Request;
-
-use Illuminate\Support\Facades\DB;  // <- Tambah line ni
 use App\Http\Controllers\Controller;
 use App\Http\Requests\MatchRequest;
+use App\Models\Admin;
 use App\Models\Association;
 use App\Models\Club;
+use App\Models\Competition;  // <- Tambah line ni
 use App\Models\Matches;
-use App\Models\Admin;
+use App\Models\MatchPlayer;
+use App\Models\MatchPlayerList;
+use App\Models\MatchPosession;
+use App\Models\Player;
+use App\Services\MatchN8nLineupService;
+use Carbon\Carbon;
 use Illuminate\Contracts\Support\Renderable;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Request as HttpRequest;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Spatie\Permission\Models\Role;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Carbon\Carbon;
 
 class MatchesController extends Controller
 {
@@ -57,7 +57,7 @@ class MatchesController extends Controller
         // - Admin with assigned club(s): only competitions those clubs have joined (ACTIVE in competition_club).
         // - Association-only admin (no clubs): competitions under their association(s).
         $scopedCompetitionIds = null;
-        if (!$isSuperAdmin) {
+        if (! $isSuperAdmin) {
             if (count($clubIds) > 0) {
                 $scopedCompetitionIds = DB::table('competition_club')
                     ->whereIn('club_id', $clubIds)
@@ -82,7 +82,7 @@ class MatchesController extends Controller
         }
         if ($request->filled('competition_id')) {
             $cid = (int) $request->competition_id;
-            if ($scopedCompetitionIds !== null && !$scopedCompetitionIds->contains($cid)) {
+            if ($scopedCompetitionIds !== null && ! $scopedCompetitionIds->contains($cid)) {
                 $baseQuery->whereRaw('0=1');
             } else {
                 $baseQuery->where('competition_id', $cid);
@@ -141,15 +141,15 @@ class MatchesController extends Controller
     {
         $this->checkAuthorization(auth()->user(), ['match.create']);
 
-        $match = new Matches();
+        $match = new Matches;
         $match->home_club_id = $request->home_club_id;
         $match->away_club_id = $request->away_club_id;
         $match->home_score = $request->home_score;
         $match->away_score = $request->away_score;
         $match->matchweek = $request->matchweek;
 
-                // Combine date and time into Unix timestamp
-        $dateTimeString = $request->date . ' ' . $request->time . ':00'; // Add seconds
+        // Combine date and time into Unix timestamp
+        $dateTimeString = $request->date.' '.$request->time.':00'; // Add seconds
         $unixTimestamp = strtotime($dateTimeString);
 
         $match->date = $unixTimestamp;
@@ -157,6 +157,7 @@ class MatchesController extends Controller
         $match->save();
 
         session()->flash('success', __('match has been created.'));
+
         return redirect()->route('admin.matches.index');
     }
 
@@ -170,7 +171,7 @@ class MatchesController extends Controller
         return view('backend.pages.matches.edit', [
             'match' => $match,
             'associations' => Association::all(),
-            'clubs' => $clubs
+            'clubs' => $clubs,
         ]);
     }
 
@@ -186,16 +187,16 @@ class MatchesController extends Controller
         $match->matchweek = $request->matchweek;
 
         // Combine date and time into Unix timestamp
-        $dateTimeString = $request->date . ' ' . $request->time . ':00'; // Add seconds
+        $dateTimeString = $request->date.' '.$request->time.':00'; // Add seconds
         $unixTimestamp = strtotime($dateTimeString);
 
         $match->date = $unixTimestamp;
         $match->competition_id = $request->competition_id;
         $match->save();
 
-        Log::info("BOARD | looping clubs invited | " . json_encode($request->has('club_ids')));
+        Log::info('BOARD | looping clubs invited | '.json_encode($request->has('club_ids')));
 
-        if ($request->has('club_ids') && !empty($request->club_ids)) {
+        if ($request->has('club_ids') && ! empty($request->club_ids)) {
             // Step 1: Fetch IDs with 'ACTIVE' status
             $activeClubIds = $match->clubs()
                 ->wherePivotIn('club_id', $request->club_ids)
@@ -211,19 +212,20 @@ class MatchesController extends Controller
 
             // Step 4: Sync without detaching
             $results = $match->clubs()->sync($idsWithStatus, false);
-            if (!empty($results['attached'])) {
-                $clubAdmins = array();
+            if (! empty($results['attached'])) {
+                $clubAdmins = [];
 
-                Log::info("BOARD | club admins | " . json_encode($clubAdmins));
+                Log::info('BOARD | club admins | '.json_encode($clubAdmins));
 
-                $this->triggerEvent(array(
+                $this->triggerEvent([
                     'action' => 'match_invitation',
                     'emails' => $clubAdmins,
-                ));
+                ]);
             }
         }
 
         session()->flash('success', 'match has been updated.');
+
         return back();
     }
 
@@ -234,16 +236,196 @@ class MatchesController extends Controller
         $match = Matches::findOrFail($id);
         $match->delete();
         session()->flash('success', 'match has been deleted.');
+
         return back();
     }
 
-    public function details($id)
+    public function details(int $match): Renderable
     {
         $this->checkAuthorization(auth()->user(), ['match.details']);
 
+        $matchModel = Matches::query()
+            ->with(['home_club', 'away_club', 'competition', 'possessions.club', 'possessions.admin'])
+            ->findOrFail($match);
+
+        $summary = MatchPosession::summarizeForMatch($matchModel);
+
         return view('backend.pages.matches.details', [
-            'match' => Matches::find($id),
+            'match' => $matchModel,
+            'summary' => $summary,
         ]);
+    }
+
+    public function recordMatchStart(HttpRequest $request, int $match): RedirectResponse|JsonResponse
+    {
+        $this->checkAuthorization(auth()->user(), ['match.edit']);
+
+        $matchModel = Matches::query()->findOrFail($match);
+        if ($matchModel->started_at !== null) {
+            return $this->possessionFail($request, __('Match has already been started.'));
+        }
+
+        $matchModel->started_at = now();
+        if ($matchModel->status === 'NOT_STARTED') {
+            $matchModel->status = 'ONGOING';
+        }
+        $matchModel->timer_pause_started_at = null;
+        $matchModel->timer_paused_seconds = 0;
+        $matchModel->save();
+
+        MatchN8nLineupService::syncAllSubmittedLineupsForMatch((int) $matchModel->id);
+        MatchN8nLineupService::notifyPlayerUpdateForMatch((int) $matchModel->id, false);
+
+        return $this->possessionOk($request, $matchModel, __('Match start time recorded.'));
+    }
+
+    public function recordPossession(HttpRequest $request, int $match): RedirectResponse|JsonResponse
+    {
+        $this->checkAuthorization(auth()->user(), ['match.edit']);
+
+        $matchModel = Matches::query()->findOrFail($match);
+
+        if ($matchModel->started_at === null) {
+            return $this->possessionFail($request, __('Record match start before logging possession.'));
+        }
+
+        $data = $request->validate([
+            'club_id' => ['required', 'integer'],
+        ]);
+
+        $clubId = (int) $data['club_id'];
+        $allowed = [(int) $matchModel->home_club_id, (int) $matchModel->away_club_id];
+        if (! in_array($clubId, $allowed, true)) {
+            return $this->possessionFail($request, __('Choose home or away team only.'));
+        }
+
+        $last = MatchPosession::query()
+            ->where('match_id', $matchModel->id)
+            ->orderByDesc('event_at')
+            ->first();
+
+        if ($last && (int) $last->club_id === $clubId) {
+            return $this->possessionOk($request, $matchModel, __('Possession is already recorded for that team.'));
+        }
+
+        MatchPosession::query()->create([
+            'match_id' => $matchModel->id,
+            'club_id' => $clubId,
+            'event_at' => now(),
+            'admin_id' => (int) auth()->id(),
+        ]);
+
+        return $this->possessionOk($request, $matchModel, __('Possession recorded.'));
+    }
+
+    public function pauseMatchTimer(HttpRequest $request, int $match): RedirectResponse|JsonResponse
+    {
+        $this->checkAuthorization(auth()->user(), ['match.edit']);
+
+        $matchModel = Matches::query()->findOrFail($match);
+        if (! $matchModel->started_at) {
+            return $this->possessionFail($request, __('Match has not started yet.'));
+        }
+        if ($matchModel->timer_pause_started_at) {
+            return $this->possessionFail($request, __('Timer is already paused.'));
+        }
+
+        $matchModel->timer_pause_started_at = now();
+        $matchModel->save();
+
+        return $this->possessionOk($request, $matchModel, __('Timer paused.'));
+    }
+
+    public function resumeMatchTimer(HttpRequest $request, int $match): RedirectResponse|JsonResponse
+    {
+        $this->checkAuthorization(auth()->user(), ['match.edit']);
+
+        $matchModel = Matches::query()->findOrFail($match);
+        if (! $matchModel->timer_pause_started_at) {
+            return $this->possessionFail($request, __('Timer is not paused.'));
+        }
+
+        $matchModel->timer_paused_seconds = (int) $matchModel->timer_paused_seconds
+            + (int) $matchModel->timer_pause_started_at->diffInSeconds(now());
+        $matchModel->timer_pause_started_at = null;
+        $matchModel->save();
+
+        return $this->possessionOk($request, $matchModel, __('Timer resumed.'));
+    }
+
+    public function resetMatchPossession(HttpRequest $request, int $match): RedirectResponse|JsonResponse
+    {
+        $this->checkAuthorization(auth()->user(), ['match.edit']);
+
+        $matchModel = Matches::query()->findOrFail($match);
+
+        DB::transaction(function () use ($matchModel): void {
+            MatchPosession::query()->where('match_id', $matchModel->id)->delete();
+            $matchModel->started_at = null;
+            $matchModel->timer_pause_started_at = null;
+            $matchModel->timer_paused_seconds = 0;
+            if ($matchModel->status === 'ONGOING') {
+                $matchModel->status = 'NOT_STARTED';
+            }
+            $matchModel->save();
+        });
+
+        $matchModel->refresh();
+
+        MatchN8nLineupService::notifyPlayerUpdateForMatch((int) $matchModel->id, false);
+
+        return $this->possessionOk($request, $matchModel, __('Timer and possession log cleared.'));
+    }
+
+    private function possessionWantsJson(HttpRequest $request): bool
+    {
+        return $request->expectsJson() || $request->ajax() || $request->wantsJson();
+    }
+
+    private function possessionJsonResponse(Matches $matchModel, ?string $message = null, bool $success = true): JsonResponse
+    {
+        $matchModel->refresh();
+        $matchModel->load(['possessions.club', 'possessions.admin']);
+
+        return response()->json([
+            'success' => $success,
+            'message' => $message,
+            'playing_seconds' => $matchModel->playingElapsedSeconds(),
+            'started_at' => $matchModel->started_at?->toIso8601String(),
+            'timer_pause_started_at' => $matchModel->timer_pause_started_at?->toIso8601String(),
+            'timer_paused_seconds' => (int) ($matchModel->timer_paused_seconds ?? 0),
+            'is_paused' => $matchModel->timer_pause_started_at !== null,
+            'match_status' => $matchModel->status,
+            'summary' => MatchPosession::summarizeForMatch($matchModel),
+            'possessions' => $matchModel->possessions->map(function ($row) {
+                return [
+                    'event_at' => $row->event_at?->format('Y-m-d H:i:s'),
+                    'club_name' => $row->club?->name ?? '—',
+                    'admin_name' => $row->admin?->name ?? '—',
+                ];
+            })->values()->all(),
+        ], $success ? 200 : 422);
+    }
+
+    private function possessionFail(HttpRequest $request, string $message): JsonResponse|RedirectResponse
+    {
+        if ($this->possessionWantsJson($request)) {
+            return response()->json([
+                'success' => false,
+                'message' => $message,
+            ], 422);
+        }
+
+        return back()->with('error', $message);
+    }
+
+    private function possessionOk(HttpRequest $request, Matches $matchModel, ?string $message = null): JsonResponse|RedirectResponse
+    {
+        if ($this->possessionWantsJson($request)) {
+            return $this->possessionJsonResponse($matchModel, $message, true);
+        }
+
+        return $message ? back()->with('success', $message) : back();
     }
 
     public function checkin()
@@ -257,10 +439,10 @@ class MatchesController extends Controller
             $token = $request->input('token');
 
             // Validate token presence
-            if (!$token) {
+            if (! $token) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Token is required.'
+                    'message' => 'Token is required.',
                 ]);
             }
 
@@ -272,7 +454,7 @@ class MatchesController extends Controller
                 if (count($tokenParts) !== 2) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Invalid token format.'
+                        'message' => 'Invalid token format.',
                     ]);
                 }
 
@@ -288,7 +470,7 @@ class MatchesController extends Controller
                 if (count($tokenData) < 2) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Invalid QR code format'
+                        'message' => 'Invalid QR code format',
                     ]);
                 }
 
@@ -298,19 +480,19 @@ class MatchesController extends Controller
 
             // Validate player exists
             $player = Player::find($playerId);
-            if (!$player) {
+            if (! $player) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Player not found'
+                    'message' => 'Player not found',
                 ]);
             }
 
             // Validate match exists
             $match = Matches::find($matchId);
-            if (!$match) {
+            if (! $match) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Match not found'
+                    'message' => 'Match not found',
                 ]);
             }
 
@@ -325,7 +507,7 @@ class MatchesController extends Controller
             if ($existingCheckin) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Player already checked in at ' . $existingCheckin->checkin_at->format('H:i A')
+                    'message' => 'Player already checked in at '.$existingCheckin->checkin_at->format('H:i A'),
                 ]);
             }
 
@@ -334,7 +516,7 @@ class MatchesController extends Controller
                 'player_id' => $playerId,
                 'club_id' => $clubId,
                 'match_id' => $matchId,
-                'checkin_at' => Carbon::now()
+                'checkin_at' => Carbon::now(),
             ]);
 
             // Return success with player data for UI update
@@ -347,18 +529,18 @@ class MatchesController extends Controller
                     'identity_number' => $player->identity_number,
                     'club_name' => $this->getPlayerClubName($player, $clubId),
                     'position' => $this->getPlayerPosition($playerId, $matchId),
-                    'checkin_at' => $checkin->checkin_at->toDateTimeString()
-                ]
+                    'checkin_at' => $checkin->checkin_at->toDateTimeString(),
+                ],
             ]);
         } catch (\Exception $e) {
-            Log::error('Checkin verification error: ' . $e->getMessage(), [
+            Log::error('Checkin verification error: '.$e->getMessage(), [
                 'token' => $request->input('token'),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'An error occurred during checkin verification: ' . $e->getMessage()
+                'message' => 'An error occurred during checkin verification: '.$e->getMessage(),
             ]);
         }
     }
@@ -371,10 +553,10 @@ class MatchesController extends Controller
                 $request->input('match_id') ??
                 $this->getCurrentActiveMatchId();
 
-            if (!$matchId) {
+            if (! $matchId) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No active match found'
+                    'message' => 'No active match found',
                 ]);
             }
 
@@ -395,7 +577,7 @@ class MatchesController extends Controller
                     'name' => $checkin->player->name,
                     'club_name' => $this->getPlayerClubName($checkin->player, $clubId),
                     'identity_number' => $checkin->player->identity_number,
-                    'checkin_at' => $checkin->checkin_at->toDateTimeString()
+                    'checkin_at' => $checkin->checkin_at->toDateTimeString(),
                 ];
             });
 
@@ -403,14 +585,14 @@ class MatchesController extends Controller
                 'success' => true,
                 'players' => $players,
                 'match_id' => $matchId,
-                'total_count' => $players->count()
+                'total_count' => $players->count(),
             ]);
         } catch (\Exception $e) {
-            Log::error('Checkin list error: ' . $e->getMessage());
+            Log::error('Checkin list error: '.$e->getMessage());
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to load players list' . $e->getMessage()
+                'message' => 'Failed to load players list'.$e->getMessage(),
             ]);
         }
     }
@@ -424,6 +606,7 @@ class MatchesController extends Controller
         // This is just an example - adjust based on your actual implementation
 
         $matchPlayer = \App\Models\MatchPlayer::where('code', $code)->first();
+
         return $matchPlayer ? $matchPlayer->match_id : null;
     }
 
@@ -479,16 +662,16 @@ class MatchesController extends Controller
                     'sub4' => 'Sub4',
                     'sub5' => 'Sub5',
                     'sub6' => 'Sub6',
-                    'sub7' => 'Sub7'
+                    'sub7' => 'Sub7',
                 ];
 
                 foreach ($positions as $column => $position) {
-                    if (!empty($mp->$column)) {
-                        $players->push((object)[
+                    if (! empty($mp->$column)) {
+                        $players->push((object) [
                             'player_id' => $mp->$column,
                             'position' => $position,
                             'club_name' => $mp->club_name,
-                            'registered_at' => $mp->created_at
+                            'registered_at' => $mp->created_at,
                         ]);
                     }
                 }
@@ -511,19 +694,19 @@ class MatchesController extends Controller
                     'identity_number' => $player->identity_number ?? null,
                     'position' => $item->position,
                     'club_name' => $item->club_name,
-                    'registered_at' => $item->registered_at
+                    'registered_at' => $item->registered_at,
                 ];
             })->sortBy(['club_name', 'position'])->values(); // Add values() to reset array keys
 
             // TAMBAH NI - Return JSON response for success case
             return response()->json([
                 'success' => true,
-                'players' => $finalPlayers
+                'players' => $finalPlayers,
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to load registered players: ' . $e->getMessage()
+                'message' => 'Failed to load registered players: '.$e->getMessage(),
             ], 500);
         }
     }
