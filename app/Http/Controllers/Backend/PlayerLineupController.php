@@ -480,6 +480,23 @@ class PlayerLineupController extends Controller
 
     public function save(LineupRequest $request): RedirectResponse
     {
+        $clubId = (int) $request->input('club_id');
+        $matchId = (int) $request->input('match_id');
+
+        $matchObj = DB::table('match')->where('id', $matchId)->first();
+        if (! $matchObj) {
+            return back()->withErrors(['error' => '❌ '.__('Match not found.')])->withInput();
+        }
+
+        $existingLineupRow = MatchPlayer::query()
+            ->where('match_id', $matchId)
+            ->where('club_id', $clubId)
+            ->first();
+
+        if ($existingLineupRow && ! $this->operatorMayEditSubmittedLineup()) {
+            return back()->withErrors(['locked' => '🔒 '.__('This lineup has already been submitted and cannot be changed.')])->withInput();
+        }
+
         $starters = $request->input('starters', []);
         $subs = $request->input('subs', []);
 
@@ -494,17 +511,9 @@ class PlayerLineupController extends Controller
             return back()->withErrors(['duplicate' => '❌ Player cannot be selected more than once.'])->withInput();
         }
 
-        $clubId = request()->post('club_id');
-        $matchId = $request->match_id;
-        $matchObj = DB::table('match')->where('id', $matchId)->first();
         $competitionObj = DB::table('competition')->where('id', $matchObj->competition_id)->first();
 
-        // Check if already exists
-        $lineup = MatchPlayer::where('match_id', $matchId)
-            ->where('club_id', $clubId)
-            ->first();
-
-        $code = $lineup->code ?? random_int(10000000, 99999999);
+        $code = $existingLineupRow?->code ?? random_int(10000000, 99999999);
 
         $data = [
             'match_id' => $matchId,
@@ -530,20 +539,34 @@ class PlayerLineupController extends Controller
             'sub7' => $subs[6] ?? null,
         ];
 
-        if ($lineup) {
-            $lineup->update($data);
+        if ($existingLineupRow) {
+            $existingLineupRow->update($data);
         } else {
-            MatchPlayer::create($data);
+            MatchPlayer::query()->create($data);
         }
 
         MatchN8nLineupService::notifyConfirmLineupForClub((int) $matchId, (int) $clubId);
 
-        if(auth()->user()->can('club.create')){
-            return redirect()->route('admin.competition.details', ['id' => $competitionObj->id])->with('success', '✅ Lineup saved successfully.');
-        }   
-        return redirect()->route('admin.dashboard')->with('success', '✅ Lineup saved successfully.');
+        $successMsg = $existingLineupRow
+            ? '✅ '.__('Lineup updated successfully.')
+            : '✅ '.__('Lineup saved successfully.');
+
+        if (auth()->user()->can('club.create')) {
+            return redirect()->route('admin.competition.details', ['id' => $competitionObj->id])->with('success', $successMsg);
+        }
+
+        return redirect()->route('admin.dashboard')->with('success', $successMsg);
     }
 
+    private function operatorMayEditSubmittedLineup(): bool
+    {
+        $user = auth()->user();
+        if (! $user) {
+            return false;
+        }
+
+        return $user->hasRole('Association Manager') || $user->can('association.view');
+    }
 
     private function playerUpdate($player_id, $matchId)
     {

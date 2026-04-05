@@ -33,8 +33,14 @@ $usr = Auth::guard('admin')->user();
     .page-title {
         font-size: 1.3rem;
         font-weight: 700;
-        color: white;
+        color: #ffffff;
         margin-bottom: 5px;
+    }
+
+    /* Beat global backend-ui-improvements / styles.css .page-title-area .page-title */
+    .page-title-area h4.page-title,
+    .page-title-area .page-title {
+        color: #ffffff !important;
     }
 
     .page-title-area p {
@@ -526,6 +532,11 @@ $usr = Auth::guard('admin')->user();
         color: #155724;
         border-color: #b7dfc1;
     }
+    .lineup-status.submitted.association-may-edit {
+        background: linear-gradient(135deg, #d1ecf1, #bee5eb);
+        color: #0c5460;
+        border-color: #abdde5;
+    }
     .lineup-status.not-submitted {
         background: linear-gradient(135deg, #fff3cd, #ffe8a1);
         color: #856404;
@@ -750,6 +761,210 @@ $usr = Auth::guard('admin')->user();
         justify-content: center;
         gap: 6px;
     }
+
+    /* Readonly submitted lineup (no pitch) */
+    .lineup-readonly-wrap {
+        margin-top: 18px;
+    }
+    .lineup-readonly-hero {
+        background: linear-gradient(135deg, #0f4c3a 0%, #1a7f64 55%, #2d9d7a 100%);
+        color: #fff;
+        border-radius: 14px;
+        padding: 18px 22px;
+        margin-bottom: 18px;
+        box-shadow: 0 12px 32px rgba(15, 76, 58, 0.22);
+        border: 1px solid rgba(255,255,255,0.2);
+    }
+    .lineup-readonly-hero h3 {
+        margin: 0 0 6px;
+        font-size: 1.15rem;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+        color: #ffffff;
+    }
+    .lineup-readonly-hero p {
+        margin: 0;
+        font-size: 13px;
+        color: #94a3b8;
+    }
+    .lineup-readonly-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        align-items: start;
+    }
+    @media (max-width: 992px) {
+        .lineup-readonly-grid { grid-template-columns: 1fr; }
+    }
+    .lineup-readonly-card {
+        background: #fff;
+        border-radius: 14px;
+        border: 1px solid #e8ece9;
+        box-shadow: 0 8px 28px rgba(15, 76, 58, 0.08);
+        overflow: hidden;
+    }
+    .lineup-readonly-card--subs {
+        background: linear-gradient(180deg, #f6fbf9 0%, #fff 100%);
+        border-color: #d4ebe3;
+    }
+    .lineup-readonly-card__head {
+        padding: 14px 16px;
+        background: linear-gradient(135deg, #f0faf7, #e8f5f0);
+        border-bottom: 1px solid #dceee6;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+    }
+    .lineup-readonly-card--subs .lineup-readonly-card__head {
+        background: linear-gradient(135deg, #e8f6ec, #dff3e5);
+        border-bottom-color: #c5e6d0;
+    }
+    .lineup-readonly-card__head h4 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 800;
+        color: #0f4c3a;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .lineup-readonly-rows {
+        padding: 6px 0;
+    }
+    .lineup-readonly-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        border-bottom: 1px solid #f0f3f1;
+        transition: background 0.15s ease;
+    }
+    .lineup-readonly-row:last-child { border-bottom: none; }
+    .lineup-readonly-row:hover { background: #fafcfb; }
+    .lineup-readonly-badge {
+        flex-shrink: 0;
+        min-width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 13px;
+        background: linear-gradient(135deg, #0f4c3a, #1a7f64);
+        color: #fff;
+        box-shadow: 0 4px 12px rgba(15, 76, 58, 0.2);
+    }
+    .lineup-readonly-card--subs .lineup-readonly-badge {
+        background: linear-gradient(135deg, #2e8b57, #3cb371);
+    }
+    .lineup-readonly-body { flex: 1; min-width: 0; }
+    .lineup-readonly-name {
+        font-weight: 800;
+        font-size: 14px;
+        color: #1a2e28;
+        line-height: 1.25;
+    }
+    .lineup-readonly-pos {
+        font-size: 12px;
+        color: #5c6f68;
+        margin-top: 2px;
+    }
+
+    /* Editable list (replaces pitch) */
+    .lineup-list-editor {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-top: 16px;
+        align-items: start;
+    }
+    @media (max-width: 992px) {
+        .lineup-list-editor { grid-template-columns: 1fr; }
+    }
+    .lineup-list-card {
+        background: #fff;
+        border-radius: 14px;
+        border: 1px solid #e8ece9;
+        box-shadow: 0 8px 28px rgba(15, 76, 58, 0.07);
+        overflow: hidden;
+    }
+    .lineup-list-card--subs {
+        background: linear-gradient(180deg, #fafdfb 0%, #fff 100%);
+    }
+    .lineup-list-card__head {
+        padding: 14px 16px;
+        background: linear-gradient(135deg, #0f4c3a, #1a7f64);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        font-weight: 800;
+        font-size: 1rem;
+    }
+    .lineup-list-card--subs .lineup-list-card__head {
+        background: linear-gradient(135deg, #2e8b57, #3daa6a);
+    }
+    .lineup-list-card__head .mini-count {
+        background: rgba(255,255,255,0.2);
+        border: 1px solid rgba(255,255,255,0.35);
+    }
+    .lineup-list-rows { padding: 8px 0; }
+    .lineup-list-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0 10px 8px;
+        padding: 12px 14px;
+        border-radius: 12px;
+        border: 1px dashed #cfd8dc;
+        background: #fafcfb;
+        cursor: pointer;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+        min-height: 56px;
+    }
+    .lineup-list-row:hover {
+        border-style: solid;
+        border-color: #0f4c3a55;
+        background: #fff;
+        box-shadow: 0 4px 14px rgba(15, 76, 58, 0.08);
+    }
+    .lineup-list-row:not(.empty) {
+        border-style: solid;
+        border-color: #bfe9dc;
+        background: linear-gradient(90deg, #f0faf7, #fff);
+    }
+    .lineup-list-row .meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+    }
+    .lineup-list-row .badge {
+        min-width: 36px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        background: #0f4c3a;
+        color: #fff;
+        font-weight: 800;
+        font-size: 12px;
+    }
+    .lineup-list-row .name {
+        font-weight: 800;
+        font-size: 14px;
+        color: #1a2e28;
+    }
+    .lineup-list-row .hint {
+        font-size: 12px;
+        color: #6b7c76;
+        margin-top: 2px;
+    }
+    .lineup-list-row .slot-body { flex: 1; min-width: 0; }
 </style>
 @endsection
 
@@ -816,6 +1031,48 @@ $subIds = $existingLineup ? [
     $existingLineup->sub6,
     $existingLineup->sub7,
 ] : [];
+
+$lineupSubmitted = (bool) $existingLineup;
+$canOverrideSubmittedLineup = $usr->hasRole('Association Manager') || $usr->can('association.view');
+$canEditLineup = (! $lineupSubmitted && $isEditingAllowed) || ($lineupSubmitted && $canOverrideSubmittedLineup);
+
+$playerById = $players->keyBy('id');
+$readonlyStarters = [];
+$readonlySubs = [];
+if ($existingLineup) {
+    $starterMap = [
+        ['gk', 'GK'],
+        ['player1', '2'],
+        ['player2', '3'],
+        ['player3', '4'],
+        ['player4', '5'],
+        ['player5', '6'],
+        ['player6', '7'],
+        ['player7', '8'],
+        ['player8', '9'],
+        ['player9', '10'],
+        ['player10', '11'],
+    ];
+    foreach ($starterMap as [$field, $label]) {
+        $pid = $existingLineup->{$field};
+        $p = $pid ? $playerById->get((int) $pid) : null;
+        $readonlyStarters[] = [
+            'label' => $label,
+            'name' => $p->name ?? '—',
+            'position' => $p->position ?? '',
+        ];
+    }
+    for ($si = 1; $si <= 7; $si++) {
+        $field = 'sub'.$si;
+        $pid = $existingLineup->{$field};
+        $p = $pid ? $playerById->get((int) $pid) : null;
+        $readonlySubs[] = [
+            'label' => 'S'.$si,
+            'name' => $p->name ?? '—',
+            'position' => $p->position ?? '',
+        ];
+    }
+}
 @endphp
 
 <div class="page-title-area">
@@ -836,13 +1093,22 @@ $subIds = $existingLineup ? [
         {{ $errors->first('duplicate') }}
     </div>
     @endif
+    @if ($errors->has('locked'))
+    <div class="alert alert-danger">
+        {{ $errors->first('locked') }}
+    </div>
+    @endif
 
-    <div class="lineup-status {{ $existingLineup ? 'submitted' : 'not-submitted' }}">
+    <div class="lineup-status {{ $existingLineup ? 'submitted' : 'not-submitted' }}{{ $existingLineup && $canOverrideSubmittedLineup ? ' association-may-edit' : '' }}">
         <div>
             @if ($existingLineup)
-                ✅ {{ __('Lineup already submitted') }}
+                @if ($canOverrideSubmittedLineup)
+                🔓 {{ __('Lineup submitted — association may update') }}
+                @else
+                🔒 {{ __('Lineup submitted — read only') }}
+                @endif
                 <div class="meta">
-                    {{ __('Last saved') }}: {{ optional($existingLineup->updated_at)->timezone('Asia/Kuala_Lumpur')->format('d M Y H:i') ?? '-' }}
+                    {{ __('Submitted') }}: {{ optional($existingLineup->updated_at)->timezone('Asia/Kuala_Lumpur')->format('d M Y H:i') ?? '-' }}
                 </div>
             @else
                 ⚠️ {{ __('Lineup not submitted yet') }}
@@ -856,42 +1122,81 @@ $subIds = $existingLineup ? [
         </div>
     </div>
 
-    @if ($deadlinePassed)
-        @if ($canBypassDeadline)
-        <div class="admin-override-notice">
-            <span class="admin-badge">🔓 ADMIN</span>
-            <span>{{ __('Special permission: Edit after deadline') }}</span>
-        </div>
+    @if (!$lineupSubmitted)
+        @if ($deadlinePassed)
+            @if ($canBypassDeadline)
+            <div class="admin-override-notice">
+                <span class="admin-badge">🔓 ADMIN</span>
+                <span>{{ __('Special permission: submit after deadline') }}</span>
+            </div>
+            @else
+            <div class="deadline-warning blink-red">
+                🚫 {{ __('Submission closed') }} - {{ $submissionDeadline->format('d M Y H:i') }}
+            </div>
+            @endif
         @else
-        <div class="deadline-warning blink-red">
-            🚫 {{ __('Submission closed') }} - {{ $submissionDeadline->format('d M Y H:i') }}
+        <div class="deadline-warning" id="countdown-timer">
+            ⚠️ {{ __('Lineup submission deadline approaching') }}
         </div>
         @endif
-    @else
-    <div class="deadline-warning" id="countdown-timer">
-        ⚠️ {{ __('Lineup submission deadline approaching') }}
-    </div>
     @endif
 
-    <!-- Formation Visual Preview -->
-    <div class="formation-visual">
-        <div class="field-lines"></div>
-        <div class="formation-preview">
-            <div id="formation-display">
-                {{ __('Select players to preview') }}
+    @if ($lineupSubmitted && ! $canOverrideSubmittedLineup)
+        <div class="lineup-readonly-wrap">
+            <div class="lineup-readonly-hero">
+                <h3>{{ __('Your submitted squad') }}</h3>
+                <p>{{ __('This lineup is locked. Contact the league if you need a correction.') }}</p>
+            </div>
+            <div class="lineup-readonly-grid">
+                <div class="lineup-readonly-card">
+                    <div class="lineup-readonly-card__head">
+                        <h4>⚽ {{ __('Starting XI') }}</h4>
+                        <span class="mini-count">11</span>
+                    </div>
+                    <div class="lineup-readonly-rows">
+                        @foreach ($readonlyStarters as $row)
+                        <div class="lineup-readonly-row">
+                            <div class="lineup-readonly-badge">{{ $row['label'] }}</div>
+                            <div class="lineup-readonly-body">
+                                <div class="lineup-readonly-name">{{ $row['name'] }}</div>
+                                @if (!empty($row['position']))
+                                <div class="lineup-readonly-pos">{{ $row['position'] }}</div>
+                                @endif
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+                <div class="lineup-readonly-card lineup-readonly-card--subs">
+                    <div class="lineup-readonly-card__head">
+                        <h4>🔄 {{ __('Substitutes') }}</h4>
+                        <span class="mini-count">7</span>
+                    </div>
+                    <div class="lineup-readonly-rows">
+                        @foreach ($readonlySubs as $row)
+                        <div class="lineup-readonly-row">
+                            <div class="lineup-readonly-badge">{{ $row['label'] }}</div>
+                            <div class="lineup-readonly-body">
+                                <div class="lineup-readonly-name">{{ $row['name'] }}</div>
+                                @if (!empty($row['position']))
+                                <div class="lineup-readonly-pos">{{ $row['position'] }}</div>
+                                @endif
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-
+    @elseif ($canEditLineup)
     <form action="{{ route('admin.lineup.save') }}" method="POST" id="lineupForm">
         @csrf
         <input type="hidden" name="match_id" value="{{ $match->id }}">
         <input type="hidden" name="club_id" value="{{ $club_id }}">
 
-        {{-- Keep real selects for form submission (hidden); interactive pitch drives these values --}}
         <div style="display:none;">
             @for ($i = 1; $i <= 11; $i++)
-                <select name="starters[]" class="form-control player-select" {{ !$isEditingAllowed ? 'disabled' : '' }} data-position="{{ $i }}">
+                <select name="starters[]" class="form-control player-select" data-position="{{ $i }}">
                     <option value="">{{ __('Select Player') }}</option>
                     @foreach ($players as $player)
                         @if ($i == 1 && $player->position == 'Goalkeeper')
@@ -907,7 +1212,7 @@ $subIds = $existingLineup ? [
                 </select>
             @endfor
             @for ($i = 1; $i <= 7; $i++)
-                <select name="subs[]" class="form-control player-select sub-select" {{ !$isEditingAllowed ? 'disabled' : '' }} data-position="sub{{ $i }}">
+                <select name="subs[]" class="form-control player-select sub-select" data-position="sub{{ $i }}">
                     <option value="">{{ __('Select Player') }}</option>
                     @foreach ($players as $player)
                         <option value="{{ $player->id }}" {{ (old("subs.$i") ?? ($subIds[$i - 1] ?? '')) == $player->id ? 'selected' : '' }}>
@@ -918,76 +1223,69 @@ $subIds = $existingLineup ? [
             @endfor
         </div>
 
-        <div class="pitch-wrap">
-            <div class="pitch-card">
-                <div style="display:flex; align-items:center; justify-content: space-between; gap:10px; margin-bottom: 10px;">
-                    <div style="font-weight: 900; letter-spacing: .2px;">{{ __('Starting XI') }}</div>
+        <div class="lineup-list-editor">
+            <div class="lineup-list-card">
+                <div class="lineup-list-card__head">
+                    <span>{{ __('Starting XI') }}</span>
                     <div class="mini-count"><span id="starter-count-inline">0</span>/11</div>
                 </div>
-                <div class="pitch">
-                    <div class="line"></div>
-                    <div class="midline"></div>
-                    <div class="circle"></div>
-
-                    <div class="slot-grid" id="pitchSlots">
-                        <div class="slot empty" data-slot="gk" data-position="1">
-                            <div class="meta"><span class="badge">GK</span><span>🥅</span></div>
+                <div class="lineup-list-rows" id="pitchSlots">
+                    <div class="lineup-list-row slot empty" data-slot="gk" data-position="1">
+                        <div class="meta"><span class="badge">GK</span></div>
+                        <div class="slot-body">
                             <div class="name">{{ __('Select Goalkeeper') }}</div>
                             <div class="hint">{{ __('Tap to choose') }}</div>
                         </div>
-                        <div class="slot empty" data-slot="p2" data-position="2"><div class="meta"><span class="badge">2</span><span>⚽</span></div><div class="name">{{ __('Select Player') }}</div><div class="hint">{{ __('Tap to choose') }}</div></div>
-                        <div class="slot empty" data-slot="p3" data-position="3"><div class="meta"><span class="badge">3</span><span>⚽</span></div><div class="name">{{ __('Select Player') }}</div><div class="hint">{{ __('Tap to choose') }}</div></div>
-                        <div class="slot empty" data-slot="p4" data-position="4"><div class="meta"><span class="badge">4</span><span>⚽</span></div><div class="name">{{ __('Select Player') }}</div><div class="hint">{{ __('Tap to choose') }}</div></div>
-                        <div class="slot empty" data-slot="p5" data-position="5"><div class="meta"><span class="badge">5</span><span>⚽</span></div><div class="name">{{ __('Select Player') }}</div><div class="hint">{{ __('Tap to choose') }}</div></div>
-                        <div class="slot empty" data-slot="p6" data-position="6"><div class="meta"><span class="badge">6</span><span>⚽</span></div><div class="name">{{ __('Select Player') }}</div><div class="hint">{{ __('Tap to choose') }}</div></div>
-                        <div class="slot empty" data-slot="p7" data-position="7"><div class="meta"><span class="badge">7</span><span>⚽</span></div><div class="name">{{ __('Select Player') }}</div><div class="hint">{{ __('Tap to choose') }}</div></div>
-                        <div class="slot empty" data-slot="p8" data-position="8"><div class="meta"><span class="badge">8</span><span>⚽</span></div><div class="name">{{ __('Select Player') }}</div><div class="hint">{{ __('Tap to choose') }}</div></div>
-                        <div class="slot empty" data-slot="p9" data-position="9"><div class="meta"><span class="badge">9</span><span>⚽</span></div><div class="name">{{ __('Select Player') }}</div><div class="hint">{{ __('Tap to choose') }}</div></div>
-                        <div class="slot empty" data-slot="p10" data-position="10"><div class="meta"><span class="badge">10</span><span>⚽</span></div><div class="name">{{ __('Select Player') }}</div><div class="hint">{{ __('Tap to choose') }}</div></div>
-                        <div class="slot empty" data-slot="p11" data-position="11"><div class="meta"><span class="badge">11</span><span>⚽</span></div><div class="name">{{ __('Select Player') }}</div><div class="hint">{{ __('Tap to choose') }}</div></div>
                     </div>
+                    @for ($li = 2; $li <= 11; $li++)
+                    <div class="lineup-list-row slot empty" data-slot="p{{ $li }}" data-position="{{ $li }}">
+                        <div class="meta"><span class="badge">{{ $li }}</span></div>
+                        <div class="slot-body">
+                            <div class="name">{{ __('Select Player') }}</div>
+                            <div class="hint">{{ __('Tap to choose') }}</div>
+                        </div>
+                    </div>
+                    @endfor
                 </div>
             </div>
-
-            <div class="bench-card">
-                <div class="bench-title">
-                    <h5><span class="section-icon">S</span>{{ __('Substitutes') }}</h5>
+            <div class="lineup-list-card lineup-list-card--subs">
+                <div class="lineup-list-card__head">
+                    <span>{{ __('Substitutes') }}</span>
                     <div class="mini-count"><span id="sub-count-inline">0</span>/7</div>
                 </div>
-                <div class="bench-grid" id="benchSlots">
+                <div class="lineup-list-rows" id="benchSlots">
                     @for ($i = 1; $i <= 7; $i++)
-                        <div class="bench-slot slot empty" data-position="sub{{ $i }}" data-slot="sub{{ $i }}">
-                            <div class="meta"><span class="badge">S{{ $i }}</span><span>🔄</span></div>
+                    <div class="lineup-list-row slot empty" data-position="sub{{ $i }}" data-slot="sub{{ $i }}">
+                        <div class="meta"><span class="badge">S{{ $i }}</span></div>
+                        <div class="slot-body">
                             <div class="name">{{ __('Select Sub') }} {{ $i }}</div>
                             <div class="hint">{{ __('Tap to choose') }}</div>
                         </div>
+                    </div>
                     @endfor
                 </div>
             </div>
         </div>
 
-        @if ($isEditingAllowed)
         <div class="alert alert-info mt-3">
             ℹ️ {{ __('You can save once at least 14 players are selected (11 starters + minimum 3 substitutes).') }}
         </div>
         <button type="submit" class="btn btn-primary mt-3" id="saveButton">
+            @if ($lineupSubmitted && $canOverrideSubmittedLineup)
+            💾 {{ __('Update lineup') }}
+            @else
             💾 {{ __('Save Lineup') }}
+            @endif
         </button>
         @if ($deadlinePassed && $canBypassDeadline)
         <div class="alert alert-info mt-3">
-            ℹ️ {{ __('Editing after deadline with admin privileges') }}
-        </div>
-        @endif
-        @else
-        <div class="alert alert-danger mt-3">
-            🚫 {{ __('Submission closed') }} - {{ $submissionDeadline->format('d M Y H:i') }}
+            ℹ️ {{ __('Submitting after deadline with admin privileges') }}
         </div>
         @endif
     </form>
 
-    {{-- Player picker modal --}}
     <div class="picker-backdrop" id="playerPicker">
-        <div class="picker" role="dialog" aria-modal="true" aria-label="Select player">
+        <div class="picker" role="dialog" aria-modal="true" aria-label="{{ __('Select player') }}">
             <div class="picker-head">
                 <div class="title" id="pickerTitle">{{ __('Select Player') }}</div>
                 <div class="picker-actions">
@@ -1001,13 +1299,18 @@ $subIds = $existingLineup ? [
             </div>
         </div>
     </div>
+    @else
+        <div class="alert alert-danger mt-3">
+            🚫 {{ __('Submission closed') }} - {{ $submissionDeadline->format('d M Y H:i') }}
+        </div>
+    @endif
 </div>
 
 @endif
 
 @endsection
 
-@if($match)
+@if($match && $canEditLineup)
 @section('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -1019,6 +1322,7 @@ $subIds = $existingLineup ? [
         const starterCountInline = document.getElementById('starter-count-inline');
         const subCountInline = document.getElementById('sub-count-inline');
         const saveButton = document.getElementById('saveButton');
+        const fpSaveReadyLabel = @json(($lineupSubmitted && $canOverrideSubmittedLineup) ? __('Update lineup') : __('Save Lineup'));
         const formationDisplay = document.getElementById('formation-display');
 
         const pickerBackdrop = document.getElementById('playerPicker');
@@ -1061,7 +1365,7 @@ $subIds = $existingLineup ? [
 
                 saveButton.disabled = !canSave;
                 saveButton.innerHTML = canSave
-                    ? `💾 {{ __("Save Lineup") }} (${totalSelected}/18)`
+                    ? `💾 ${fpSaveReadyLabel} (${totalSelected}/18)`
                     : `💾 {{ __("Select at least 14") }} (${totalSelected}/18)`;
             }
         }
@@ -1269,7 +1573,7 @@ $subIds = $existingLineup ? [
         // Pitch/bench slot click -> open picker
         document.querySelectorAll('.slot[data-position]').forEach(slotEl => {
             slotEl.addEventListener('click', function() {
-                if (!@json($isEditingAllowed)) return;
+                if (!@json($canEditLineup)) return;
                 const pos = slotEl.dataset.position;
                 const selectEl = document.querySelector(`select.player-select[data-position="${pos}"]`);
                 if (!selectEl) return;
