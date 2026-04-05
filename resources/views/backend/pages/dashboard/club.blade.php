@@ -340,6 +340,12 @@
                                                                     <i class="fas fa-edit"></i> Match Update
                                                                 </a>
                                                             @endcan
+                                                            <a class="btn btn-outline-dark"
+                                                               target="_blank"
+                                                               rel="noopener noreferrer"
+                                                               href="{{ route('admin.matches.lineups-print', $fixture->id) }}">
+                                                                <i class="fas fa-print"></i> {{ __('Print lineups') }}
+                                                            </a>
                                                         </div>
 
                                                         @can('admin.view')

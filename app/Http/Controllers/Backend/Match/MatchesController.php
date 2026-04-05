@@ -256,6 +256,114 @@ class MatchesController extends Controller
         ]);
     }
 
+    public function printLineups(int $match): Renderable
+    {
+        $user = auth()->user();
+        if (! $user->can('admin.view') && ! $user->can('match.edit')) {
+            abort(403, 'Sorry !! You are unauthorized to perform this action.');
+        }
+
+        $matchModel = Matches::query()
+            ->with(['home_club', 'away_club', 'competition'])
+            ->findOrFail($match);
+
+        $homeLineup = MatchPlayer::query()
+            ->where('match_id', $matchModel->id)
+            ->where('club_id', $matchModel->home_club_id)
+            ->first();
+        $awayLineup = MatchPlayer::query()
+            ->where('match_id', $matchModel->id)
+            ->where('club_id', $matchModel->away_club_id)
+            ->first();
+
+        return view('backend.pages.matches.lineups-print', [
+            'match' => $matchModel,
+            'homeHasLineup' => $homeLineup !== null,
+            'awayHasLineup' => $awayLineup !== null,
+            'homeRoster' => $this->rosterForPrint($homeLineup),
+            'awayRoster' => $this->rosterForPrint($awayLineup),
+            'kickoff' => Carbon::createFromTimestamp((int) $matchModel->date)->timezone('Asia/Kuala_Lumpur'),
+        ]);
+    }
+
+    /**
+     * @return array{starters: list<array{label: string, name: string, position: string}>, subs: list<array{label: string, name: string, position: string}>}
+     */
+    private function rosterForPrint(?MatchPlayer $row): array
+    {
+        if ($row === null) {
+            return [
+                'starters' => [],
+                'subs' => [],
+            ];
+        }
+
+        $idList = array_values(array_filter([
+            $row->gk,
+            $row->player1,
+            $row->player2,
+            $row->player3,
+            $row->player4,
+            $row->player5,
+            $row->player6,
+            $row->player7,
+            $row->player8,
+            $row->player9,
+            $row->player10,
+            $row->sub1,
+            $row->sub2,
+            $row->sub3,
+            $row->sub4,
+            $row->sub5,
+            $row->sub6,
+            $row->sub7,
+        ], fn ($v) => $v !== null && $v !== ''));
+
+        $players = $idList === [] ? collect() : Player::query()->whereIn('id', $idList)->get()->keyBy('id');
+
+        $starterMap = [
+            'gk' => 'GK',
+            'player1' => '2',
+            'player2' => '3',
+            'player3' => '4',
+            'player4' => '5',
+            'player5' => '6',
+            'player6' => '7',
+            'player7' => '8',
+            'player8' => '9',
+            'player9' => '10',
+            'player10' => '11',
+        ];
+
+        $starters = [];
+        foreach ($starterMap as $field => $label) {
+            $pid = $row->{$field};
+            $p = $pid ? $players->get((int) $pid) : null;
+            $starters[] = [
+                'label' => $label,
+                'name' => $p->name ?? '—',
+                'position' => $p->position ?? '',
+            ];
+        }
+
+        $subs = [];
+        for ($i = 1; $i <= 7; $i++) {
+            $field = 'sub'.$i;
+            $pid = $row->{$field};
+            $p = $pid ? $players->get((int) $pid) : null;
+            $subs[] = [
+                'label' => 'S'.$i,
+                'name' => $p->name ?? '—',
+                'position' => $p->position ?? '',
+            ];
+        }
+
+        return [
+            'starters' => $starters,
+            'subs' => $subs,
+        ];
+    }
+
     public function recordMatchStart(HttpRequest $request, int $match): RedirectResponse|JsonResponse
     {
         $this->checkAuthorization(auth()->user(), ['match.edit']);
