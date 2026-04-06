@@ -340,11 +340,14 @@ Player Dashboard
                                 </div>
                                 
                                 <div class="col-md-6 mb-3">
-                                    <label for="identity_number" class="form-label required-field">Identity Number (IC/Passport)</label>
+                                    <label for="identity_number" class="form-label">{{ __('Identity number (IC / passport)') }}</label>
                                     <div class="input-icon">
                                         <i class="fa fa-id-card"></i>
-                                        <input type="text" class="form-control" value="{{ $player->identity_number }}" id="identity_number" name="identity_number" placeholder="Enter IC/Passport number" required>
+                                        <input type="text" readonly class="form-control" value="{{ $player->identity_number }}" id="identity_number" autocomplete="off">
                                     </div>
+                                    <small class="info-text">
+                                        <i class="fa fa-shield-alt"></i> {{ __('Contact your club administrator to change your identity number.') }}
+                                    </small>
                                 </div>
                             </div>
                         </div>

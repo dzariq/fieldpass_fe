@@ -102,7 +102,7 @@ class PlayerDashboardController extends Controller
             $player->username = $request->username;
         }
 
-        $player->identity_number = $request->identity_number;
+        // Identity number is admin-managed only (not editable on player dashboard).
 
         // Only update phone if provided
         if ($request->filled('phone')) {
