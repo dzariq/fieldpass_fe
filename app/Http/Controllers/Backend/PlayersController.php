@@ -88,15 +88,26 @@ class PlayersController extends Controller
      */
     private function adminMayEditPlayer(Player $player): bool
     {
-        if (! auth()->user()->can('players.edit')) {
+        $user = auth()->user();
+        if (! $user) {
             return false;
         }
-        if (auth()->user()->can('association.view')) {
+
+        // Association-wide admins can edit any player (same scope as players index).
+        if ($user->can('association.view')) {
             return true;
         }
-        $admin = Admin::findOrFail(auth()->user()->id);
-        $clubIds = $admin->clubs()->pluck('club.id')->map(fn ($id) => (int) $id)->all();
-        if (count($clubIds) === 0) {
+
+        // Association Managers should be allowed to edit players in their association scope
+        // even if their permission set doesn't include association.view.
+        $isAssociationManager = $user->hasRole('Association Manager');
+        if (! $user->can('players.edit') && ! $isAssociationManager) {
+            return false;
+        }
+
+        $admin = Admin::findOrFail($user->id);
+        $clubIds = $this->allowedClubIdsForPlayersList($admin);
+        if (! $clubIds || count($clubIds) === 0) {
             return false;
         }
 
@@ -145,6 +156,7 @@ class PlayersController extends Controller
 
         return $user
             && $user->can('players.edit')
+            && ! $user->hasRole('Association Manager')
             && ! $user->can('association.view');
     }
 
@@ -335,7 +347,10 @@ class PlayersController extends Controller
         $admin_obj = Admin::find(auth()->user()->id);
         $clubIds = $admin_obj->clubs()->pluck('club.id')->toArray();
 
-        $this->checkAuthorization(auth()->user(), ['admin.create']);
+        // Allow Association Managers to create players even if their permission set doesn't include admin.create.
+        if (! auth()->user()->hasRole('Association Manager')) {
+            $this->checkAuthorization(auth()->user(), ['admin.create']);
+        }
 
         if (count($clubIds) > 0) {
             $clubs = Club::whereIn('id', $clubIds)->get();
@@ -389,7 +404,10 @@ class PlayersController extends Controller
             abort(403);
         }
 
-        $this->checkAuthorization(auth()->user(), ['players.create']);
+        // Allow Association Managers to create players even if their permission set doesn't include players.create.
+        if (! auth()->user()->hasRole('Association Manager')) {
+            $this->checkAuthorization(auth()->user(), ['players.create']);
+        }
 
         $rawType = $request->input('identity_type');
         $identityType = in_array($rawType, ['malaysia_ic', 'foreign_id'], true) ? $rawType : '';
@@ -398,6 +416,13 @@ class PlayersController extends Controller
         } elseif ($identityType === 'foreign_id') {
             $request->merge(['identity_number' => trim((string) $request->input('identity_number', ''))]);
         }
+
+        $phoneDigits = preg_replace('/\D/', '', (string) $request->input('phone', ''));
+        $ccDigits = preg_replace('/\D/', '', (string) $request->input('country_code', ''));
+        $request->merge([
+            'phone' => $phoneDigits === '' ? null : $phoneDigits,
+            'country_code' => $ccDigits === '' ? null : $ccDigits,
+        ]);
 
         $identityNumberRules = ['required', 'string', 'max:50', Rule::unique('players', 'identity_number')];
         if ($identityType === 'malaysia_ic') {
@@ -411,8 +436,15 @@ class PlayersController extends Controller
             'username' => 'required|string|max:255|unique:players,username',
             'identity_type' => 'required|in:malaysia_ic,foreign_id',
             'identity_number' => $identityNumberRules,
-            'phone' => 'required|string|max:20|unique:players,phone',
-            'country_code' => 'required|string|max:4|regex:/^\d{1,4}$/',
+            'country_code' => ['nullable', 'required_with:phone', 'string', 'max:4', 'regex:/^\d{1,4}$/'],
+            'phone' => [
+                'nullable',
+                'required_with:country_code',
+                'string',
+                'max:20',
+                'regex:/^[0-9]{7,15}$/',
+                Rule::unique('players', 'phone'),
+            ],
             'position' => 'required|in:Goalkeeper,Defender,Midfielder,Forward',
             'salary' => 'nullable|numeric|min:0',
             'club_ids' => 'required|array|min:1',
@@ -424,8 +456,10 @@ class PlayersController extends Controller
             'identity_number.required' => 'Identity number is required.',
             'identity_number.unique' => 'This identity number is already registered.',
             'identity_number.regex' => 'Malaysia IC must be in format XXXXXX-XX-XXXX (12 digits).',
-            'phone.required' => 'Phone number is required.',
             'phone.unique' => 'This phone number is already registered.',
+            'country_code.required_with' => 'Enter a country code when providing a phone number.',
+            'phone.required_with' => 'Enter a phone number when providing a country code.',
+            'phone.regex' => 'Enter 7–15 digits only (no spaces), or leave empty.',
             'username.unique' => 'This username is already taken.',
             'email.unique' => 'This email is already registered.',
             'club_ids.required' => 'Please assign at least one club.',
@@ -436,8 +470,8 @@ class PlayersController extends Controller
         $player->name = $request->name;
         $player->identity_type = $validated['identity_type'];
         $player->identity_number = $validated['identity_number'];
-        $player->phone = $request->phone;
-        $player->country_code = $request->country_code;
+        $player->phone = $validated['phone'] ?? null;
+        $player->country_code = $validated['country_code'] ?? null;
         $player->username = $request->username;
         $player->jersey_number = $request->jersey_number;
         $player->email = $request->has('email') ? $request->email : null;
@@ -572,7 +606,7 @@ class PlayersController extends Controller
 
         return view('backend.pages.players.edit', [
             'player' => $player,
-            'allowFullPlayerFieldEdit' => auth()->user()->can('association.view'),
+            'allowFullPlayerFieldEdit' => auth()->user()->can('association.view') || auth()->user()->hasRole('Association Manager'),
             'clubsForTermination' => $this->clubsEligibleForTermination($player),
         ]);
     }

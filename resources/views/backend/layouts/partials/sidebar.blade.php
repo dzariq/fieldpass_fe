@@ -165,40 +165,6 @@ $usr = Auth::guard('admin')->user();
                     </li>
                     @endif
 
-                    <!-- PLAYERS -->
-                    @if ($usr->can('players.create') || $usr->can('players.view') || $usr->can('players.edit') || $usr->can('players.delete'))
-                    <li>
-                        <a href="javascript:void(0)" aria-expanded="true">
-                            <i class="fas fa-running"></i>
-                            <span>Players</span>
-                        </a>
-                        <ul class="collapse {{ Route::is('admin.players.index') || Route::is('admin.players.edit') || Route::is('admin.players.show') || Route::is('admin.players.invite') || Route::is('admin.player.lineup') ? 'in' : '' }}">
-                            @if ($usr->can('players.view'))
-                            <li class="{{ Route::is('admin.players.index') || Route::is('admin.players.edit') ? 'active' : '' }}">
-                                <a href="{{ route('admin.players.index') }}">
-                                    <i class="fas fa-list"></i>
-                                    All Players
-                                </a>
-                            </li>
-                            <li class="{{ Route::is('admin.players.invite') ? 'active' : '' }}">
-                                <a href="{{ route('admin.players.invite') }}">
-                                    <i class="fas fa-user-plus"></i>
-                                    Invite players
-                                </a>
-                            </li>
-                            @endif
-                            @if ($usr->can('players.create'))
-                            <li class="{{ Route::is('admin.player.lineup') ? 'active' : '' }}">
-                                <a href="{{ route('admin.player.lineup') }}">
-                                    <i class="fas fa-users"></i>
-                                    Player Lineup
-                                </a>
-                            </li>
-                            @endif
-                        </ul>
-                    </li>
-                    @endif
-
                     <!-- TRAINING -->
                     @if ($usr->can('training.create') || $usr->can('training.view') || $usr->can('training.delete'))
                     <li>

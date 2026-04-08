@@ -321,7 +321,7 @@ All Players - Admin Panel
                             @endif
                         </h4>
                         <div>
-                            @if (! auth()->user()->hasRole('Club Manager'))
+                            @if (! auth()->user()->hasRole('Club Manager') && (auth()->user()->can('players.create') || auth()->user()->can('players.edit') || auth()->user()->hasRole('Association Manager')))
                             <a href="{{ route('admin.players.create') }}" class="btn btn-primary btn-sm">
                                 <i class="fa fa-plus"></i> Add Player
                             </a>
@@ -333,85 +333,68 @@ All Players - Admin Panel
                     </div>
 
                     @if($players->count() > 0)
-                        @foreach($players as $player)
-                            <div class="player-card">
-                                <div class="player-header">
-                                    <div>
-                                        <h5 class="player-name">
-                                            {{ $player->name }}
-                                            <span class="player-username">({{ $player->username }})</span>
-                                        </h5>
-                                    </div>
-                                    <div class="d-flex gap-2">
-                                        <span class="status-badge status-{{ strtolower($player->status) }}">
-                                            {{ $player->status }}
-                                        </span>
-                                        <span class="position-badge position-{{ strtolower($player->position) }}">
-                                            {{ $player->position }}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <div class="player-info">
-                                    <div class="info-item">
-                                        <span class="info-label">IC:</span>
-                                        <span class="info-value">{{ $player->identity_number }}</span>
-                                    </div>
-                                    <div class="info-item">
-                                        <span class="info-label">Country Code:</span>
-                                        <span class="info-value">{{ $player->country_code }}</span>
-                                    </div>
-                                    <div class="info-item">
-                                        <span class="info-label">Phone:</span>
-                                        <span class="info-value">{{ $player->phone }}</span>
-                                    </div>
-                                    <div class="info-item">
-                                        <span class="info-label">Email:</span>
-                                        <span class="info-value">{{ $player->email ?? 'N/A' }}</span>
-                                    </div>
-                                    @if($player->contracts->first())
-                                        <div class="info-item">
-                                            <span class="info-label">Salary:</span>
-                                            <span class="info-value">RM {{ number_format($player->contracts->first()->salary, 2) }}</span>
-                                        </div>
-                                    @endif
-                                    
-                                    <!-- Market Value Editable -->
-                                    <div class="info-item">
-                                        <span class="info-label">Market Value:</span>
-                                        <span class="info-value market-value-display" id="market-value-display-{{ $player->id }}">
-                                            RM {{ number_format($player->market_value ?? 0, 2) }}
-                                        </span>
-                                        <button type="button" class="btn btn-sm btn-link edit-market-value" data-player-id="{{ $player->id }}" data-current-value="{{ $player->market_value ?? 0 }}">
-                                            <i class="fa fa-edit"></i>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                @if($player->clubs->count() > 0)
-                                    <div class="clubs-list">
-                                        <span class="info-label">Clubs:</span>
-                                        @foreach($player->clubs as $club)
-                                            <span class="club-badge">{{ $club->name }}</span>
-                                        @endforeach
-                                    </div>
-                                @else
-                                    <div class="clubs-list">
-                                        <span class="info-label">Clubs:</span>
-                                        <span class="text-muted">No clubs assigned</span>
-                                    </div>
-                                @endif
-
-                                <div class="mt-3">
-                                    <a href="{{ route('admin.players.edit', $player->id) }}" class="btn btn-sm btn-primary">
-                                        <i class="fa fa-edit"></i> Edit
-                                    </a>
-                                    <!-- <a href="{{ route('admin.players.show', $player->id) }}" class="btn btn-sm btn-info">
-                                        <i class="fa fa-eye"></i> View
-                                    </a> -->
-                                </div>
-                            </div>
-                        @endforeach
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered mb-0">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th>{{ __('Name') }}</th>
+                                        <th class="text-nowrap">{{ __('IC / ID') }}</th>
+                                        <th class="text-nowrap">{{ __('Phone') }}</th>
+                                        <th>{{ __('Clubs') }}</th>
+                                        <th class="text-nowrap">{{ __('Status') }}</th>
+                                        <th class="text-nowrap">{{ __('Position') }}</th>
+                                        <th class="text-nowrap">{{ __('Salary') }}</th>
+                                        <th class="text-nowrap">{{ __('Market value') }}</th>
+                                        <th class="text-nowrap">{{ __('Action') }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($players as $player)
+                                        @php
+                                            $salary = $player->contracts->first() ? (float) $player->contracts->first()->salary : null;
+                                            $phoneDisplay = ($player->country_code && $player->phone)
+                                                ? ('+'.preg_replace('/\\D/', '', (string) $player->country_code).preg_replace('/\\D/', '', (string) $player->phone))
+                                                : ($player->phone ? preg_replace('/\\D/', '', (string) $player->phone) : '—');
+                                        @endphp
+                                        <tr>
+                                            <td class="text-left">
+                                                <strong>{{ $player->name }}</strong>
+                                                <span class="text-muted">({{ $player->username }})</span>
+                                            </td>
+                                            <td class="text-monospace">{{ $player->identity_number }}</td>
+                                            <td class="text-nowrap">{{ $phoneDisplay }}</td>
+                                            <td class="text-left">
+                                                @if($player->clubs->count() > 0)
+                                                    @foreach($player->clubs as $club)
+                                                        <span class="badge badge-pill badge-light border">{{ $club->name }}</span>
+                                                    @endforeach
+                                                @else
+                                                    <span class="text-muted">—</span>
+                                                @endif
+                                            </td>
+                                            <td class="text-nowrap">
+                                                <span class="badge badge-success">{{ $player->status }}</span>
+                                            </td>
+                                            <td class="text-nowrap">{{ $player->position }}</td>
+                                            <td class="text-nowrap">{{ $salary !== null ? ('RM '.number_format($salary, 2)) : '—' }}</td>
+                                            <td class="text-nowrap">
+                                                <span class="market-value-display" id="market-value-display-{{ $player->id }}">
+                                                    RM {{ number_format($player->market_value ?? 0, 2) }}
+                                                </span>
+                                                <button type="button" class="btn btn-sm btn-link edit-market-value p-0 ml-1" data-player-id="{{ $player->id }}" data-current-value="{{ $player->market_value ?? 0 }}">
+                                                    <i class="fa fa-edit"></i>
+                                                </button>
+                                            </td>
+                                            <td class="text-nowrap">
+                                                <a href="{{ route('admin.players.edit', $player->id) }}" class="btn btn-sm btn-primary">
+                                                    <i class="fa fa-edit"></i> {{ __('Edit') }}
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
 
                         <!-- Pagination -->
                         <div class="mt-4">

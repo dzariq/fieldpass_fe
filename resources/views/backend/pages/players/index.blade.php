@@ -166,7 +166,7 @@
                 <div class="card-body py-3 px-3">
                     <h4 class="header-title float-left mb-2">{{ __('Players') }}</h4>
                     <p class="float-right mb-2">
-                        @if (auth()->user()->can('players.edit') && ! auth()->user()->hasRole('Club Manager'))
+                        @if ((auth()->user()->can('players.edit') || auth()->user()->hasRole('Association Manager')) && ! auth()->user()->hasRole('Club Manager'))
                             <a class="btn btn-primary text-white" href="{{ route('admin.players.create') }}">
                                 {{ __('Create New Player') }}
                             </a>
@@ -176,7 +176,7 @@
                     <div class="data-tables">
                         @include('backend.layouts.partials.messages')
                         @php
-                            $playerInlineFullEdit = auth()->user()->can('association.view');
+                            $playerInlineFullEdit = auth()->user()->can('association.view') || auth()->user()->hasRole('Association Manager');
                         @endphp
                         <div class="players-table-outer table-responsive">
                         <table id="dataTable" class="text-center table table-sm table-bordered table-players-compact mb-0">
@@ -363,7 +363,7 @@
     @include('backend.pages.players.partials.club-history-modal')
 @endif
 
-@if (auth()->user()->can('players.edit') && auth()->user()->can('association.view'))
+@if (auth()->user()->can('players.edit') && (auth()->user()->can('association.view') || auth()->user()->hasRole('Association Manager')))
 <div class="modal fade" id="marketValueModal" tabindex="-1" role="dialog" aria-labelledby="marketValueModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
@@ -412,7 +412,7 @@
 
         @if (auth()->user()->can('players.edit'))
         (function () {
-            var playerInlineFullEdit = @json(auth()->user()->can('association.view'));
+            var playerInlineFullEdit = @json(auth()->user()->can('association.view') || auth()->user()->hasRole('Association Manager'));
             var csrf = document.querySelector('meta[name="csrf-token"]');
             csrf = csrf ? csrf.getAttribute('content') : '';
             var timers = {};

@@ -124,8 +124,8 @@ Player Create - Admin Panel
 
                         <div class="form-row">
                             <div class="form-group col-md-6 col-sm-6">
-                                <label for="country_code" class="required-field">Country Code</label>
-                                <select name="country_code" id="country_code" class="form-control" required>
+                                <label for="country_code">Country Code</label>
+                                <select name="country_code" id="country_code" class="form-control">
                                     <option value="">Select Country Code</option>
                                     <option value="60" {{ old('country_code') == '60' ? 'selected' : '' }}>+60 (Malaysia)</option>
                                     <option value="65" {{ old('country_code') == '65' ? 'selected' : '' }}>+65 (Singapore)</option>
@@ -139,14 +139,15 @@ Player Create - Admin Panel
                                     <option value="673" {{ old('country_code') == '673' ? 'selected' : '' }}>+673 (Brunei)</option>
                                     <option value="670" {{ old('country_code') == '670' ? 'selected' : '' }}>+670 (East Timor)</option>
                                 </select>
+                                <small class="form-text text-muted">Optional. Required if you enter a phone number.</small>
                             </div>
                         </div>
 
                         <div class="form-row">
                             <div class="form-group col-md-6 col-sm-6">
-                                <label for="phone" class="required-field">Phone Number</label>
-                                <input type="text" class="form-control" id="phone" name="phone" placeholder="123456789" required value="{{ old('phone') }}" pattern="[0-9]{7,15}" title="Please enter 7-15 digits">
-                                <small class="form-text text-muted">Enter without country code (e.g., 123456789)</small>
+                                <label for="phone">Phone Number</label>
+                                <input type="text" class="form-control" id="phone" name="phone" placeholder="Optional — 7–15 digits" value="{{ old('phone') }}" inputmode="numeric" maxlength="15" pattern="[0-9]{7,15}" title="Please enter 7-15 digits (numbers only)">
+                                <small class="form-text text-muted">Optional. Enter without country code (e.g., 123456789)</small>
                             </div>
                             <div class="form-group col-md-6 col-sm-6">
                                 <label for="start_date">Start Date</label>

@@ -18,7 +18,6 @@ class HomeController extends Controller
 
     public function redirectAdmin()
     {
-        echo 'dd';die;
         return redirect()->route('admin.dashboard');
     }
 
