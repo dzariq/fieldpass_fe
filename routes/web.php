@@ -107,6 +107,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.'], function () {
 
     Route::post('/players/{player}/reinvite', [PlayersController::class, 'reinvite'])->name('players.reinvite');
     Route::post('/players/{player}/terminate-contract', [PlayersController::class, 'terminateContract'])->name('players.terminate-contract');
+    Route::post('/players/{player}/association-transfer', [PlayersController::class, 'associationTransferPlayer'])->name('players.association-transfer');
     Route::get('/players/{player}/club-history-performance', [PlayersController::class, 'playerClubHistoryPerformance'])->name('players.club-history-performance');
     Route::get('/bulk-upload', [PlayersController::class, 'bulkUploadForm'])->name('players.bulk.form');
     Route::post('/bulk-upload', [PlayersController::class, 'bulkUploadStore'])->name('players.bulk.store');
@@ -114,6 +115,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.'], function () {
     Route::get('/admin/players/list', [PlayersController::class, 'playersList'])->name('players.list');
     Route::post('/players/{id}/update-market-value', [PlayersController::class, 'updateMarketValue'])->name('players.update.market.value');
     Route::post('/players/{id}/inline-update', [PlayersController::class, 'updateInline'])->name('players.inline-update');
+    Route::post('/players/{id}/inline-jersey', [PlayersController::class, 'updateJerseyInline'])->name('players.inline-jersey');
     Route::post('/players/{id}/send-invitation', [PlayersController::class, 'sendPlayerInvitation'])->name('players.send-invitation');
 
     Route::resource('fantasy', FantasyController::class);

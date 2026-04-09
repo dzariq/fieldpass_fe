@@ -44,6 +44,10 @@ Player Edit - Admin Panel
 @php
     $allowFullPlayerFieldEdit = $allowFullPlayerFieldEdit ?? true;
     $clubsForTermination = $clubsForTermination ?? collect();
+    $transferFromClubs = $transferFromClubs ?? collect();
+    $transferNewClubs = $transferNewClubs ?? collect();
+    $showAssociationTransfer = auth()->user()->hasRole('Association Manager')
+        && ($transferFromClubs->isNotEmpty() || $transferNewClubs->isNotEmpty());
 @endphp
 
 <!-- page title area start -->
@@ -308,6 +312,60 @@ Player Edit - Admin Panel
                     </div>
                     @endif
 
+                    @if ($showAssociationTransfer)
+                    <hr class="my-4">
+                    <h5 class="mb-3">{{ __('Transfer player') }}</h5>
+                    <p class="text-muted small mb-3">{{ __('End the contract with a club you manage, then optionally assign the player to another club in your association or leave them without a club.') }}</p>
+                    <form id="association-transfer-form" action="{{ route('admin.players.association-transfer', $player->id) }}" method="POST" class="border rounded p-3 bg-light">
+                        @csrf
+                        @if ($transferFromClubs->isNotEmpty())
+                            <div class="form-group">
+                                <label for="transfer_terminate_club_id" class="required-field">{{ __('Club to leave (terminate)') }}</label>
+                                @if ($transferFromClubs->count() === 1)
+                                    @php
+                                        $tf = $transferFromClubs->first();
+                                        $tfDisplay = trim((string) ($tf->long_name ?? '')) !== '' ? $tf->long_name : $tf->name;
+                                    @endphp
+                                    <p class="mb-1"><strong>{{ $tfDisplay }}</strong></p>
+                                    <input type="hidden" name="terminate_club_id" id="transfer_terminate_club_id_hidden" value="{{ $tf->id }}" data-club-name="{{ $tfDisplay }}">
+                                @else
+                                    <select name="terminate_club_id" id="transfer_terminate_club_id" class="form-control" required>
+                                        <option value="">— {{ __('Select club') }} —</option>
+                                        @foreach ($transferFromClubs as $c)
+                                            @php $cDisplay = trim((string) ($c->long_name ?? '')) !== '' ? $c->long_name : $c->name; @endphp
+                                            <option value="{{ $c->id }}" {{ (string) old('terminate_club_id') === (string) $c->id ? 'selected' : '' }}>{{ $cDisplay }}</option>
+                                        @endforeach
+                                    </select>
+                                @endif
+                            </div>
+                        @endif
+
+                        <div class="form-group">
+                            <label for="transfer_remark" class="required-field">{{ __('Remark') }}</label>
+                            <textarea name="remark" id="transfer_remark" class="form-control" rows="3" required maxlength="5000" placeholder="{{ __('Reason or notes for this transfer') }}">{{ old('remark') }}</textarea>
+                        </div>
+
+                        @if ($transferNewClubs->isNotEmpty())
+                            <div class="form-group mb-0">
+                                <label for="transfer_new_club_id">{{ __('New club') }}</label>
+                                <select name="new_club_id" id="transfer_new_club_id" class="form-control">
+                                    <option value="">{{ __('— No club (player stays without a club) —') }}</option>
+                                    @foreach ($transferNewClubs as $c)
+                                        @php $newDisplay = trim((string) ($c->long_name ?? '')) !== '' ? $c->long_name : $c->name; @endphp
+                                        <option value="{{ $c->id }}" {{ (string) old('new_club_id') === (string) $c->id ? 'selected' : '' }}>{{ $newDisplay }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endif
+
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-warning" id="association-transfer-confirm-btn">
+                                <i class="fa fa-exchange-alt"></i> {{ __('Review and transfer') }}
+                            </button>
+                        </div>
+                    </form>
+                    @endif
+
                     @if (auth()->user()->can('players.edit'))
                         @include('backend.pages.players.partials.club-history-modal')
                     @endif
@@ -379,6 +437,74 @@ Player Edit - Admin Panel
         });
     });
 </script>
+@if ($showAssociationTransfer)
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+(function () {
+    var form = document.getElementById('association-transfer-form');
+    var btn = document.getElementById('association-transfer-confirm-btn');
+    if (!form || !btn) return;
+
+    function optText(sel) {
+        if (!sel || sel.selectedIndex < 0) return '—';
+        var t = sel.options[sel.selectedIndex].text;
+        return t || '—';
+    }
+
+    btn.addEventListener('click', function () {
+        if (typeof Swal === 'undefined') {
+            if (confirm('{{ __('Submit this transfer?') }}')) {
+                form.submit();
+            }
+            return;
+        }
+
+        var termSel = document.getElementById('transfer_terminate_club_id');
+        var termHidden = document.getElementById('transfer_terminate_club_id_hidden');
+        var newSel = document.getElementById('transfer_new_club_id');
+        var remark = (document.getElementById('transfer_remark') || {}).value || '';
+
+        if (termSel && !termSel.value) {
+            Swal.fire({ icon: 'warning', title: '{{ __('Club required') }}', text: '{{ __('Select which club contract to terminate.') }}' });
+            return;
+        }
+        if (!remark.trim()) {
+            Swal.fire({ icon: 'warning', title: '{{ __('Remark required') }}', text: '{{ __('Please enter a remark.') }}' });
+            return;
+        }
+
+        var leaveClubLabel = '';
+        if (termSel) {
+            leaveClubLabel = optText(termSel);
+        } else if (termHidden && termHidden.getAttribute('data-club-name')) {
+            leaveClubLabel = termHidden.getAttribute('data-club-name');
+        }
+
+        var leaveLine = leaveClubLabel
+            ? '<p><strong>{{ __('Club to leave') }}:</strong> ' + String(leaveClubLabel).replace(/</g, '&lt;') + '</p>'
+            : '<p><strong>{{ __('Club to leave') }}:</strong> {{ __('Not applicable — the player has no current club in your association scope to end. You can still assign them to a new club below.') }}</p>';
+
+        var newLine = newSel
+            ? '<p><strong>{{ __('New club') }}:</strong> ' + (newSel.value ? optText(newSel) : '{{ __('No club') }}') + '</p>'
+            : '<p><strong>{{ __('New club') }}:</strong> {{ __('No change') }}</p>';
+
+        Swal.fire({
+            title: '{{ __('Confirm transfer') }}',
+            html: leaveLine + newLine + '<p class="text-left small text-muted mt-2"><strong>{{ __('Remark') }}:</strong> ' + String(remark).replace(/</g, '&lt;') + '</p>',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: '{{ __('Yes, transfer') }}',
+            cancelButtonText: '{{ __('Cancel') }}',
+            focusCancel: true
+        }).then(function (result) {
+            if (result.isConfirmed) {
+                form.submit();
+            }
+        });
+    });
+})();
+</script>
+@endif
 @if (auth()->user()->can('players.edit'))
     @include('backend.pages.players.partials.club-history-modal-script')
 @endif

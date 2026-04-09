@@ -599,16 +599,169 @@ class PlayersController extends Controller
     {
         // $this->checkAuthorization(auth()->user(), ['players.edit', 'admin.create']);
 
-        $player = Player::findOrFail($id);
+        $player = Player::with(['clubs', 'contracts'])->findOrFail($id);
         if (! $this->adminMayEditPlayer($player)) {
             abort(403, 'Sorry !! You are unauthorized to perform this action.');
         }
+
+        $admin = Admin::findOrFail(auth()->user()->id);
+        $allowedClubIds = $this->allowedClubIdsForPlayersList($admin) ?? [];
+        $transferFromClubs = $player->clubs
+            ->filter(fn (Club $c) => in_array((int) $c->id, $allowedClubIds, true))
+            ->values();
+        $transferNewClubs = count($allowedClubIds) > 0
+            ? Club::query()->whereIn('id', $allowedClubIds)->orderBy('name')->get()
+            : collect();
 
         return view('backend.pages.players.edit', [
             'player' => $player,
             'allowFullPlayerFieldEdit' => auth()->user()->can('association.view') || auth()->user()->hasRole('Association Manager'),
             'clubsForTermination' => $this->clubsEligibleForTermination($player),
+            'transferFromClubs' => $transferFromClubs,
+            'transferNewClubs' => $transferNewClubs,
         ]);
+    }
+
+    /**
+     * Association Manager: leave one current club (terminate) and optionally join another club in scope (or no club).
+     */
+    public function associationTransferPlayer(Request $request, int $player): RedirectResponse
+    {
+        if (! auth()->user()->hasRole('Association Manager')) {
+            abort(403);
+        }
+
+        $playerModel = Player::query()->with('clubs')->findOrFail($player);
+        if (! $this->adminMayEditPlayer($playerModel)) {
+            abort(403, 'Sorry !! You are unauthorized to perform this action.');
+        }
+
+        $admin = Admin::findOrFail(auth()->user()->id);
+        $allowedClubIds = $this->allowedClubIdsForPlayersList($admin) ?? [];
+        if (count($allowedClubIds) === 0) {
+            return back()->with('error', __('You have no clubs in your association scope to use for transfers.'));
+        }
+
+        $playerClubIds = $playerModel->clubs->pluck('id')->map(fn ($id) => (int) $id)->all();
+        $terminatableIds = array_values(array_intersect($playerClubIds, $allowedClubIds));
+        $hasCurrentClubInScope = count($terminatableIds) > 0;
+
+        $terminateClubRules = ['nullable', 'integer'];
+        if ($hasCurrentClubInScope) {
+            $terminateClubRules = ['required', 'integer', Rule::in($terminatableIds)];
+        }
+
+        $validated = $request->validate([
+            'terminate_club_id' => $terminateClubRules,
+            'remark' => ['required', 'string', 'max:5000'],
+            'new_club_id' => ['nullable', 'integer', Rule::in($allowedClubIds)],
+        ], [
+            'terminate_club_id.in' => __('Choose a club the player is in that you are allowed to manage.'),
+            'new_club_id.in' => __('Choose a club in your association scope.'),
+        ]);
+
+        $terminateId = isset($validated['terminate_club_id']) ? (int) $validated['terminate_club_id'] : null;
+        $newClubId = isset($validated['new_club_id']) ? (int) $validated['new_club_id'] : null;
+
+        if ($hasCurrentClubInScope && $terminateId === null) {
+            return back()->with('error', __('Select which club contract to terminate.'));
+        }
+
+        if ($newClubId !== null && $terminateId !== null && $newClubId === $terminateId) {
+            return back()->with('error', __('New club must be different from the club you are leaving.'));
+        }
+
+        if (! $hasCurrentClubInScope && $newClubId === null) {
+            return back()->with('error', __('The player has no club in your scope to leave, and no new club was selected.'));
+        }
+
+        $remark = (string) $validated['remark'];
+        $now = now();
+        $adminId = (int) auth()->id();
+
+        DB::transaction(function () use ($playerModel, $terminateId, $newClubId, $remark, $now, $adminId, $hasCurrentClubInScope): void {
+            if ($hasCurrentClubInScope && $terminateId !== null) {
+                if (! $playerModel->clubs->contains('id', $terminateId)) {
+                    abort(400);
+                }
+
+                PlayerTermination::query()->create([
+                    'player_id' => $playerModel->id,
+                    'club_id' => $terminateId,
+                    'remark' => $remark,
+                    'terminated_at' => $now,
+                    'admin_id' => $adminId,
+                ]);
+
+                PlayerClubHistory::record(
+                    $playerModel->id,
+                    $terminateId,
+                    'terminated',
+                    $adminId,
+                    __('Transfer — terminated from club').': '.$remark,
+                    $now
+                );
+
+                $playerModel->clubs()->detach($terminateId);
+
+                PlayerContract::query()
+                    ->where('player_id', $playerModel->id)
+                    ->where('club_id', $terminateId)
+                    ->where('status', 'active')
+                    ->update(['status' => 'terminated']);
+            }
+
+            if ($newClubId !== null) {
+                $playerModel->unsetRelation('clubs');
+                $playerModel->load('clubs');
+                if (! $playerModel->clubs->contains('id', $newClubId)) {
+                    $playerModel->clubs()->syncWithoutDetaching([$newClubId]);
+
+                    PlayerClubHistory::record(
+                        $playerModel->id,
+                        $newClubId,
+                        'assigned',
+                        $adminId,
+                        __('Transfer — assigned to club')
+                    );
+
+                    $startDate = date('Y-m-d');
+                    $endDate = date('Y-m-d', strtotime($startDate.' +1 year'));
+
+                    $contract = PlayerContract::query()
+                        ->where('player_id', $playerModel->id)
+                        ->where('club_id', $newClubId)
+                        ->first();
+
+                    if (! $contract) {
+                        $contract = new PlayerContract;
+                        $contract->player_id = $playerModel->id;
+                        $contract->club_id = $newClubId;
+                        $contract->start_date = $startDate;
+                        $contract->end_date = $endDate;
+                        $contract->salary = 0;
+                        $contract->status = 'active';
+                        $contract->save();
+                    } else {
+                        $contract->status = 'active';
+                        $contract->start_date = $startDate;
+                        $contract->end_date = $endDate;
+                        $contract->save();
+                    }
+                }
+            }
+        });
+
+        $msg = __('Transfer completed.');
+        if ($hasCurrentClubInScope && $newClubId === null) {
+            $msg = __('Contract terminated. Player is not assigned to a new club.');
+        } elseif (! $hasCurrentClubInScope && $newClubId !== null) {
+            $msg = __('Player assigned to the selected club.');
+        }
+
+        return redirect()
+            ->route('admin.players.edit', $playerModel->id)
+            ->with('success', $msg);
     }
 
     public function terminateContract(Request $request, int $player): RedirectResponse
@@ -1426,6 +1579,35 @@ class PlayersController extends Controller
             'success' => true,
             'message' => 'Market value updated.',
             'market_value' => $player->market_value,
+        ]);
+    }
+
+    /**
+     * Jersey-only inline update for compact tables (e.g. players list) — avoids full updateInline validation.
+     */
+    public function updateJerseyInline(Request $request, int $id): JsonResponse
+    {
+        $player = Player::findOrFail($id);
+        if (! $this->adminMayEditPlayer($player)) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $jn = $request->input('jersey_number');
+        if ($jn === '' || $jn === null) {
+            $request->merge(['jersey_number' => null]);
+        }
+
+        $validated = $request->validate([
+            'jersey_number' => 'nullable|integer|min:1|max:99999',
+        ]);
+
+        $player->jersey_number = $validated['jersey_number'] ?? null;
+        $player->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => __('Jersey number updated.'),
+            'jersey_number' => $player->jersey_number,
         ]);
     }
 

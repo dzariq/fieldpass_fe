@@ -7,6 +7,11 @@ All Players - Admin Panel
 @section('styles')
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/css/select2.min.css" rel="stylesheet" />
 <style>
+    .jersey-value-display {
+        display: inline-block;
+        min-width: 2rem;
+        font-weight: 500;
+    }
     .market-value-display {
         font-weight: 600;
         color: #28a745;
@@ -343,7 +348,7 @@ All Players - Admin Panel
                                         <th>{{ __('Clubs') }}</th>
                                         <th class="text-nowrap">{{ __('Status') }}</th>
                                         <th class="text-nowrap">{{ __('Position') }}</th>
-                                        <th class="text-nowrap">{{ __('Salary') }}</th>
+                                        <th class="text-nowrap">{{ __('Jersey') }}</th>
                                         <th class="text-nowrap">{{ __('Market value') }}</th>
                                         <th class="text-nowrap">{{ __('Action') }}</th>
                                     </tr>
@@ -351,7 +356,6 @@ All Players - Admin Panel
                                 <tbody>
                                     @foreach($players as $player)
                                         @php
-                                            $salary = $player->contracts->first() ? (float) $player->contracts->first()->salary : null;
                                             $phoneDisplay = ($player->country_code && $player->phone)
                                                 ? ('+'.preg_replace('/\\D/', '', (string) $player->country_code).preg_replace('/\\D/', '', (string) $player->phone))
                                                 : ($player->phone ? preg_replace('/\\D/', '', (string) $player->phone) : '—');
@@ -376,7 +380,22 @@ All Players - Admin Panel
                                                 <span class="badge badge-success">{{ $player->status }}</span>
                                             </td>
                                             <td class="text-nowrap">{{ $player->position }}</td>
-                                            <td class="text-nowrap">{{ $salary !== null ? ('RM '.number_format($salary, 2)) : '—' }}</td>
+                                            <td class="text-nowrap">
+                                                @if (auth()->user()->can('players.edit') || auth()->user()->hasRole('Association Manager'))
+                                                    @php $jerseyVal = $player->jersey_number; @endphp
+                                                    <span class="jersey-value-display" id="jersey-display-{{ $player->id }}">{{ $jerseyVal !== null && $jerseyVal !== '' ? $jerseyVal : '—' }}</span>
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-link edit-jersey p-0 ml-1 align-baseline"
+                                                            title="{{ __('Edit jersey number') }}"
+                                                            data-player-id="{{ $player->id }}"
+                                                            data-url="{{ route('admin.players.inline-jersey', ['id' => $player->id], false) }}"
+                                                            data-current-value="{{ $jerseyVal ?? '' }}">
+                                                        <i class="fa fa-edit"></i>
+                                                    </button>
+                                                @else
+                                                    {{ $player->jersey_number ?? '—' }}
+                                                @endif
+                                            </td>
                                             <td class="text-nowrap">
                                                 <span class="market-value-display" id="market-value-display-{{ $player->id }}">
                                                     RM {{ number_format($player->market_value ?? 0, 2) }}
@@ -435,6 +454,130 @@ All Players - Admin Panel
             if (e.which === 13) {
                 $('#filterForm').submit();
             }
+        });
+
+        function fetchUrlHttpsPlayersList(url) {
+            if (!url || typeof url !== 'string') {
+                return url;
+            }
+            if (window.location.protocol !== 'https:') {
+                return url;
+            }
+            try {
+                var u = new URL(url, window.location.href);
+                if (u.protocol === 'http:' && u.host === window.location.host) {
+                    u.protocol = 'https:';
+                    return u.href;
+                }
+            } catch (e) { /* ignore */ }
+            return url;
+        }
+
+        function postJerseyInline(url, jerseyPayload) {
+            var fd = new FormData();
+            fd.append('_token', '{{ csrf_token() }}');
+            fd.append('jersey_number', jerseyPayload);
+            return fetch(url, {
+                method: 'POST',
+                body: fd,
+                credentials: 'same-origin',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                }
+            }).then(function (r) {
+                return r.text().then(function (text) {
+                    var data = {};
+                    try {
+                        data = text ? JSON.parse(text) : {};
+                    } catch (e) {
+                        data = { message: text || 'Invalid response' };
+                    }
+                    return { ok: r.ok, status: r.status, data: data };
+                });
+            });
+        }
+
+        $(document).on('click', '.edit-jersey', function () {
+            var $btn = $(this);
+            var playerId = String($btn.data('player-id') || '');
+            var url = fetchUrlHttpsPlayersList($btn.attr('data-url') || '');
+            var current = $btn.attr('data-current-value');
+            if (current === undefined || current === null) {
+                current = '';
+            }
+
+            Swal.fire({
+                title: '{{ __("Edit jersey number") }}',
+                html:
+                    '<div class="form-group text-left mb-0">' +
+                    '<label for="swal-jersey-input" class="d-block">{{ __("Jersey number") }}</label>' +
+                    '<input type="number" id="swal-jersey-input" class="form-control" ' +
+                    'min="1" max="99999" step="1" placeholder="{{ __("Leave empty to clear") }}">' +
+                    '<small class="form-text text-muted">{{ __("Optional. 1–99999, or clear to remove.") }}</small>' +
+                    '</div>',
+                showCancelButton: true,
+                confirmButtonText: '{{ __("Save") }}',
+                cancelButtonText: '{{ __("Cancel") }}',
+                focusConfirm: false,
+                didOpen: function () {
+                    var el = document.getElementById('swal-jersey-input');
+                    if (el) {
+                        el.value = current === '' ? '' : String(current);
+                        el.focus();
+                        el.select();
+                    }
+                },
+                preConfirm: function () {
+                    var el = document.getElementById('swal-jersey-input');
+                    var raw = el ? String(el.value).trim() : '';
+                    if (raw === '') {
+                        return '';
+                    }
+                    var n = parseInt(raw.replace(/\D/g, ''), 10);
+                    if (isNaN(n) || n < 1 || n > 99999) {
+                        Swal.showValidationMessage('{{ __("Enter a number from 1 to 99999, or leave empty to clear.") }}');
+                        return false;
+                    }
+                    return String(n);
+                }
+            }).then(function (result) {
+                if (!result.isConfirmed) {
+                    return;
+                }
+                var payload = result.value;
+                Swal.fire({
+                    title: '{{ __("Saving…") }}',
+                    allowOutsideClick: false,
+                    didOpen: function () {
+                        Swal.showLoading();
+                    }
+                });
+                postJerseyInline(url, payload).then(function (res) {
+                    if (!res.ok) {
+                        var msg = (res.data && res.data.message) ? res.data.message : '{{ __("Could not save jersey number.") }}';
+                        if (res.data && res.data.errors) {
+                            msg = Object.values(res.data.errors).flat().join(' ');
+                        }
+                        Swal.fire({ icon: 'error', title: '{{ __("Error") }}', text: msg });
+                        return;
+                    }
+                    var jn = res.data.jersey_number;
+                    var display = (jn === null || jn === undefined || jn === '') ? '—' : String(jn);
+                    $('#jersey-display-' + playerId).text(display);
+                    $btn.attr('data-current-value', (jn === null || jn === undefined || jn === '') ? '' : String(jn));
+                    Swal.fire({
+                        icon: 'success',
+                        title: '{{ __("Saved") }}',
+                        text: (res.data && res.data.message) ? res.data.message : '{{ __("Jersey number updated.") }}',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                }).catch(function () {
+                    Swal.fire({ icon: 'error', title: '{{ __("Error") }}', text: '{{ __("Network error") }}' });
+                });
+            });
         });
 
         // Edit Market Value
