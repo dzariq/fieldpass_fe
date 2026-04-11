@@ -903,9 +903,19 @@ class MatchUpdateController extends Controller
 
             $matchIdForScore = (int) $event->match_id;
 
-            DB::table('match_events')
-                ->where('event_id', $eventId)
-                ->delete();
+            if (in_array($event->event_type, ['sub_out', 'sub_in'], true)) {
+                // Remove both halves of the substitution so we never leave an orphan sub_in/sub_out row.
+                DB::table('match_events')
+                    ->where('match_id', $event->match_id)
+                    ->where('club_id', $event->club_id)
+                    ->where('minute_in_match', $event->minute_in_match)
+                    ->whereIn('event_type', ['sub_out', 'sub_in'])
+                    ->delete();
+            } else {
+                DB::table('match_events')
+                    ->where('event_id', $eventId)
+                    ->delete();
+            }
 
             $this->updateMatchScores($matchIdForScore);
             $this->playerUpdate($matchIdForScore);
@@ -991,13 +1001,20 @@ class MatchUpdateController extends Controller
             ->orderBy('event_id')
             ->get(['event_type', 'player_id']);
 
+        $pendingSubOut = 0;
         foreach ($events as $ev) {
             $pid = (int) $ev->player_id;
             if ($ev->event_type === 'sub_out') {
                 $onPitch = array_values(array_filter($onPitch, fn (int $id) => $id !== $pid));
+                $pendingSubOut++;
             } elseif ($ev->event_type === 'sub_in') {
+                if ($pendingSubOut <= 0) {
+                    // Orphan sub_in (e.g. partner sub_out was deleted): do not move bench player onto pitch.
+                    continue;
+                }
                 $onPitch[] = $pid;
                 $onBench = array_values(array_filter($onBench, fn (int $id) => $id !== $pid));
+                $pendingSubOut--;
             }
         }
 
