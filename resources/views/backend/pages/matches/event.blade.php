@@ -835,6 +835,8 @@ $subIdsHome = $existingLineupHome ? [
     $existingLineupHome->sub5,
     $existingLineupHome->sub6,
     $existingLineupHome->sub7,
+    $existingLineupHome->sub8,
+    $existingLineupHome->sub9,
 ] : [];
 
 $starterIdsAway = $existingLineupAway ? [
@@ -859,6 +861,8 @@ $subIdsAway = $existingLineupAway ? [
     $existingLineupAway->sub5,
     $existingLineupAway->sub6,
     $existingLineupAway->sub7,
+    $existingLineupAway->sub8,
+    $existingLineupAway->sub9,
 ] : [];
 @endphp
 

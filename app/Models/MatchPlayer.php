@@ -33,6 +33,8 @@ class MatchPlayer extends Model
         'sub5',
         'sub6',
         'sub7',
+        'sub8',
+        'sub9',
     ];
 
     // Optional: relationships

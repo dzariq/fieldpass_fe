@@ -27,7 +27,7 @@ class LineupRequest extends FormRequest
             'match_id' => 'required|exists:match,id',
             'starters' => 'required|array|size:11',
             'starters.*' => 'required|integer|exists:players,id',
-            'subs' => 'required|array|size:7',
+            'subs' => 'required|array|size:9',
             'subs.*' => 'nullable|integer|exists:players,id',
         ];
     }

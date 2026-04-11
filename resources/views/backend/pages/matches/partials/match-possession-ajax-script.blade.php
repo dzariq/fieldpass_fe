@@ -3,11 +3,37 @@
     if (!root) return;
 
     var csrf = root.getAttribute('data-csrf') || '';
-    var urlStart = root.getAttribute('data-url-start');
-    var urlPossession = root.getAttribute('data-url-possession');
-    var urlPause = root.getAttribute('data-url-pause');
-    var urlResume = root.getAttribute('data-url-resume');
-    var urlReset = root.getAttribute('data-url-reset');
+
+    /**
+     * If the page is loaded over HTTPS but Laravel emitted http:// URLs (wrong APP_URL, cached routes, or proxy),
+     * upgrade same-host requests to https so fetch() never hits mixed-content blocking in production.
+     */
+    function ensureHttpsWhenPageIsHttps(url) {
+        if (!url || typeof url !== 'string') {
+            return url;
+        }
+        if (typeof window === 'undefined' || window.location.protocol !== 'https:') {
+            return url;
+        }
+        try {
+            var u = new URL(url, window.location.href);
+            if (u.protocol !== 'http:') {
+                return url;
+            }
+            // Same hostname as the current page (ignore port mismatches vs strict u.host === window.location.host).
+            if (u.hostname === window.location.hostname) {
+                u.protocol = 'https:';
+                return u.href;
+            }
+        } catch (e) { /* ignore */ }
+        return url;
+    }
+
+    var urlStart = ensureHttpsWhenPageIsHttps(root.getAttribute('data-url-start'));
+    var urlPossession = ensureHttpsWhenPageIsHttps(root.getAttribute('data-url-possession'));
+    var urlPause = ensureHttpsWhenPageIsHttps(root.getAttribute('data-url-pause'));
+    var urlResume = ensureHttpsWhenPageIsHttps(root.getAttribute('data-url-resume'));
+    var urlReset = ensureHttpsWhenPageIsHttps(root.getAttribute('data-url-reset'));
     var homeClubId = root.getAttribute('data-home-club-id');
     var awayClubId = root.getAttribute('data-away-club-id');
     var homeName = root.getAttribute('data-home-name') || '';
@@ -179,6 +205,7 @@
     }
 
     function postJson(url, body) {
+        url = ensureHttpsWhenPageIsHttps(url);
         return fetch(url, {
             method: 'POST',
             credentials: 'same-origin',

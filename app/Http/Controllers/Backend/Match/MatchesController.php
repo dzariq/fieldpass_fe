@@ -317,6 +317,8 @@ class MatchesController extends Controller
             $row->sub5,
             $row->sub6,
             $row->sub7,
+            $row->sub8,
+            $row->sub9,
         ], fn ($v) => $v !== null && $v !== ''));
 
         $players = $idList === [] ? collect() : Player::query()->whereIn('id', $idList)->get()->keyBy('id');
@@ -347,7 +349,7 @@ class MatchesController extends Controller
         }
 
         $subs = [];
-        for ($i = 1; $i <= 7; $i++) {
+        for ($i = 1; $i <= 9; $i++) {
             $field = 'sub'.$i;
             $pid = $row->{$field};
             $p = $pid ? $players->get((int) $pid) : null;
@@ -771,6 +773,8 @@ class MatchesController extends Controller
                     'sub5' => 'Sub5',
                     'sub6' => 'Sub6',
                     'sub7' => 'Sub7',
+                    'sub8' => 'Sub8',
+                    'sub9' => 'Sub9',
                 ];
 
                 foreach ($positions as $column => $position) {

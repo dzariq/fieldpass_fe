@@ -134,6 +134,8 @@ class MatchUpdateController extends Controller
                     $lineup->sub5,
                     $lineup->sub6,
                     $lineup->sub7,
+                    $lineup->sub8,
+                    $lineup->sub9,
                 ]);
             };
 
@@ -172,6 +174,8 @@ class MatchUpdateController extends Controller
                     $existingLineupHome->sub5,
                     $existingLineupHome->sub6,
                     $existingLineupHome->sub7,
+                    $existingLineupHome->sub8,
+                    $existingLineupHome->sub9,
                 ]);
             }
 
@@ -197,6 +201,8 @@ class MatchUpdateController extends Controller
                     $existingLineupAway->sub5,
                     $existingLineupAway->sub6,
                     $existingLineupAway->sub7,
+                    $existingLineupAway->sub8,
+                    $existingLineupAway->sub9,
                 ]);
             }
 

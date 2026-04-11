@@ -94,6 +94,8 @@ final class MatchN8nLineupService
             $lineup->sub5,
             $lineup->sub6,
             $lineup->sub7,
+            $lineup->sub8,
+            $lineup->sub9,
         ]);
 
         $players = Player::query()->whereIn('id', $playerIds)->get();

@@ -537,6 +537,8 @@ class PlayerLineupController extends Controller
             'sub5' => $subs[4] ?? null,
             'sub6' => $subs[5] ?? null,
             'sub7' => $subs[6] ?? null,
+            'sub8' => $subs[7] ?? null,
+            'sub9' => $subs[8] ?? null,
         ];
 
         if ($existingLineupRow) {

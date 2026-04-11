@@ -1030,6 +1030,8 @@ $subIds = $existingLineup ? [
     $existingLineup->sub5,
     $existingLineup->sub6,
     $existingLineup->sub7,
+    $existingLineup->sub8,
+    $existingLineup->sub9,
 ] : [];
 
 $lineupSubmitted = (bool) $existingLineup;
@@ -1062,7 +1064,7 @@ if ($existingLineup) {
             'position' => $p->position ?? '',
         ];
     }
-    for ($si = 1; $si <= 7; $si++) {
+    for ($si = 1; $si <= 9; $si++) {
         $field = 'sub'.$si;
         $pid = $existingLineup->{$field};
         $p = $pid ? $playerById->get((int) $pid) : null;
@@ -1170,7 +1172,7 @@ if ($existingLineup) {
                 <div class="lineup-readonly-card lineup-readonly-card--subs">
                     <div class="lineup-readonly-card__head">
                         <h4>🔄 {{ __('Substitutes') }}</h4>
-                        <span class="mini-count">7</span>
+                        <span class="mini-count">9</span>
                     </div>
                     <div class="lineup-readonly-rows">
                         @foreach ($readonlySubs as $row)
@@ -1211,7 +1213,7 @@ if ($existingLineup) {
                     @endforeach
                 </select>
             @endfor
-            @for ($i = 1; $i <= 7; $i++)
+            @for ($i = 1; $i <= 9; $i++)
                 <select name="subs[]" class="form-control player-select sub-select" data-position="sub{{ $i }}">
                     <option value="">{{ __('Select Player') }}</option>
                     @foreach ($players as $player)
@@ -1251,10 +1253,10 @@ if ($existingLineup) {
             <div class="lineup-list-card lineup-list-card--subs">
                 <div class="lineup-list-card__head">
                     <span>{{ __('Substitutes') }}</span>
-                    <div class="mini-count"><span id="sub-count-inline">0</span>/7</div>
+                    <div class="mini-count"><span id="sub-count-inline">0</span>/9</div>
                 </div>
                 <div class="lineup-list-rows" id="benchSlots">
-                    @for ($i = 1; $i <= 7; $i++)
+                    @for ($i = 1; $i <= 9; $i++)
                     <div class="lineup-list-row slot empty" data-position="sub{{ $i }}" data-slot="sub{{ $i }}">
                         <div class="meta"><span class="badge">S{{ $i }}</span></div>
                         <div class="slot-body">
@@ -1268,7 +1270,7 @@ if ($existingLineup) {
         </div>
 
         <div class="alert alert-info mt-3">
-            ℹ️ {{ __('You can save once at least 14 players are selected (11 starters + minimum 3 substitutes).') }}
+            ℹ️ {{ __('You can save once at least 14 players are selected (11 starters + minimum 3 substitutes, up to 9 substitutes).') }}
         </div>
         <button type="submit" class="btn btn-primary mt-3" id="saveButton">
             @if ($lineupSubmitted && $canOverrideSubmittedLineup)
@@ -1354,7 +1356,7 @@ if ($existingLineup) {
             const totalSelected = selectedStarters + selectedSubs;
 
             if (starterCount) starterCount.textContent = `(${selectedStarters}/11)`;
-            if (subCount) subCount.textContent = `(${selectedSubs}/7)`;
+            if (subCount) subCount.textContent = `(${selectedSubs}/9)`;
             if (starterCountInline) starterCountInline.textContent = String(selectedStarters);
             if (subCountInline) subCountInline.textContent = String(selectedSubs);
 
@@ -1365,8 +1367,8 @@ if ($existingLineup) {
 
                 saveButton.disabled = !canSave;
                 saveButton.innerHTML = canSave
-                    ? `💾 ${fpSaveReadyLabel} (${totalSelected}/18)`
-                    : `💾 {{ __("Select at least 14") }} (${totalSelected}/18)`;
+                    ? `💾 ${fpSaveReadyLabel} (${totalSelected}/20)`
+                    : `💾 {{ __("Select at least 14") }} (${totalSelected}/20)`;
             }
         }
 
@@ -1405,7 +1407,7 @@ if ($existingLineup) {
                 const player = allPlayers.find(p => p.id === sel.value) || null;
                 setSlotDisplay(slotEl, player);
             }
-            for (let i = 1; i <= 7; i++) {
+            for (let i = 1; i <= 9; i++) {
                 const pos = `sub${i}`;
                 const sel = document.querySelector(`select.player-select[data-position="${pos}"]`);
                 const slotEl = document.querySelector(`.slot[data-position="${pos}"]`);
@@ -1545,7 +1547,7 @@ if ($existingLineup) {
 
                 formationDisplay.innerHTML = `
                     <div style="font-size: 12px; margin-bottom: 10px;">
-                        <strong>${selectedPlayers.length}/18 {{ __('Selected') }}</strong>
+                        <strong>${selectedPlayers.length}/20 {{ __('Selected') }}</strong>
                     </div>
                     <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;">
                         ${playerAvatars}
