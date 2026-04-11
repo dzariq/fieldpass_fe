@@ -1845,6 +1845,7 @@ $subInIdsAway = $substitutionPlayerInIdsAway ?? $subIdsAway;
     }
 
     var FP_EVENT_SAVE_URL = fpEnsureHttpsUrl(@json(route('admin.match.event_save')));
+    var FP_EVENT_DELETE_URL = fpEnsureHttpsUrl(@json(route('admin.match.deleteEvent')));
     var FP_FORM_PREFIX_TO_ACTION = {
         goals: 'goal',
         assists: 'assist',
@@ -1886,6 +1887,64 @@ $subInIdsAway = $substitutionPlayerInIdsAway ?? $subIdsAway;
         if (wrap && data.recorded_events_html !== undefined) wrap.innerHTML = data.recorded_events_html;
         fpApplySubstitutionListsFromApi(data);
     }
+
+    function fpIsRecordedEventDeleteForm(form) {
+        if (!form || form.tagName !== 'FORM' || String(form.method).toLowerCase() !== 'post') return false;
+        try {
+            return new URL(form.action, window.location.href).pathname === new URL(FP_EVENT_DELETE_URL, window.location.href).pathname;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    (function () {
+        var wrap = document.getElementById('fp-recorded-events-wrap');
+        if (!wrap) return;
+        wrap.addEventListener('submit', function (e) {
+            var form = e.target;
+            if (!fpIsRecordedEventDeleteForm(form)) return;
+            e.preventDefault();
+            fpBumpEventSaveMask(1);
+            var fd = new FormData(form);
+            fetch(FP_EVENT_DELETE_URL, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': fpGetCsrfToken()
+                },
+                credentials: 'same-origin',
+                body: fd
+            })
+                .then(function (r) {
+                    var ct = r.headers.get('content-type') || '';
+                    if (ct.indexOf('application/json') === -1) {
+                        return r.text().then(function () {
+                            throw Object.assign(new Error('Unexpected response from server.'), { fpAlerted: true });
+                        });
+                    }
+                    return r.json().then(function (body) {
+                        return { ok: r.ok, status: r.status, body: body };
+                    });
+                })
+                .then(function (res) {
+                    if (!res.ok || !res.body.success) {
+                        var msg = (res.body && res.body.message) ? res.body.message : 'Delete failed';
+                        window.alert(msg);
+                        throw Object.assign(new Error(msg), { fpAlerted: true });
+                    }
+                    fpApplyMatchSnapshot(res.body);
+                })
+                .catch(function (err) {
+                    if (!err || !err.fpAlerted) {
+                        window.alert((err && err.message) ? err.message : 'Network error');
+                    }
+                })
+                .finally(function () {
+                    fpBumpEventSaveMask(-1);
+                });
+        });
+    })();
 
     function fpResetRowAfterSave(row) {
         row.querySelectorAll('select').forEach(function (s) { s.selectedIndex = 0; });

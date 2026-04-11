@@ -651,21 +651,12 @@ class MatchUpdateController extends Controller
 
         $this->updateMatchScores($matchId);
 
-        $matchForView = $this->getMatchForEventView($matchId);
-        if (! $matchForView) {
+        $snapshot = $this->matchEventViewSnapshotPayload($matchId);
+        if ($snapshot === null) {
             return response()->json(['success' => false, 'message' => 'Match not found.'], 404);
         }
 
-        $matchEvents = $this->getMatchEventsForDisplay($matchId);
-
-        return response()->json([
-            'success' => true,
-            'home_score' => (int) ($matchForView->home_score ?? 0),
-            'away_score' => (int) ($matchForView->away_score ?? 0),
-            'page_title' => $matchForView->home_club_name.' vs '.$matchForView->away_club_name,
-            'match_info' => '📅 '.\Carbon\Carbon::createFromTimestamp((int) $matchForView->date)->format('d M Y H:i'),
-            'recorded_events_html' => $this->renderRecordedEventsBlockHtml($matchForView, $matchEvents),
-        ]);
+        return response()->json(array_merge(['success' => true], $snapshot));
     }
 
     private function requestWantsSingleEventJson(Request $request): bool
@@ -768,28 +759,16 @@ class MatchUpdateController extends Controller
             $this->updateMatchScores($matchId);
             $this->playerUpdate($matchId);
 
-            $matchForView = $this->getMatchForEventView($matchId);
-            $matchEvents = $this->getMatchEventsForDisplay($matchId);
+            $snapshot = $this->matchEventViewSnapshotPayload($matchId);
+            if ($snapshot === null) {
+                return response()->json(['success' => false, 'message' => __('Match not found.')], 404);
+            }
 
-            $lineupHome = MatchPlayer::query()->where('match_id', $matchId)->where('club_id', (int) $match->home_club_id)->first();
-            $lineupAway = MatchPlayer::query()->where('match_id', $matchId)->where('club_id', (int) $match->away_club_id)->first();
-            [$subOutHome, $subInHome] = $this->substitutionSelectIdsForClub($matchId, (int) $match->home_club_id, $lineupHome);
-            [$subOutAway, $subInAway] = $this->substitutionSelectIdsForClub($matchId, (int) $match->away_club_id, $lineupAway);
-
-            return response()->json([
+            return response()->json(array_merge([
                 'success' => true,
                 'message' => __('Event saved.'),
                 'events_created' => $eventsCreated,
-                'home_score' => (int) ($matchForView->home_score ?? 0),
-                'away_score' => (int) ($matchForView->away_score ?? 0),
-                'page_title' => $matchForView->home_club_name.' vs '.$matchForView->away_club_name,
-                'match_info' => '📅 '.\Carbon\Carbon::createFromTimestamp((int) $matchForView->date)->format('d M Y H:i'),
-                'recorded_events_html' => $this->renderRecordedEventsBlockHtml($matchForView, $matchEvents),
-                'substitution_lists' => [
-                    'home' => ['out' => $subOutHome, 'in' => $subInHome],
-                    'away' => ['out' => $subOutAway, 'in' => $subInAway],
-                ],
-            ]);
+            ], $snapshot));
         } catch (\Exception $e) {
             Log::error('eventSaveSingleJson: '.$e->getMessage());
 
@@ -852,6 +831,37 @@ class MatchUpdateController extends Controller
         ])->render();
     }
 
+    /**
+     * Shared JSON payload for the match events page (scores, recorded list, substitution dropdowns).
+     *
+     * @return array<string, mixed>|null
+     */
+    private function matchEventViewSnapshotPayload(int $matchId): ?array
+    {
+        $matchForView = $this->getMatchForEventView($matchId);
+        if ($matchForView === null) {
+            return null;
+        }
+
+        $matchEvents = $this->getMatchEventsForDisplay($matchId);
+        $lineupHome = MatchPlayer::query()->where('match_id', $matchId)->where('club_id', (int) $matchForView->home_club_id)->first();
+        $lineupAway = MatchPlayer::query()->where('match_id', $matchId)->where('club_id', (int) $matchForView->away_club_id)->first();
+        [$subOutHome, $subInHome] = $this->substitutionSelectIdsForClub($matchId, (int) $matchForView->home_club_id, $lineupHome);
+        [$subOutAway, $subInAway] = $this->substitutionSelectIdsForClub($matchId, (int) $matchForView->away_club_id, $lineupAway);
+
+        return [
+            'home_score' => (int) ($matchForView->home_score ?? 0),
+            'away_score' => (int) ($matchForView->away_score ?? 0),
+            'page_title' => $matchForView->home_club_name.' vs '.$matchForView->away_club_name,
+            'match_info' => '📅 '.Carbon::createFromTimestamp((int) $matchForView->date)->format('d M Y H:i'),
+            'recorded_events_html' => $this->renderRecordedEventsBlockHtml($matchForView, $matchEvents),
+            'substitution_lists' => [
+                'home' => ['out' => $subOutHome, 'in' => $subInHome],
+                'away' => ['out' => $subOutAway, 'in' => $subInAway],
+            ],
+        ];
+    }
+
     private function insertMatchEventRow(object $match, int $clubId, int $playerId, string $eventType, int $minute, string $createdBy): void
     {
         DB::table('match_events')->insert([
@@ -870,8 +880,12 @@ class MatchUpdateController extends Controller
     /**
      * Delete a specific match event
      */
-    public function event_delete(Request $request): RedirectResponse
+    public function event_delete(Request $request): JsonResponse|RedirectResponse
     {
+        $this->checkAuthorization(auth()->user(), ['match.edit']);
+
+        $wantsJson = $request->expectsJson() || $request->ajax();
+
         try {
             $eventId = $request->input('event_id');
 
@@ -880,6 +894,10 @@ class MatchUpdateController extends Controller
                 ->first();
 
             if (! $event) {
+                if ($wantsJson) {
+                    return response()->json(['success' => false, 'message' => __('Event not found.')], 404);
+                }
+
                 return back()->withErrors(['error' => '❌ Event not found.']);
             }
 
@@ -892,9 +910,28 @@ class MatchUpdateController extends Controller
             $this->updateMatchScores($matchIdForScore);
             $this->playerUpdate($matchIdForScore);
 
+            if ($wantsJson) {
+                $snapshot = $this->matchEventViewSnapshotPayload($matchIdForScore);
+                if ($snapshot === null) {
+                    return response()->json(['success' => false, 'message' => __('Match not found.')], 404);
+                }
+
+                return response()->json(array_merge([
+                    'success' => true,
+                    'message' => __('Event deleted successfully.'),
+                ], $snapshot));
+            }
+
             return back()->with('success', '✅ Event deleted successfully.');
         } catch (\Exception $e) {
             Log::error('Failed to delete match event: '.$e->getMessage());
+
+            if ($wantsJson) {
+                return response()->json([
+                    'success' => false,
+                    'message' => __('Failed to delete event.').' '.$e->getMessage(),
+                ], 500);
+            }
 
             return back()->withErrors(['error' => '❌ Failed to delete event: '.$e->getMessage()]);
         }
