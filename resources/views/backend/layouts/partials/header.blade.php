@@ -19,7 +19,7 @@
                 <div class="header-club-manager-block">
                     <a href="{{ route('admin.clubs.edit', $headerClubForManager->id) }}" class="header-club-manager-brand" title="{{ __('Edit club profile') }}">
                         <img
-                            src="{{ $headerClubForManager->avatar ? asset($headerClubForManager->avatar) : asset('backend/assets/images/default-avatar.png') }}"
+                            src="{{ $headerClubForManager->avatar ? fp_asset_path($headerClubForManager->avatar) : fp_asset_path('backend/assets/images/default-avatar.png') }}"
                             alt="{{ $headerClubForManager->name }}"
                             class="header-club-logo"
                             width="44"

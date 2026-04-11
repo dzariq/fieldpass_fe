@@ -374,6 +374,9 @@ class MatchesController extends Controller
         if ($matchModel->started_at !== null) {
             return $this->possessionFail($request, __('Match has already been started.'));
         }
+        if ($matchModel->status === 'END') {
+            return $this->possessionFail($request, __('Set the match back to ongoing before recording a new kickoff.'));
+        }
 
         $matchModel->started_at = now();
         if ($matchModel->status === 'NOT_STARTED') {
@@ -397,6 +400,10 @@ class MatchesController extends Controller
 
         if ($matchModel->started_at === null) {
             return $this->possessionFail($request, __('Record match start before logging possession.'));
+        }
+
+        if ($matchModel->status === 'END') {
+            return $this->possessionFail($request, __('This match has ended. Set it back to ongoing to record possession.'));
         }
 
         if ($matchModel->timer_pause_started_at !== null) {
@@ -444,6 +451,9 @@ class MatchesController extends Controller
         if (! $matchModel->started_at) {
             return $this->possessionFail($request, __('Match has not started yet.'));
         }
+        if ($matchModel->status === 'END') {
+            return $this->possessionFail($request, __('Timer controls are not available for an ended match.'));
+        }
         if ($matchModel->timer_pause_started_at) {
             return $this->possessionFail($request, __('Timer is already paused.'));
         }
@@ -461,6 +471,9 @@ class MatchesController extends Controller
         $matchModel = Matches::query()->findOrFail($match);
         if (! $matchModel->timer_pause_started_at) {
             return $this->possessionFail($request, __('Timer is not paused.'));
+        }
+        if ($matchModel->status === 'END') {
+            return $this->possessionFail($request, __('Timer controls are not available for an ended match.'));
         }
 
         $matchModel->timer_paused_seconds = (int) $matchModel->timer_paused_seconds
@@ -493,6 +506,40 @@ class MatchesController extends Controller
         MatchN8nLineupService::notifyPlayerUpdateForMatch((int) $matchModel->id, false);
 
         return $this->possessionOk($request, $matchModel, __('Timer and possession log cleared.'));
+    }
+
+    public function setMatchStatusEnd(HttpRequest $request, int $match): RedirectResponse|JsonResponse
+    {
+        $this->checkAuthorization(auth()->user(), ['match.edit']);
+
+        $matchModel = Matches::query()->findOrFail($match);
+        if ($matchModel->status !== 'ONGOING') {
+            return $this->possessionFail($request, __('Only a match in progress can be marked as ended.'));
+        }
+
+        $matchModel->status = 'END';
+        $matchModel->save();
+
+        MatchN8nLineupService::notifyPlayerUpdateForMatch((int) $matchModel->id, false);
+
+        return $this->possessionOk($request, $matchModel, __('Match marked as ended.'));
+    }
+
+    public function setMatchStatusOngoing(HttpRequest $request, int $match): RedirectResponse|JsonResponse
+    {
+        $this->checkAuthorization(auth()->user(), ['match.edit']);
+
+        $matchModel = Matches::query()->findOrFail($match);
+        if ($matchModel->status !== 'END') {
+            return $this->possessionFail($request, __('Only an ended match can be set back to ongoing.'));
+        }
+
+        $matchModel->status = 'ONGOING';
+        $matchModel->save();
+
+        MatchN8nLineupService::notifyPlayerUpdateForMatch((int) $matchModel->id, false);
+
+        return $this->possessionOk($request, $matchModel, __('Match set back to ongoing.'));
     }
 
     private function possessionWantsJson(HttpRequest $request): bool

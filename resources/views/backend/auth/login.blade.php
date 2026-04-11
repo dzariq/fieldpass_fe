@@ -10,7 +10,7 @@
         <div class="auth-card">
             <div class="auth-header">
                 <div class="logo-container">
-                    <img src="{{ asset('backend/assets/images/media/logo.png') }}" alt="Football Association" class="auth-logo">
+                    <img src="{{ fp_asset_path('backend/assets/images/media/logo.png') }}" alt="Football Association" class="auth-logo">
                 </div>
                 <h1 class="auth-title">Football Association</h1>
                 <p class="auth-subtitle">Admin Panel — Sign in with OTP</p>

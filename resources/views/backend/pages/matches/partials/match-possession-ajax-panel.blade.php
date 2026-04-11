@@ -27,6 +27,27 @@
         default => 'badge-secondary',
     };
 @endphp
+@once
+<style>
+    .fp-possession-log-wrap {
+        max-height: min(360px, 45vh);
+        overflow: auto;
+        -webkit-overflow-scrolling: touch;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+    }
+    .fp-possession-log-wrap .table {
+        margin-bottom: 0;
+    }
+    .fp-possession-log-wrap thead th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: #f8f9fa;
+        box-shadow: 0 1px 0 #dee2e6;
+    }
+</style>
+@endonce
 <div
     class="possession-timer-panel fp-possession-ajax-root"
     id="fp-possession-ajax-root"
@@ -36,6 +57,8 @@
     data-url-pause="{{ route('admin.matches.timer-pause', $possessionMatch->id) }}"
     data-url-resume="{{ route('admin.matches.timer-resume', $possessionMatch->id) }}"
     data-url-reset="{{ route('admin.matches.possession-reset', $possessionMatch->id) }}"
+    data-url-status-end="{{ route('admin.matches.status-end', $possessionMatch->id) }}"
+    data-url-status-ongoing="{{ route('admin.matches.status-ongoing', $possessionMatch->id) }}"
     data-url-details="{{ route('admin.matches.details', $possessionMatch->id) }}"
     data-home-club-id="{{ $homeClubId }}"
     data-away-club-id="{{ $awayClubId }}"
@@ -79,24 +102,30 @@
             <button type="button" class="btn btn-primary font-weight-bold" id="fp-btn-match-start" @if ($possessionMatch->started_at) style="display: none;" @endif>
                 {{ __('Record match start (now)') }}
             </button>
-            <button type="button" class="btn btn-outline-warning font-weight-bold" id="fp-btn-timer-pause" @if (! $possessionMatch->started_at || $possessionMatch->timer_pause_started_at) style="display: none;" @endif>
+            <button type="button" class="btn btn-outline-warning font-weight-bold" id="fp-btn-timer-pause" @if (! $possessionMatch->started_at || $possessionMatch->timer_pause_started_at || $fpPossessionStatus !== 'ONGOING') style="display: none;" @endif>
                 {{ __('Pause') }}
             </button>
-            <button type="button" class="btn btn-outline-success font-weight-bold" id="fp-btn-timer-resume" @if (! $possessionMatch->started_at || ! $possessionMatch->timer_pause_started_at) style="display: none;" @endif>
+            <button type="button" class="btn btn-outline-success font-weight-bold" id="fp-btn-timer-resume" @if (! $possessionMatch->started_at || ! $possessionMatch->timer_pause_started_at || $fpPossessionStatus !== 'ONGOING') style="display: none;" @endif>
                 {{ __('Resume') }}
             </button>
             <button type="button" class="btn btn-outline-danger btn-sm" id="fp-btn-possession-reset" @if (! $possessionMatch->started_at && $possessionMatch->possessions->isEmpty()) style="display: none;" @endif>
                 {{ __('Reset (clear timer & possession)') }}
+            </button>
+            <button type="button" class="btn btn-dark font-weight-bold" id="fp-btn-match-end" @if ($fpPossessionStatus !== 'ONGOING') style="display: none;" @endif>
+                {{ __('End match') }}
+            </button>
+            <button type="button" class="btn btn-outline-success font-weight-bold" id="fp-btn-match-reopen" @if ($fpPossessionStatus !== 'END') style="display: none;" @endif>
+                {{ __('Mark ongoing again') }}
             </button>
         </div>
     @endif
 
     <div class="possession-btn-row">
         @if ($canEdit)
-            <button type="button" class="btn-possession-home" id="fp-btn-possession-home" @if (! $possessionMatch->started_at) disabled @endif>
+            <button type="button" class="btn-possession-home" id="fp-btn-possession-home" @if (! $possessionMatch->started_at || $fpPossessionStatus !== 'ONGOING' || $possessionMatch->timer_pause_started_at) disabled @endif>
                 🏠 {{ __('Home ball') }} — {{ $homeName }}
             </button>
-            <button type="button" class="btn-possession-away" id="fp-btn-possession-away" @if (! $possessionMatch->started_at) disabled @endif>
+            <button type="button" class="btn-possession-away" id="fp-btn-possession-away" @if (! $possessionMatch->started_at || $fpPossessionStatus !== 'ONGOING' || $possessionMatch->timer_pause_started_at) disabled @endif>
                 ✈️ {{ __('Away ball') }} — {{ $awayName }}
             </button>
         @endif
@@ -124,7 +153,7 @@
     </div>
 
     <h6 class="text-secondary mt-3 mb-2">{{ __('Possession log') }}</h6>
-    <div class="table-responsive">
+    <div class="table-responsive fp-possession-log-wrap">
         <table class="table table-sm table-bordered mb-0">
             <thead class="bg-light">
                 <tr>

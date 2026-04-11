@@ -18,9 +18,9 @@ if ($association) {
     $competitions = collect();
 }
 
-$defaultAvatar = asset('backend/assets/images/default-avatar.png');
+$defaultAvatar = fp_asset_path('backend/assets/images/default-avatar.png');
 // Always show the admin avatar in the header (matches Edit Admin page).
-$headerAvatarSrc = !empty($usr->avatar) ? asset($usr->avatar) : $defaultAvatar;
+$headerAvatarSrc = !empty($usr->avatar) ? fp_asset_path($usr->avatar) : $defaultAvatar;
 @endphp
 
 <header class="admin-header">

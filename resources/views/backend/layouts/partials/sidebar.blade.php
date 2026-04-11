@@ -7,7 +7,7 @@ $usr = Auth::guard('admin')->user();
         <div class="logo">
             <a href="{{ route('admin.dashboard') }}">
                 <h2 class="text-white">
-                    <img class="avatar" alt="FieldPass" src="{{ asset('backend/assets/images/media/logo.png') }}" />
+                    <img class="avatar" alt="FieldPass" src="{{ fp_asset_path('backend/assets/images/media/logo.png') }}" />
                 </h2>
             </a>
         </div>

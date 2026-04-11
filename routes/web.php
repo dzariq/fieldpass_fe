@@ -127,6 +127,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.'], function () {
     Route::post('matches/{match}/timer-pause', [MatchesController::class, 'pauseMatchTimer'])->name('matches.timer-pause');
     Route::post('matches/{match}/timer-resume', [MatchesController::class, 'resumeMatchTimer'])->name('matches.timer-resume');
     Route::post('matches/{match}/possession-reset', [MatchesController::class, 'resetMatchPossession'])->name('matches.possession-reset');
+    Route::post('matches/{match}/status-end', [MatchesController::class, 'setMatchStatusEnd'])->name('matches.status-end');
+    Route::post('matches/{match}/status-ongoing', [MatchesController::class, 'setMatchStatusOngoing'])->name('matches.status-ongoing');
     Route::resource('matches', MatchesController::class);
 
     Route::get('/invite', [PlayersController::class, 'inviteForm'])->name('players.invite');

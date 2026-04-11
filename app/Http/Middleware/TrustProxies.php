@@ -9,10 +9,11 @@ class TrustProxies extends Middleware
 {
     /**
      * The trusted proxies for this application.
+     * Trust all so X-Forwarded-Proto (HTTPS behind load balancer/CDN) is applied — fixes asset URLs and request()->secure().
      *
-     * @var array|string
+     * @var array<int, string>|string|null
      */
-    protected $proxies;
+    protected $proxies = '*';
 
     /**
      * The headers that should be used to detect proxies.

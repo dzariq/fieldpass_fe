@@ -34,6 +34,8 @@
     var urlPause = ensureHttpsWhenPageIsHttps(root.getAttribute('data-url-pause'));
     var urlResume = ensureHttpsWhenPageIsHttps(root.getAttribute('data-url-resume'));
     var urlReset = ensureHttpsWhenPageIsHttps(root.getAttribute('data-url-reset'));
+    var urlStatusEnd = ensureHttpsWhenPageIsHttps(root.getAttribute('data-url-status-end'));
+    var urlStatusOngoing = ensureHttpsWhenPageIsHttps(root.getAttribute('data-url-status-ongoing'));
     var homeClubId = root.getAttribute('data-home-club-id');
     var awayClubId = root.getAttribute('data-away-club-id');
     var homeName = root.getAttribute('data-home-name') || '';
@@ -48,6 +50,8 @@
     var elBtnPause = document.getElementById('fp-btn-timer-pause');
     var elBtnResume = document.getElementById('fp-btn-timer-resume');
     var elBtnReset = document.getElementById('fp-btn-possession-reset');
+    var elBtnEnd = document.getElementById('fp-btn-match-end');
+    var elBtnReopen = document.getElementById('fp-btn-match-reopen');
     var elBtnHome = document.getElementById('fp-btn-possession-home');
     var elBtnAway = document.getElementById('fp-btn-possession-away');
     var elMini = document.getElementById('fp-mini-stats-inner');
@@ -163,23 +167,29 @@
             }
         }
 
+        var matchCode = root.getAttribute('data-match-status') || 'NOT_STARTED';
+        if (p.match_status != null && String(p.match_status) !== '') {
+            matchCode = String(p.match_status);
+            root.setAttribute('data-match-status', matchCode);
+            renderMatchStatus(matchCode);
+        }
+
+        var inProgress = matchCode === 'ONGOING';
+
         if (elBtnStart) elBtnStart.style.display = startedAtIso ? 'none' : 'inline-block';
-        if (elBtnPause) elBtnPause.style.display = (startedAtIso && !isPaused) ? 'inline-block' : 'none';
-        if (elBtnResume) elBtnResume.style.display = (startedAtIso && isPaused) ? 'inline-block' : 'none';
+        if (elBtnPause) elBtnPause.style.display = (startedAtIso && !isPaused && inProgress) ? 'inline-block' : 'none';
+        if (elBtnResume) elBtnResume.style.display = (startedAtIso && isPaused && inProgress) ? 'inline-block' : 'none';
         if (elBtnReset) elBtnReset.style.display = (startedAtIso || (p.possessions && p.possessions.length)) ? 'inline-block' : 'none';
+        if (elBtnEnd) elBtnEnd.style.display = inProgress ? 'inline-block' : 'none';
+        if (elBtnReopen) elBtnReopen.style.display = (matchCode === 'END') ? 'inline-block' : 'none';
         if (elPausedLabel) elPausedLabel.style.display = isPaused ? 'block' : 'none';
 
-        var canBall = !!startedAtIso && !isPaused;
+        var canBall = !!startedAtIso && !isPaused && inProgress;
         if (elBtnHome) elBtnHome.disabled = !canBall;
         if (elBtnAway) elBtnAway.disabled = !canBall;
 
         if (p.summary) renderMiniStats(p.summary);
         if (p.possessions) renderLog(p.possessions);
-
-        if (p.match_status != null && String(p.match_status) !== '') {
-            root.setAttribute('data-match-status', String(p.match_status));
-            renderMatchStatus(String(p.match_status));
-        }
 
         if (!startedAtIso) {
             document.querySelectorAll('input.js-match-minute-sync').forEach(function (el) {
@@ -297,6 +307,28 @@
             if (!confirm('{{ __('Clear match start time, timer pause state, and all possession log rows for this match?') }}')) return;
             postJson(urlReset, {}).then(function (res) {
                 handleResponse(res, '{{ __('Could not reset.') }}');
+            }).catch(function (err) {
+                showToast((err && err.message) ? err.message : '{{ __('Network error') }}', true);
+            });
+        });
+    }
+
+    if (elBtnEnd && urlStatusEnd) {
+        elBtnEnd.addEventListener('click', function () {
+            if (!confirm('{{ __('Mark this match as ended? You can set it back to ongoing later if needed.') }}')) return;
+            postJson(urlStatusEnd, {}).then(function (res) {
+                handleResponse(res, '{{ __('Could not end match.') }}');
+            }).catch(function (err) {
+                showToast((err && err.message) ? err.message : '{{ __('Network error') }}', true);
+            });
+        });
+    }
+
+    if (elBtnReopen && urlStatusOngoing) {
+        elBtnReopen.addEventListener('click', function () {
+            if (!confirm('{{ __('Set match status back to ongoing?') }}')) return;
+            postJson(urlStatusOngoing, {}).then(function (res) {
+                handleResponse(res, '{{ __('Could not update match status.') }}');
             }).catch(function (err) {
                 showToast((err && err.message) ? err.message : '{{ __('Network error') }}', true);
             });
