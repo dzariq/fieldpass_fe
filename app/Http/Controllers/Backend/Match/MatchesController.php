@@ -399,6 +399,10 @@ class MatchesController extends Controller
             return $this->possessionFail($request, __('Record match start before logging possession.'));
         }
 
+        if ($matchModel->timer_pause_started_at !== null) {
+            return $this->possessionFail($request, __('Resume the match timer before recording possession (clock paused — ball out of play).'));
+        }
+
         $data = $request->validate([
             'club_id' => ['required', 'integer'],
         ]);
@@ -418,10 +422,14 @@ class MatchesController extends Controller
             return $this->possessionOk($request, $matchModel, __('Possession is already recorded for that team.'));
         }
 
+        $matchModel->refresh();
+        $playingSnap = (int) ($matchModel->playingElapsedSeconds() ?? 0);
+
         MatchPosession::query()->create([
             'match_id' => $matchModel->id,
             'club_id' => $clubId,
             'event_at' => now(),
+            'playing_elapsed_seconds' => $playingSnap,
             'admin_id' => (int) auth()->id(),
         ]);
 

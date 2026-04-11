@@ -169,7 +169,7 @@
         if (elBtnReset) elBtnReset.style.display = (startedAtIso || (p.possessions && p.possessions.length)) ? 'inline-block' : 'none';
         if (elPausedLabel) elPausedLabel.style.display = isPaused ? 'block' : 'none';
 
-        var canBall = !!startedAtIso;
+        var canBall = !!startedAtIso && !isPaused;
         if (elBtnHome) elBtnHome.disabled = !canBall;
         if (elBtnAway) elBtnAway.disabled = !canBall;
 

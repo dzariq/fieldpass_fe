@@ -16,6 +16,7 @@ class MatchPosession extends Model
         'match_id',
         'club_id',
         'event_at',
+        'playing_elapsed_seconds',
         'admin_id',
     ];
 
@@ -58,42 +59,66 @@ class MatchPosession extends Model
         $awaySec = 0;
         $unknownSec = 0;
 
-        /*
-         * Open-ended intervals must not use raw wall-clock "now" while the match timer is paused:
-         * otherwise possession seconds keep growing even though playingElapsedSeconds() is frozen.
-         * Cap the timeline at timer_pause_started_at when a pause is active.
-         *
-         * Note: intervals between two logged events still use wall time; pauses fully inside such
-         * an interval are not subtracted unless we store per-pause ranges (future improvement).
-         */
-        $now = Carbon::now();
-        $effectiveEnd = $match->timer_pause_started_at
-            ? $match->timer_pause_started_at->copy()
-            : $now->copy();
+        $allHavePlaying = $rows->isNotEmpty()
+            && $rows->every(fn (self $r) => $r->playing_elapsed_seconds !== null);
 
-        if ($started && $rows->isNotEmpty()) {
-            $firstAt = $rows->first()->event_at;
-            if ($firstAt->gt($started)) {
-                $unknownEnd = $firstAt->lt($effectiveEnd) ? $firstAt : $effectiveEnd;
-                if ($unknownEnd->gt($started)) {
-                    $unknownSec = (int) $started->diffInSeconds($unknownEnd);
+        if ($allHavePlaying) {
+            $currentPlaying = $match->playingElapsedSeconds();
+            if ($currentPlaying === null) {
+                $currentPlaying = 0;
+            }
+
+            $first = $rows->first();
+            $unknownSec = max(0, (int) $first->playing_elapsed_seconds);
+
+            foreach ($rows as $i => $row) {
+                $fromPlay = (int) $row->playing_elapsed_seconds;
+                $nextRow = $rows[$i + 1] ?? null;
+                $toPlay = $nextRow !== null
+                    ? (int) $nextRow->playing_elapsed_seconds
+                    : $currentPlaying;
+                $seconds = max(0, $toPlay - $fromPlay);
+                $cid = (int) $row->club_id;
+                if ($cid === $homeId) {
+                    $homeSec += $seconds;
+                } elseif ($cid === $awayId) {
+                    $awaySec += $seconds;
                 }
             }
-        }
+        } else {
+            /*
+             * Legacy: wall-clock segments (inaccurate across pauses). Cap open end at pause start
+             * so the live tail does not grow while the clock is paused.
+             */
+            $now = Carbon::now();
+            $effectiveEnd = $match->timer_pause_started_at
+                ? $match->timer_pause_started_at->copy()
+                : $now->copy();
 
-        foreach ($rows as $i => $row) {
-            $from = $row->event_at;
-            $next = $rows[$i + 1] ?? null;
-            $to = $next ? $next->event_at : $effectiveEnd;
-            if ($from >= $to) {
-                continue;
+            if ($started && $rows->isNotEmpty()) {
+                $firstAt = $rows->first()->event_at;
+                if ($firstAt->gt($started)) {
+                    $unknownEnd = $firstAt->lt($effectiveEnd) ? $firstAt : $effectiveEnd;
+                    if ($unknownEnd->gt($started)) {
+                        $unknownSec = (int) $started->diffInSeconds($unknownEnd);
+                    }
+                }
             }
-            $seconds = (int) $from->diffInSeconds($to);
-            $cid = (int) $row->club_id;
-            if ($cid === $homeId) {
-                $homeSec += $seconds;
-            } elseif ($cid === $awayId) {
-                $awaySec += $seconds;
+
+            foreach ($rows as $i => $row) {
+                $from = $row->event_at;
+                $next = $rows[$i + 1] ?? null;
+                $to = $next ? $next->event_at : $effectiveEnd;
+                if (! $from->lt($to)) {
+                    continue;
+                }
+                $seconds = (int) $from->diffInSeconds($to);
+                $cid = (int) $row->club_id;
+                if ($cid === $homeId) {
+                    $homeSec += $seconds;
+                } elseif ($cid === $awayId) {
+                    $awaySec += $seconds;
+                }
             }
         }
 
