@@ -217,7 +217,25 @@
             },
             body: body ? JSON.stringify(body) : JSON.stringify({})
         }).then(function (r) {
-            return r.json().then(function (data) {
+            return r.text().then(function (text) {
+                var data = {};
+                if (text) {
+                    try {
+                        data = JSON.parse(text);
+                    } catch (e) {
+                        var snippet = String(text).replace(/\s+/g, ' ').trim().substring(0, 180);
+                        data = {
+                            success: false,
+                            message: r.status === 419
+                                ? '{{ __('Page expired. Refresh and try again.') }}'
+                                : (r.status >= 500
+                                    ? '{{ __('Server error. Try again or contact support.') }}'
+                                    : (snippet || '{{ __('Invalid server response') }}'))
+                        };
+                    }
+                } else if (!r.ok) {
+                    data = { success: false, message: '{{ __('Request failed') }}' + ' (' + r.status + ')' };
+                }
                 return { ok: r.ok, status: r.status, data: data };
             });
         });
@@ -237,8 +255,8 @@
         elBtnStart.addEventListener('click', function () {
             postJson(urlStart, {}).then(function (res) {
                 handleResponse(res, '{{ __('Could not start match.') }}');
-            }).catch(function () {
-                showToast('{{ __('Network error') }}', true);
+            }).catch(function (err) {
+                showToast((err && err.message) ? err.message : '{{ __('Network error') }}', true);
             });
         });
     }
@@ -246,8 +264,8 @@
     function possessionClick(clubId) {
         postJson(urlPossession, { club_id: parseInt(clubId, 10) }).then(function (res) {
             handleResponse(res, '{{ __('Could not record possession.') }}');
-        }).catch(function () {
-            showToast('{{ __('Network error') }}', true);
+        }).catch(function (err) {
+            showToast((err && err.message) ? err.message : '{{ __('Network error') }}', true);
         });
     }
 
@@ -258,8 +276,8 @@
         elBtnPause.addEventListener('click', function () {
             postJson(urlPause, {}).then(function (res) {
                 handleResponse(res, '{{ __('Could not pause.') }}');
-            }).catch(function () {
-                showToast('{{ __('Network error') }}', true);
+            }).catch(function (err) {
+                showToast((err && err.message) ? err.message : '{{ __('Network error') }}', true);
             });
         });
     }
@@ -268,8 +286,8 @@
         elBtnResume.addEventListener('click', function () {
             postJson(urlResume, {}).then(function (res) {
                 handleResponse(res, '{{ __('Could not resume.') }}');
-            }).catch(function () {
-                showToast('{{ __('Network error') }}', true);
+            }).catch(function (err) {
+                showToast((err && err.message) ? err.message : '{{ __('Network error') }}', true);
             });
         });
     }
@@ -279,8 +297,8 @@
             if (!confirm('{{ __('Clear match start time, timer pause state, and all possession log rows for this match?') }}')) return;
             postJson(urlReset, {}).then(function (res) {
                 handleResponse(res, '{{ __('Could not reset.') }}');
-            }).catch(function () {
-                showToast('{{ __('Network error') }}', true);
+            }).catch(function (err) {
+                showToast((err && err.message) ? err.message : '{{ __('Network error') }}', true);
             });
         });
     }

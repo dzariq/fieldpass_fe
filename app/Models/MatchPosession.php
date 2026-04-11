@@ -58,19 +58,33 @@ class MatchPosession extends Model
         $awaySec = 0;
         $unknownSec = 0;
 
+        /*
+         * Open-ended intervals must not use raw wall-clock "now" while the match timer is paused:
+         * otherwise possession seconds keep growing even though playingElapsedSeconds() is frozen.
+         * Cap the timeline at timer_pause_started_at when a pause is active.
+         *
+         * Note: intervals between two logged events still use wall time; pauses fully inside such
+         * an interval are not subtracted unless we store per-pause ranges (future improvement).
+         */
+        $now = Carbon::now();
+        $effectiveEnd = $match->timer_pause_started_at
+            ? $match->timer_pause_started_at->copy()
+            : $now->copy();
+
         if ($started && $rows->isNotEmpty()) {
             $firstAt = $rows->first()->event_at;
             if ($firstAt->gt($started)) {
-                $unknownSec = (int) $started->diffInSeconds($firstAt);
+                $unknownEnd = $firstAt->lt($effectiveEnd) ? $firstAt : $effectiveEnd;
+                if ($unknownEnd->gt($started)) {
+                    $unknownSec = (int) $started->diffInSeconds($unknownEnd);
+                }
             }
         }
-
-        $now = Carbon::now();
 
         foreach ($rows as $i => $row) {
             $from = $row->event_at;
             $next = $rows[$i + 1] ?? null;
-            $to = $next ? $next->event_at : $now;
+            $to = $next ? $next->event_at : $effectiveEnd;
             if ($from >= $to) {
                 continue;
             }

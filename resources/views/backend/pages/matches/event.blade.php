@@ -1762,7 +1762,25 @@ $subIdsAway = $existingLineupAway ? [
         }
     }
 
-    var FP_EVENT_SAVE_URL = @json(route('admin.match.event_save'));
+    /** If the page is HTTPS but Laravel generated http:// URLs (APP_URL), avoid mixed-content blocked fetch. */
+    function fpEnsureHttpsUrl(url) {
+        if (!url || typeof url !== 'string') {
+            return url;
+        }
+        if (typeof window === 'undefined' || window.location.protocol !== 'https:') {
+            return url;
+        }
+        try {
+            var u = new URL(url, window.location.href);
+            if (u.protocol === 'http:' && u.hostname === window.location.hostname) {
+                u.protocol = 'https:';
+                return u.href;
+            }
+        } catch (e) { /* ignore */ }
+        return url;
+    }
+
+    var FP_EVENT_SAVE_URL = fpEnsureHttpsUrl(@json(route('admin.match.event_save')));
     var FP_FORM_PREFIX_TO_ACTION = {
         goals: 'goal',
         assists: 'assist',
@@ -1882,7 +1900,7 @@ $subIdsAway = $existingLineupAway ? [
             }
             row.dataset.fpSaving = '1';
             fpBumpEventSaveMask(1);
-            fetch(FP_EVENT_SAVE_URL, {
+            fetch(fpEnsureHttpsUrl(FP_EVENT_SAVE_URL), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

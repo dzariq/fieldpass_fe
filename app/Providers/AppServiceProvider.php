@@ -29,6 +29,7 @@ class AppServiceProvider extends ServiceProvider
         $appUrl = (string) config('app.url', '');
         if (
             $this->app->environment('production')
+            || filter_var(env('FORCE_HTTPS', false), FILTER_VALIDATE_BOOLEAN)
             || env('REDIRECT_HTTPS')
             || str_starts_with($appUrl, 'https://')
         ) {
