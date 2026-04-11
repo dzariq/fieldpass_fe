@@ -871,6 +871,12 @@ $subIdsAway = $existingLineupAway ? [
     $existingLineupAway->sub8,
     $existingLineupAway->sub9,
 ] : [];
+
+// Substitution dropdowns: on-pitch vs bench (replays match_events so subbed-in players appear as "player out").
+$subOutIdsHome = $substitutionPlayerOutIdsHome ?? $starterIdsHome;
+$subInIdsHome = $substitutionPlayerInIdsHome ?? $subIdsHome;
+$subOutIdsAway = $substitutionPlayerOutIdsAway ?? $starterIdsAway;
+$subInIdsAway = $substitutionPlayerInIdsAway ?? $subIdsAway;
 @endphp
 
 <div class="page-title-area">
@@ -1019,7 +1025,7 @@ $subIdsAway = $existingLineupAway ? [
                                         <select name="substitutions[0][player_out_id]" class="form-control action-input">
                                             <option value="">{{ __('Select Player') }}</option>
                                             @foreach ($playersHome as $player)
-                                            @if (in_array($player->id, $starterIdsHome))
+                                            @if (in_array($player->id, $subOutIdsHome))
                                             <option value="{{ $player->id }}">{{ $player->name }}</option>
                                             @endif
                                             @endforeach
@@ -1030,7 +1036,7 @@ $subIdsAway = $existingLineupAway ? [
                                         <select name="substitutions[0][player_in_id]" class="form-control action-input">
                                             <option value="">{{ __('Select Player') }}</option>
                                             @foreach ($playersHome as $player)
-                                            @if (in_array($player->id, $subIdsHome))
+                                            @if (in_array($player->id, $subInIdsHome))
                                             <option value="{{ $player->id }}">{{ $player->name }}</option>
                                             @endif
                                             @endforeach
@@ -1289,7 +1295,7 @@ $subIdsAway = $existingLineupAway ? [
                                         <select name="substitutions[0][player_out_id]" class="form-control action-input">
                                             <option value="">{{ __('Select Player') }}</option>
                                             @foreach ($playersAway as $player)
-                                            @if (in_array($player->id, $starterIdsAway))
+                                            @if (in_array($player->id, $subOutIdsAway))
                                             <option value="{{ $player->id }}">{{ $player->name }}</option>
                                             @endif
                                             @endforeach
@@ -1300,7 +1306,7 @@ $subIdsAway = $existingLineupAway ? [
                                         <select name="substitutions[0][player_in_id]" class="form-control action-input">
                                             <option value="">{{ __('Select Player') }}</option>
                                             @foreach ($playersAway as $player)
-                                            @if (in_array($player->id, $subIdsAway))
+                                            @if (in_array($player->id, $subInIdsAway))
                                             <option value="{{ $player->id }}">{{ $player->name }}</option>
                                             @endif
                                             @endforeach
@@ -1537,21 +1543,72 @@ $subIdsAway = $existingLineupAway ? [
         own_goals: 1
     };
 
-    const starterPlayersHome = @json($playersHome->filter(function($player) use($starterIdsHome) {
-        return in_array($player->id, $starterIdsHome);
-    })->values() ?? []);
+    var FP_ALL_PLAYERS_HOME = @json($playersHome->map(fn ($p) => ['id' => (int) $p->id, 'name' => $p->name])->values());
+    var FP_ALL_PLAYERS_AWAY = @json($playersAway->map(fn ($p) => ['id' => (int) $p->id, 'name' => $p->name])->values());
 
-    const subPlayersHome = @json($playersHome->filter(function($player) use($subIdsHome) {
-        return in_array($player->id, $subIdsHome);
-    })->values() ?? []);
+    function fpFilterPlayersByIds(allPlayers, ids) {
+        if (!allPlayers || !ids || !ids.length) return [];
+        var idSet = {};
+        ids.forEach(function (id) { idSet[Number(id)] = true; });
+        return allPlayers.filter(function (p) { return idSet[Number(p.id)]; });
+    }
 
-    const starterPlayersAway = @json($playersAway->filter(function($player) use($starterIdsAway) {
-        return in_array($player->id, $starterIdsAway);
-    })->values() ?? []);
+    var fpSubOutPlayersHome = fpFilterPlayersByIds(FP_ALL_PLAYERS_HOME, @json(array_values($subOutIdsHome)));
+    var fpSubInPlayersHome = fpFilterPlayersByIds(FP_ALL_PLAYERS_HOME, @json(array_values($subInIdsHome)));
+    var fpSubOutPlayersAway = fpFilterPlayersByIds(FP_ALL_PLAYERS_AWAY, @json(array_values($subOutIdsAway)));
+    var fpSubInPlayersAway = fpFilterPlayersByIds(FP_ALL_PLAYERS_AWAY, @json(array_values($subInIdsAway)));
 
-    const subPlayersAway = @json($playersAway->filter(function($player) use($subIdsAway) {
-        return in_array($player->id, $subIdsAway);
-    })->values() ?? []);
+    var FP_SELECT_PLAYER_PLACEHOLDER = @json(__('Select Player'));
+
+    function fpFillSubstitutionPlayerSelect(sel, players) {
+        if (!sel) return;
+        var cur = String(sel.value || '');
+        sel.innerHTML = '';
+        var opt0 = document.createElement('option');
+        opt0.value = '';
+        opt0.textContent = FP_SELECT_PLAYER_PLACEHOLDER;
+        sel.appendChild(opt0);
+        (players || []).forEach(function (p) {
+            var o = document.createElement('option');
+            o.value = String(p.id);
+            o.textContent = p.name;
+            sel.appendChild(o);
+        });
+        if (cur && Array.prototype.some.call(sel.options, function (o) { return o.value === cur; })) {
+            sel.value = cur;
+        }
+    }
+
+    function fpRefreshAllSubstitutionSelectOptions() {
+        [['home', fpSubOutPlayersHome, fpSubInPlayersHome], ['away', fpSubOutPlayersAway, fpSubInPlayersAway]].forEach(function (cfg) {
+            var team = cfg[0];
+            var outList = cfg[1];
+            var inList = cfg[2];
+            var container = document.getElementById('substitutions-container-' + team);
+            if (!container) return;
+            container.querySelectorAll('.substitution-row').forEach(function (row) {
+                var outSel = row.querySelector('select[name*="[player_out_id]"]');
+                var inSel = row.querySelector('select[name*="[player_in_id]"]');
+                fpFillSubstitutionPlayerSelect(outSel, outList);
+                fpFillSubstitutionPlayerSelect(inSel, inList);
+            });
+        });
+    }
+
+    function fpApplySubstitutionListsFromApi(data) {
+        if (!data || !data.substitution_lists) return;
+        var h = data.substitution_lists.home;
+        var a = data.substitution_lists.away;
+        if (h && Array.isArray(h.out) && Array.isArray(h.in)) {
+            fpSubOutPlayersHome = fpFilterPlayersByIds(FP_ALL_PLAYERS_HOME, h.out);
+            fpSubInPlayersHome = fpFilterPlayersByIds(FP_ALL_PLAYERS_HOME, h.in);
+        }
+        if (a && Array.isArray(a.out) && Array.isArray(a.in)) {
+            fpSubOutPlayersAway = fpFilterPlayersByIds(FP_ALL_PLAYERS_AWAY, a.out);
+            fpSubInPlayersAway = fpFilterPlayersByIds(FP_ALL_PLAYERS_AWAY, a.in);
+        }
+        fpRefreshAllSubstitutionSelectOptions();
+    }
 
     function fpUndoActionKeyFromContainerId(containerId) {
         var m = String(containerId || '').match(/^([a-z_]+)-container-(home|away)$/);
@@ -1728,15 +1785,15 @@ $subIdsAway = $existingLineupAway ? [
             return;
         }
         const index = actionCounters.substitutions;
-        const starterPlayers = team === 'home' ? starterPlayersHome : starterPlayersAway;
-        const subPlayers = team === 'home' ? subPlayersHome : subPlayersAway;
+        const starterPlayers = team === 'home' ? fpSubOutPlayersHome : fpSubOutPlayersAway;
+        const subPlayers = team === 'home' ? fpSubInPlayersHome : fpSubInPlayersAway;
 
-        let playerOutOptions = '<option value="">Select Player</option>';
+        let playerOutOptions = '<option value="">' + FP_SELECT_PLAYER_PLACEHOLDER + '</option>';
         starterPlayers.forEach(player => {
             playerOutOptions += `<option value="${player.id}">${player.name}</option>`;
         });
 
-        let playerInOptions = '<option value="">Select Player</option>';
+        let playerInOptions = '<option value="">' + FP_SELECT_PLAYER_PLACEHOLDER + '</option>';
         subPlayers.forEach(player => {
             playerInOptions += `<option value="${player.id}">${player.name}</option>`;
         });
@@ -1827,6 +1884,7 @@ $subIdsAway = $existingLineupAway ? [
         if (infoEl && data.match_info) infoEl.textContent = data.match_info;
         var wrap = document.getElementById('fp-recorded-events-wrap');
         if (wrap && data.recorded_events_html !== undefined) wrap.innerHTML = data.recorded_events_html;
+        fpApplySubstitutionListsFromApi(data);
     }
 
     function fpResetRowAfterSave(row) {

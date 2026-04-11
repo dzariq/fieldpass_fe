@@ -128,6 +128,40 @@
         elMini.innerHTML = html;
     }
 
+    function renderPossessionViz(sum) {
+        var elRing = document.getElementById('fp-poss-donut-ring');
+        var elHomeInner = document.getElementById('fp-poss-pct-home-inner');
+        var elAwayInner = document.getElementById('fp-poss-pct-away-inner');
+        if (!elRing || !elHomeInner || !elAwayInner) return;
+
+        var hp = sum && sum.home_pct != null ? parseFloat(sum.home_pct, 10) : NaN;
+        var ap = sum && sum.away_pct != null ? parseFloat(sum.away_pct, 10) : NaN;
+        var hSec = sum && sum.home_seconds != null ? parseInt(sum.home_seconds, 10) : 0;
+        var aSec = sum && sum.away_seconds != null ? parseInt(sum.away_seconds, 10) : 0;
+        if (isNaN(hSec)) hSec = 0;
+        if (isNaN(aSec)) aSec = 0;
+
+        if (!isNaN(hp) && !isNaN(ap)) {
+            elHomeInner.innerHTML = '<span class="fp-poss-pct-num">' + hp + '</span><span class="fp-poss-pct-sup">%</span>';
+            elAwayInner.innerHTML = '<span class="fp-poss-pct-num">' + ap + '</span><span class="fp-poss-pct-sup">%</span>';
+            elRing.style.setProperty('--home-share', String(Math.max(0, Math.min(1, hp / 100))));
+            elRing.classList.remove('fp-poss-donut-ring--empty');
+        } else if ((hSec + aSec) > 0) {
+            var t = hSec + aSec;
+            var hpf = Math.round(1000 * hSec / t) / 10;
+            var apf = Math.round(1000 * aSec / t) / 10;
+            elHomeInner.innerHTML = '<span class="fp-poss-pct-num">' + hpf + '</span><span class="fp-poss-pct-sup">%</span>';
+            elAwayInner.innerHTML = '<span class="fp-poss-pct-num">' + apf + '</span><span class="fp-poss-pct-sup">%</span>';
+            elRing.style.setProperty('--home-share', String(hSec / t));
+            elRing.classList.remove('fp-poss-donut-ring--empty');
+        } else {
+            elHomeInner.innerHTML = '<span class="fp-poss-pct-num">\u2014</span>';
+            elAwayInner.innerHTML = '<span class="fp-poss-pct-num">\u2014</span>';
+            elRing.style.setProperty('--home-share', '0.5');
+            elRing.classList.add('fp-poss-donut-ring--empty');
+        }
+    }
+
     function renderLog(rows) {
         if (!elTbody) return;
         elTbody.innerHTML = '';
@@ -194,7 +228,13 @@
         if (elBtnAway) elBtnAway.disabled = !canBall;
         if (elBtnNeutral) elBtnNeutral.disabled = !canBall;
 
-        if (p.summary) renderMiniStats(p.summary);
+        if (p.summary) {
+            renderMiniStats(p.summary);
+            renderPossessionViz(p.summary);
+            try {
+                root.setAttribute('data-possession-summary', JSON.stringify(p.summary));
+            } catch (e) {}
+        }
         if (p.possessions) renderLog(p.possessions);
 
         if (!startedAtIso) {
@@ -352,6 +392,13 @@
     }
 
     renderMatchStatus(root.getAttribute('data-match-status') || 'NOT_STARTED');
+
+    try {
+        var initSumRaw = root.getAttribute('data-possession-summary');
+        if (initSumRaw) {
+            renderPossessionViz(JSON.parse(initSumRaw));
+        }
+    } catch (e) {}
 
     tick();
     setInterval(tick, 1000);

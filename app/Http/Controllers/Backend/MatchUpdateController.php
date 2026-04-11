@@ -233,7 +233,7 @@ class MatchUpdateController extends Controller
             ];
             if ($matchData) {
                 $possessionMatch = Matches::query()
-                    ->with(['possessions.club', 'possessions.admin'])
+                    ->with(['home_club', 'away_club', 'possessions.club', 'possessions.admin'])
                     ->find($matchData->id);
                 if ($possessionMatch) {
                     $possessionSummary = MatchPosession::summarizeForMatch($possessionMatch);
@@ -247,6 +247,23 @@ class MatchUpdateController extends Controller
                 }
             }
 
+            $substitutionPlayerOutIdsHome = [];
+            $substitutionPlayerInIdsHome = [];
+            $substitutionPlayerOutIdsAway = [];
+            $substitutionPlayerInIdsAway = [];
+            if ($matchData) {
+                [$substitutionPlayerOutIdsHome, $substitutionPlayerInIdsHome] = $this->substitutionSelectIdsForClub(
+                    (int) $matchData->id,
+                    (int) $matchData->home_club_id,
+                    $existingLineupHome
+                );
+                [$substitutionPlayerOutIdsAway, $substitutionPlayerInIdsAway] = $this->substitutionSelectIdsForClub(
+                    (int) $matchData->id,
+                    (int) $matchData->away_club_id,
+                    $existingLineupAway
+                );
+            }
+
             return view('backend.pages.matches.event', [
                 'playersHome' => $homePlayers,
                 'playersAway' => $awayPlayers,
@@ -257,6 +274,10 @@ class MatchUpdateController extends Controller
                 'matchEvents' => $matchEvents ? $matchEvents : [],
                 'possessionMatch' => $possessionMatch,
                 'possessionSummary' => $possessionSummary,
+                'substitutionPlayerOutIdsHome' => $substitutionPlayerOutIdsHome,
+                'substitutionPlayerInIdsHome' => $substitutionPlayerInIdsHome,
+                'substitutionPlayerOutIdsAway' => $substitutionPlayerOutIdsAway,
+                'substitutionPlayerInIdsAway' => $substitutionPlayerInIdsAway,
             ]);
         }
     }
@@ -750,6 +771,11 @@ class MatchUpdateController extends Controller
             $matchForView = $this->getMatchForEventView($matchId);
             $matchEvents = $this->getMatchEventsForDisplay($matchId);
 
+            $lineupHome = MatchPlayer::query()->where('match_id', $matchId)->where('club_id', (int) $match->home_club_id)->first();
+            $lineupAway = MatchPlayer::query()->where('match_id', $matchId)->where('club_id', (int) $match->away_club_id)->first();
+            [$subOutHome, $subInHome] = $this->substitutionSelectIdsForClub($matchId, (int) $match->home_club_id, $lineupHome);
+            [$subOutAway, $subInAway] = $this->substitutionSelectIdsForClub($matchId, (int) $match->away_club_id, $lineupAway);
+
             return response()->json([
                 'success' => true,
                 'message' => __('Event saved.'),
@@ -759,6 +785,10 @@ class MatchUpdateController extends Controller
                 'page_title' => $matchForView->home_club_name.' vs '.$matchForView->away_club_name,
                 'match_info' => '📅 '.\Carbon\Carbon::createFromTimestamp((int) $matchForView->date)->format('d M Y H:i'),
                 'recorded_events_html' => $this->renderRecordedEventsBlockHtml($matchForView, $matchEvents),
+                'substitution_lists' => [
+                    'home' => ['out' => $subOutHome, 'in' => $subInHome],
+                    'away' => ['out' => $subOutAway, 'in' => $subInAway],
+                ],
             ]);
         } catch (\Exception $e) {
             Log::error('eventSaveSingleJson: '.$e->getMessage());
@@ -873,5 +903,70 @@ class MatchUpdateController extends Controller
     private function playerUpdate($matchId): void
     {
         MatchN8nLineupService::notifyPlayerUpdateForMatch((int) $matchId, true);
+    }
+
+    /**
+     * Who can be selected for substitution: player out = currently on pitch; player in = still on bench.
+     * Replays saved sub_out / sub_in events so players who already came on appear under "player out", not "player in".
+     *
+     * @return array{0: list<int>, 1: list<int>}
+     */
+    private function substitutionSelectIdsForClub(int $matchId, int $clubId, ?MatchPlayer $lineup): array
+    {
+        if ($lineup === null) {
+            return [[], []];
+        }
+
+        $starters = array_values(array_filter(array_map('intval', [
+            $lineup->gk,
+            $lineup->player1,
+            $lineup->player2,
+            $lineup->player3,
+            $lineup->player4,
+            $lineup->player5,
+            $lineup->player6,
+            $lineup->player7,
+            $lineup->player8,
+            $lineup->player9,
+            $lineup->player10,
+        ]), fn (int $id) => $id > 0));
+
+        $subs = array_values(array_filter(array_map('intval', [
+            $lineup->sub1,
+            $lineup->sub2,
+            $lineup->sub3,
+            $lineup->sub4,
+            $lineup->sub5,
+            $lineup->sub6,
+            $lineup->sub7,
+            $lineup->sub8,
+            $lineup->sub9,
+        ]), fn (int $id) => $id > 0));
+
+        $onPitch = $starters;
+        $onBench = $subs;
+
+        $events = DB::table('match_events')
+            ->where('match_id', $matchId)
+            ->where('club_id', $clubId)
+            ->whereIn('event_type', ['sub_out', 'sub_in'])
+            ->orderBy('minute_in_match')
+            ->orderBy('event_id')
+            ->get(['event_type', 'player_id']);
+
+        foreach ($events as $ev) {
+            $pid = (int) $ev->player_id;
+            if ($ev->event_type === 'sub_out') {
+                $onPitch = array_values(array_filter($onPitch, fn (int $id) => $id !== $pid));
+            } elseif ($ev->event_type === 'sub_in') {
+                $onPitch[] = $pid;
+                $onBench = array_values(array_filter($onBench, fn (int $id) => $id !== $pid));
+            }
+        }
+
+        $onPitch = array_values(array_unique($onPitch));
+        $onBench = array_values(array_unique($onBench));
+
+        return [$onPitch, $onBench];
     }
 }
