@@ -77,7 +77,7 @@
         <h5 class="mb-0">⏱️ {{ __('Match timer & ball possession') }}</h5>
         <span id="fp-match-status-badge" class="badge fp-match-status-badge {{ $fpPossessionBadgeClass }}">{{ $fpPossessionStatusLabels[$fpPossessionStatus] ?? $fpPossessionStatus }}</span>
     </div>
-    <p class="possession-sub mb-0">{{ __('Start the match to begin the clock, then tap which team has the ball when it changes. Pause freezes the match clock.') }}</p>
+    <p class="possession-sub mb-0">{{ __('Start the match to begin the clock, then tap which team has the ball when it changes. Use “ball out of play” when neither team has possession while the clock keeps running. Pause freezes the match clock.') }}</p>
 
     <div class="d-flex flex-wrap align-items-center justify-content-between mt-3" style="gap: 12px;">
         <div>
@@ -128,6 +128,9 @@
             <button type="button" class="btn-possession-away" id="fp-btn-possession-away" @if (! $possessionMatch->started_at || $fpPossessionStatus !== 'ONGOING' || $possessionMatch->timer_pause_started_at) disabled @endif>
                 ✈️ {{ __('Away ball') }} — {{ $awayName }}
             </button>
+            <button type="button" class="btn-possession-neutral" id="fp-btn-possession-neutral" @if (! $possessionMatch->started_at || $fpPossessionStatus !== 'ONGOING' || $possessionMatch->timer_pause_started_at) disabled @endif>
+                ⚪ {{ __('Ball out of play') }}
+            </button>
         @endif
         @if ($showFullLogLink)
             <a href="{{ route('admin.matches.details', $possessionMatch->id) }}" class="btn btn-outline-secondary btn-sm align-self-center">{{ __('Full log') }}</a>
@@ -145,6 +148,9 @@
             {{ $awayName }} {{ $fmtPossDur((int) ($pSum['away_seconds'] ?? 0)) }}
             @if (($pSum['away_pct'] ?? null) !== null)
                 ({{ $pSum['away_pct'] }}%)
+            @endif
+            @if (($pSum['neutral_seconds'] ?? 0) > 0)
+                · <span class="text-muted">{{ __('Ball out of play') }}: {{ $fmtPossDur((int) $pSum['neutral_seconds']) }}</span>
             @endif
             @if (($pSum['unknown_seconds'] ?? 0) > 0)
                 · <span class="text-muted">{{ __('Before first switch') }}: {{ $fmtPossDur((int) $pSum['unknown_seconds']) }}</span>
@@ -166,7 +172,7 @@
                 @forelse ($possessionMatch->possessions as $row)
                     <tr>
                         <td>{{ $row->event_at->format('Y-m-d H:i:s') }}</td>
-                        <td>{{ $row->club->name ?? '—' }}</td>
+                        <td>{{ $row->club_id === null ? __('Ball out (no possession)') : ($row->club->name ?? '—') }}</td>
                         <td>{{ $row->admin->name ?? '—' }}</td>
                     </tr>
                 @empty

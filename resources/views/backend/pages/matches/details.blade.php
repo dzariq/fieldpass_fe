@@ -27,12 +27,13 @@
     }
     .possession-btn-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; align-items: center; }
     .possession-btn-row form { margin: 0; }
-    .btn-possession-home, .btn-possession-away {
+    .btn-possession-home, .btn-possession-away, .btn-possession-neutral {
         min-width: 160px; font-weight: 600; padding: 10px 16px; border-radius: 10px; border: none; cursor: pointer;
     }
     .btn-possession-home { background: #2563eb; color: #fff; }
     .btn-possession-away { background: #7c3aed; color: #fff; }
-    .btn-possession-home:disabled, .btn-possession-away:disabled { opacity: 0.55; cursor: not-allowed; }
+    .btn-possession-neutral { background: #475569; color: #fff; }
+    .btn-possession-home:disabled, .btn-possession-away:disabled, .btn-possession-neutral:disabled { opacity: 0.55; cursor: not-allowed; }
     .possession-mini-stats {
         font-size: 0.8125rem; color: #334155; margin-top: 12px; padding-top: 12px; border-top: 1px solid #bfdbfe;
     }

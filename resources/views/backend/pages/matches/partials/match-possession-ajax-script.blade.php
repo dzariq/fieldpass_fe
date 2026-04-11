@@ -54,6 +54,7 @@
     var elBtnReopen = document.getElementById('fp-btn-match-reopen');
     var elBtnHome = document.getElementById('fp-btn-possession-home');
     var elBtnAway = document.getElementById('fp-btn-possession-away');
+    var elBtnNeutral = document.getElementById('fp-btn-possession-neutral');
     var elMini = document.getElementById('fp-mini-stats-inner');
     var elTbody = document.getElementById('fp-possession-log-tbody');
 
@@ -114,9 +115,13 @@
         var h = (sum.home_seconds || 0);
         var a = (sum.away_seconds || 0);
         var u = (sum.unknown_seconds || 0);
+        var n = (sum.neutral_seconds || 0);
         var hp = sum.home_pct != null ? ' (' + sum.home_pct + '%)' : '';
         var ap = sum.away_pct != null ? ' (' + sum.away_pct + '%)' : '';
         var html = escapeHtml(homeName) + ' ' + fmtDur(h) + hp + ' · ' + escapeHtml(awayName) + ' ' + fmtDur(a) + ap;
+        if (n > 0) {
+            html += ' · <span class="text-muted">{{ __('Ball out of play') }}: ' + fmtDur(n) + '</span>';
+        }
         if (u > 0) {
             html += ' · <span class="text-muted">{{ __('Before first switch') }}: ' + fmtDur(u) + '</span>';
         }
@@ -187,6 +192,7 @@
         var canBall = !!startedAtIso && !isPaused && inProgress;
         if (elBtnHome) elBtnHome.disabled = !canBall;
         if (elBtnAway) elBtnAway.disabled = !canBall;
+        if (elBtnNeutral) elBtnNeutral.disabled = !canBall;
 
         if (p.summary) renderMiniStats(p.summary);
         if (p.possessions) renderLog(p.possessions);
@@ -281,6 +287,16 @@
 
     if (elBtnHome) elBtnHome.addEventListener('click', function () { possessionClick(homeClubId); });
     if (elBtnAway) elBtnAway.addEventListener('click', function () { possessionClick(awayClubId); });
+
+    if (elBtnNeutral) {
+        elBtnNeutral.addEventListener('click', function () {
+            postJson(urlPossession, { neutral: true }).then(function (res) {
+                handleResponse(res, '{{ __('Could not record ball out of play.') }}');
+            }).catch(function (err) {
+                showToast((err && err.message) ? err.message : '{{ __('Network error') }}', true);
+            });
+        });
+    }
 
     if (elBtnPause) {
         elBtnPause.addEventListener('click', function () {

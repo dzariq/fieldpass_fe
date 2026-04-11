@@ -747,7 +747,8 @@ Match Events
     }
 
     .btn-possession-home,
-    .btn-possession-away {
+    .btn-possession-away,
+    .btn-possession-neutral {
         min-width: 160px;
         font-weight: 600;
         padding: 10px 16px;
@@ -766,8 +767,14 @@ Match Events
         color: #fff;
     }
 
+    .btn-possession-neutral {
+        background: #475569;
+        color: #fff;
+    }
+
     .btn-possession-home:disabled,
-    .btn-possession-away:disabled {
+    .btn-possession-away:disabled,
+    .btn-possession-neutral:disabled {
         opacity: 0.55;
         cursor: not-allowed;
     }

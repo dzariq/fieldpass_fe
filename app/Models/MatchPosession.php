@@ -43,6 +43,7 @@ class MatchPosession extends Model
      * @return array{
      *     home_seconds: int,
      *     away_seconds: int,
+     *     neutral_seconds: int,
      *     unknown_seconds: int,
      *     home_pct: float|null,
      *     away_pct: float|null
@@ -57,6 +58,7 @@ class MatchPosession extends Model
 
         $homeSec = 0;
         $awaySec = 0;
+        $neutralSec = 0;
         $unknownSec = 0;
 
         $allHavePlaying = $rows->isNotEmpty()
@@ -78,11 +80,13 @@ class MatchPosession extends Model
                     ? (int) $nextRow->playing_elapsed_seconds
                     : $currentPlaying;
                 $seconds = max(0, $toPlay - $fromPlay);
-                $cid = (int) $row->club_id;
+                $cid = $row->club_id !== null ? (int) $row->club_id : null;
                 if ($cid === $homeId) {
                     $homeSec += $seconds;
                 } elseif ($cid === $awayId) {
                     $awaySec += $seconds;
+                } elseif ($cid === null) {
+                    $neutralSec += $seconds;
                 }
             }
         } else {
@@ -113,11 +117,13 @@ class MatchPosession extends Model
                     continue;
                 }
                 $seconds = (int) $from->diffInSeconds($to);
-                $cid = (int) $row->club_id;
+                $cid = $row->club_id !== null ? (int) $row->club_id : null;
                 if ($cid === $homeId) {
                     $homeSec += $seconds;
                 } elseif ($cid === $awayId) {
                     $awaySec += $seconds;
+                } elseif ($cid === null) {
+                    $neutralSec += $seconds;
                 }
             }
         }
@@ -128,6 +134,7 @@ class MatchPosession extends Model
         return [
             'home_seconds' => $homeSec,
             'away_seconds' => $awaySec,
+            'neutral_seconds' => $neutralSec,
             'unknown_seconds' => $unknownSec,
             'home_pct' => $totalForPct > 0 ? round(100 * $homeSec / $totalForPct, 1) : null,
             'away_pct' => $totalForPct > 0 ? round(100 * $awaySec / $totalForPct, 1) : null,

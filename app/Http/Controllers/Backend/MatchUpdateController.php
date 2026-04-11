@@ -226,6 +226,7 @@ class MatchUpdateController extends Controller
             $possessionSummary = [
                 'home_seconds' => 0,
                 'away_seconds' => 0,
+                'neutral_seconds' => 0,
                 'unknown_seconds' => 0,
                 'home_pct' => null,
                 'away_pct' => null,

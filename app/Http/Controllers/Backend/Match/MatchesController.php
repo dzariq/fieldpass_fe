@@ -410,6 +410,32 @@ class MatchesController extends Controller
             return $this->possessionFail($request, __('Resume the match timer before recording possession (clock paused — ball out of play).'));
         }
 
+        $isNeutral = filter_var($request->input('neutral'), FILTER_VALIDATE_BOOLEAN);
+
+        if ($isNeutral) {
+            $last = MatchPosession::query()
+                ->where('match_id', $matchModel->id)
+                ->orderByDesc('event_at')
+                ->first();
+
+            if ($last && $last->club_id === null) {
+                return $this->possessionOk($request, $matchModel, __('Ball out of play is already recorded.'));
+            }
+
+            $matchModel->refresh();
+            $playingSnap = (int) ($matchModel->playingElapsedSeconds() ?? 0);
+
+            MatchPosession::query()->create([
+                'match_id' => $matchModel->id,
+                'club_id' => null,
+                'event_at' => now(),
+                'playing_elapsed_seconds' => $playingSnap,
+                'admin_id' => (int) auth()->id(),
+            ]);
+
+            return $this->possessionOk($request, $matchModel, __('Ball out of play recorded — neither team has possession.'));
+        }
+
         $data = $request->validate([
             'club_id' => ['required', 'integer'],
         ]);
@@ -563,9 +589,11 @@ class MatchesController extends Controller
             'match_status' => $matchModel->status,
             'summary' => MatchPosession::summarizeForMatch($matchModel),
             'possessions' => $matchModel->possessions->map(function ($row) {
+                $neutralLabel = __('Ball out (no possession)');
+
                 return [
                     'event_at' => $row->event_at?->format('Y-m-d H:i:s'),
-                    'club_name' => $row->club?->name ?? '—',
+                    'club_name' => $row->club_id === null ? $neutralLabel : ($row->club?->name ?? '—'),
                     'admin_name' => $row->admin?->name ?? '—',
                 ];
             })->values()->all(),
