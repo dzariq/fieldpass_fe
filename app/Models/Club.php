@@ -59,4 +59,9 @@ class Club extends Model
     {
         return $this->belongsToMany(Player::class, 'player_club', 'club_id', 'player_id');
     }
+
+    public function budgetExpenses()
+    {
+        return $this->hasMany(ClubBudgetExpense::class, 'club_id');
+    }
 }

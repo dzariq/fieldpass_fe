@@ -104,6 +104,15 @@ $usr = Auth::guard('admin')->user();
                     </li>
                     @endif
 
+                    @if ($usr->hasRole('Club Manager') || $usr->can('budget_expense.view'))
+                    <li class="{{ Route::is('admin.budget-expenses.*') ? 'active' : '' }}">
+                        <a href="{{ route('admin.budget-expenses.index') }}">
+                            <i class="fas fa-wallet"></i>
+                            <span>Budget &amp; expenses</span>
+                        </a>
+                    </li>
+                    @endif
+
                     <!-- FOOTBALL SECTION -->
                     <li class="menu-section">
                         <span class="menu-section-text">FOOTBALL MANAGEMENT</span>

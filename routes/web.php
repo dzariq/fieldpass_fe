@@ -9,6 +9,7 @@ use App\Http\Controllers\Backend\Auth\LoginController;
 use App\Http\Controllers\Backend\Auth\RegisterController;
 use App\Http\Controllers\Backend\Club\ClubController;
 use App\Http\Controllers\Backend\Competition\CompetitionController;
+use App\Http\Controllers\Backend\BudgetExpenseController;
 use App\Http\Controllers\Backend\DashboardController;
 use App\Http\Controllers\Backend\DemoDataController;
 use App\Http\Controllers\Backend\FantasyController;
@@ -158,6 +159,11 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.'], function () {
     Route::get('/notification', [NotificationController::class, 'index'])->name('notifications');
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
 
+    Route::get('/budget-expenses', [BudgetExpenseController::class, 'index'])->name('budget-expenses.index');
+    Route::post('/budget-expenses', [BudgetExpenseController::class, 'store'])->name('budget-expenses.store');
+    Route::put('/budget-expenses/{club_budget_expense}', [BudgetExpenseController::class, 'update'])->name('budget-expenses.update');
+    Route::delete('/budget-expenses/{club_budget_expense}', [BudgetExpenseController::class, 'destroy'])->name('budget-expenses.destroy');
+
     Route::get('/training', [TrainingController::class, 'index'])->name('training.show');
     Route::post('/training/submit', [TrainingController::class, 'submit'])->name('training.submit');
     Route::get('/training/attributes', [TrainingController::class, 'attributes'])->name('training.attributes.show');
@@ -189,8 +195,7 @@ Route::group(['prefix' => 'player', 'as' => 'player.'], function () {
 
 Route::group(['prefix' => 'player', 'as' => 'player.', 'middleware' => 'auth:player'], function () {
     Route::get('/', [PlayerDashboardController::class, 'index'])->name('dashboard');
-    Route::post('/dashboard/update/{id}', [PlayerDashboardController::class, 'update'])->name('dashboard.update');
-    Route::put('/dashboard/update/{id}', [PlayerDashboardController::class, 'update'])->name('dashboard.update');
+    Route::match(['post', 'put'], '/dashboard/update/{id}', [PlayerDashboardController::class, 'update'])->name('dashboard.update');
     Route::get('/playerdetails/{id}', [PlayerDashboardController::class, 'details'])->name('details');
 
     Route::post('/logout/submit', [PlayerLoginController::class, 'logout'])->name('logout.submit');
