@@ -1,0 +1,159 @@
+{\rtf1\ansi\deff0
+{\fonttbl{\f0 Calibri;}{\f1 Calibri Light;}}
+\paperw12240\paperh15840\margl1440\margr1440\margt1440\margb1440
+\fs24
+
+\pard\qc\b\f1\fs44 Fieldpass\par
+\pard\qc\b\f1\fs32 Build, Deployment \& Internal Test Report\par
+\pard\qc\fs24\par
+\pard\qc\fs24 Prepared for:\b  Quad Data Sdn Bhd\b0\par
+\pard\qc\fs24 Date:\b  06 May 2026\b0\par
+\pard\qc\fs24 Version:\b  1.0\b0\par
+\pard\qc\fs24\par
+\pard\qc\fs22 Confidentiality:\b0 Internal use\par
+
+\page
+
+\pard\b\f1\fs32 1. Executive Summary\b0\f0\fs24\par
+\pard\fs24 This document summarizes the Fieldpass build workflow, deployment to a production-like server, and internal testing outcomes. It is intended to provide traceability of what was built, where it was deployed, and how it was verified.\par
+\pard\fs24\par
+\pard\b Key outcomes\b0\par
+\pard\li360\fs24\bullet\tab Fieldpass was successfully deployed to a DigitalOcean Droplet using Nginx and a Docker-based reverse proxy.\par
+\pard\li360\fs24\bullet\tab Core user journeys and role-based access were internally tested using a structured checklist.\par
+\pard\li360\fs24\bullet\tab No critical blockers found in the covered scenarios; minor UI/validation issues (if any) are tracked separately.\par
+\pard\fs24\par
+\pard\b Scope\b0\par
+\pard\li360\fs24\bullet\tab Build \& packaging overview\par
+\pard\li360\fs24\bullet\tab Deployment-to-server report (DigitalOcean droplet + Nginx + Docker reverse proxy)\par
+\pard\li360\fs24\bullet\tab Internal testing report (functional + smoke tests)\par
+\pard\fs24\par
+\pard\b Out of scope\b0\par
+\pard\li360\fs24\bullet\tab Full security penetration testing\par
+\pard\li360\fs24\bullet\tab Load/performance benchmarking beyond smoke verification\par
+
+\page
+
+\pard\b\f1\fs32 2. Build \& Deployment to Server Report\b0\f0\fs24\par
+\pard\b 2.1 Environment\b0\par
+\pard\li360\fs24\bullet\tab Cloud provider:\b0 DigitalOcean\par
+\pard\li360\fs24\bullet\tab Target:\b0 Droplet (Linux)\par
+\pard\li360\fs24\bullet\tab Web server:\b0 Nginx\par
+\pard\li360\fs24\bullet\tab Containerization:\b0 Docker + Docker Compose\par
+\pard\li360\fs24\bullet\tab Reverse proxy:\b0 Dockerized reverse proxy fronted by Nginx (TLS termination at Nginx)\par
+\pard\fs24\par
+
+\pard\b 2.2 Build artifacts\b0\par
+\pard\fs24 The deployment package includes the application source, dependency manifests, and container definitions. The build produces a runnable application container image and supporting services (e.g., web server, queue/worker, scheduler) as defined by the Compose configuration.\par
+\pard\fs24\par
+\pard\b Build inputs\b0\par
+\pard\li360\fs24\bullet\tab Source repository: Fieldpass\par
+\pard\li360\fs24\bullet\tab Runtime: PHP 8.2+\par
+\pard\li360\fs24\bullet\tab Framework: Laravel (as per project dependency manifest)\par
+\pard\fs24\par
+
+\pard\b 2.3 Deployment architecture\b0\par
+\pard\fs24 High-level request flow:\par
+\pard\li360\fs24\bullet\tab Internet \u8594? Nginx (Droplet)\u8594? Docker reverse proxy \u8594? Fieldpass app container(s)\par
+\pard\li360\fs24\bullet\tab Static assets are served via the application stack, consistent with environment configuration.\par
+\pard\fs24\par
+\pard\b 2.4 Deployment steps executed\b0\par
+\pard\fs24 The following procedure was used to deploy Fieldpass to the droplet:\par
+\pard\li360\fs24\bullet\tab Provision droplet and secure access (SSH keys, firewall rules).\par
+\pard\li360\fs24\bullet\tab Install Docker Engine and Docker Compose.\par
+\pard\li360\fs24\bullet\tab Install and configure Nginx on the droplet.\par
+\pard\li360\fs24\bullet\tab Configure Nginx server blocks to forward traffic to the Docker reverse proxy upstream.\par
+\pard\li360\fs24\bullet\tab Place environment variables and secrets in the server environment (e.g., \i .env\i0 ) and restrict file permissions.\par
+\pard\li360\fs24\bullet\tab Pull the latest application version (git pull or artifact upload).\par
+\pard\li360\fs24\bullet\tab Build and start containers using Docker Compose (\i docker compose up -d --build\i0 ).\par
+\pard\li360\fs24\bullet\tab Run database migrations and cache warms as required (\i php artisan migrate\i0 , config/cache).\par
+\pard\li360\fs24\bullet\tab Verify health checks: web responds, login page reachable, basic role access verified.\par
+\pard\fs24\par
+
+\pard\b 2.5 Verification checklist (deployment)\b0\par
+\pard\li360\fs24\bullet\tab Nginx configuration syntax validated and service active.\par
+\pard\li360\fs24\bullet\tab Reverse proxy routes to the correct container upstream.\par
+\pard\li360\fs24\bullet\tab Application returns HTTP 200 for main routes.\par
+\pard\li360\fs24\bullet\tab Admin login reachable; authentication works.\par
+\pard\li360\fs24\bullet\tab Logs accessible for troubleshooting (Nginx + container logs).\par
+\pard\fs24\par
+
+\pard\b 2.6 Rollback plan\b0\par
+\pard\fs24 If a deployment fails, rollback is performed by redeploying the previous tagged image/revision and restarting services:\par
+\pard\li360\fs24\bullet\tab Switch to previous container image tag or git revision\par
+\pard\li360\fs24\bullet\tab \i docker compose up -d\i0\par
+\pard\li360\fs24\bullet\tab Verify health checks as above\par
+
+\page
+
+\pard\b\f1\fs32 3. Internal Testing Report\b0\f0\fs24\par
+\pard\b 3.1 Testing approach\b0\par
+\pard\fs24 Internal testing focused on functional smoke coverage of role-based dashboard behavior and primary CRUD workflows. Testing was executed manually using a checklist and validated against expected UI responses and authorization rules.\par
+\pard\fs24\par
+\pard\b Test types\b0\par
+\pard\li360\fs24\bullet\tab Smoke tests (startup, login, navigation)\par
+\pard\li360\fs24\bullet\tab Functional tests (CRUD flows, filters/sorting)\par
+\pard\li360\fs24\bullet\tab Authorization checks (role/permission gating)\par
+\pard\fs24\par
+
+\pard\b 3.2 Test environment\b0\par
+\pard\li360\fs24\bullet\tab Environment:\b0 Local development + server deployment verification\par
+\pard\li360\fs24\bullet\tab Browser(s):\b0 Chromium-based (primary)\par
+\pard\li360\fs24\bullet\tab Data:\b0 Representative admin + club-linked accounts\par
+\pard\fs24\par
+
+\pard\b 3.3 Test coverage (high-level)\b0\par
+\pard\b Authentication \& session\b0\par
+\pard\li360\fs24\bullet\tab Admin login with OTP/password flow (as configured)\par
+\pard\li360\fs24\bullet\tab Session persistence and logout\par
+\pard\fs24\par
+
+\pard\b Role-based navigation\b0\par
+\pard\li360\fs24\bullet\tab Sidebar visibility matches permissions\par
+\pard\li360\fs24\bullet\tab Club Manager dashboard renders for club-linked admin\par
+\pard\fs24\par
+
+\pard\b Budget \& expenses page\b0\par
+\pard\li360\fs24\bullet\tab Page accessible for Club Manager (or users with budget permissions)\par
+\pard\li360\fs24\bullet\tab Table grouped by Year and Month\par
+\pard\li360\fs24\bullet\tab Filtering by year/month\par
+\pard\li360\fs24\bullet\tab Sorting via column headers\par
+\pard\li360\fs24\bullet\tab Add expense item with required fields\par
+\pard\li360\fs24\bullet\tab Edit expense item via modal\par
+\pard\li360\fs24\bullet\tab Delete expense item with confirmation\par
+\pard\li360\fs24\bullet\tab Club scoping: items are isolated per club\par
+\pard\fs24\par
+
+\pard\b 3.4 Results summary\b0\par
+\pard\li360\fs24\bullet\tab Overall status:\b0 Pass (for covered scenarios)\par
+\pard\li360\fs24\bullet\tab Critical defects:\b0 None identified in the tested checklist\par
+\pard\li360\fs24\bullet\tab Non-critical issues:\b0 Minor issues, if any, tracked separately (UI/UX, copy, edge validation)\par
+\pard\fs24\par
+
+\pard\b 3.5 Recommendations\b0\par
+\pard\li360\fs24\bullet\tab Add automated feature tests for role-based access and CRUD flows.\par
+\pard\li360\fs24\bullet\tab Add basic monitoring/alerting on server: container restarts, HTTP error rate, disk usage.\par
+\pard\li360\fs24\bullet\tab Define a periodic backup plan (DB + environment config).\par
+
+\page
+
+\pard\b\f1\fs32 4. Appendix: Deployment \& Test Checklists\b0\f0\fs24\par
+\pard\b 4.1 Deployment checklist\b0\par
+\pard\li360\fs24\bullet\tab DNS points to droplet IP\par
+\pard\li360\fs24\bullet\tab TLS certificate installed and auto-renew configured (if applicable)\par
+\pard\li360\fs24\bullet\tab Firewall restricts inbound ports (80/443 + SSH)\par
+\pard\li360\fs24\bullet\tab Environment variables reviewed and secured\par
+\pard\li360\fs24\bullet\tab \i docker compose up -d --build\i0 successful\par
+\pard\li360\fs24\bullet\tab Migrations run and verified\par
+\pard\li360\fs24\bullet\tab Health checks passed\par
+\pard\fs24\par
+
+\pard\b 4.2 Internal test checklist\b0\par
+\pard\li360\fs24\bullet\tab Login / logout\par
+\pard\li360\fs24\bullet\tab Club dashboard loads for Club Manager\par
+\pard\li360\fs24\bullet\tab Budget \& expenses visible and accessible\par
+\pard\li360\fs24\bullet\tab Add / edit / delete expense flows\par
+\pard\li360\fs24\bullet\tab Filter year/month\par
+\pard\li360\fs24\bullet\tab Sort columns\par
+\pard\li360\fs24\bullet\tab Unauthorized users cannot access budget routes (403)\par
+
+}

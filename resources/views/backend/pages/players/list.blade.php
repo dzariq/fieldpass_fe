@@ -266,6 +266,7 @@ All Players - Admin Panel
                             <label for="club_id">Filter by Club</label>
                             <select name="club_id" id="club_id" class="form-control select2">
                                 <option value="">All Clubs</option>
+                                <option value="none" {{ request('club_id') === 'none' ? 'selected' : '' }}>{{ __('Without club') }}</option>
                                 @foreach($clubs as $club)
                                     <option value="{{ $club->id }}" {{ request('club_id') == $club->id ? 'selected' : '' }}>
                                         {{ $club->name }}
@@ -318,7 +319,9 @@ All Players - Admin Panel
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h4 class="header-title mb-0">
                             Players List 
-                            @if($selectedClubId)
+                            @if($selectedClubId === 'none')
+                                - {{ __('Without club') }}
+                            @elseif($selectedClubId)
                                 @php $filterClub = $clubs->firstWhere('id', (int) $selectedClubId); @endphp
                                 @if($filterClub)
                                     - {{ $filterClub->name }}

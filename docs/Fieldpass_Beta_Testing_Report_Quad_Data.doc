@@ -1,0 +1,159 @@
+{\rtf1\ansi\deff0
+{\fonttbl{\f0 Calibri;}{\f1 Calibri Light;}}
+\paperw12240\paperh15840\margl1440\margr1440\margt1440\margb1440
+\fs24
+
+\pard\qc\b\f1\fs44 Fieldpass\par
+\pard\qc\b\f1\fs32 Beta Testing Report\par
+\pard\qc\fs24\par
+\pard\qc\fs24 Company:\b  Quad Data Sdn Bhd\b0\par
+\pard\qc\fs24 Date:\b  06 May 2026\b0\par
+\pard\qc\fs24 Version:\b  1.0\b0\par
+\pard\qc\fs22 Confidentiality:\b0 Internal use\par
+
+\page
+
+\pard\b\f1\fs32 1. Overview\b0\f0\fs24\par
+\pard\fs24 This beta testing report documents functional verification of Fieldpass across key user roles and their major workflows:\par
+\pard\li360\fs24\bullet\tab Superadmin: user roles and permissions management\par
+\pard\li360\fs24\bullet\tab Association Manager: association-level administration workflows\par
+\pard\li360\fs24\bullet\tab Club Manager: club-level workflows and club dashboard access\par
+\pard\li360\fs24\bullet\tab Player: player login and player dashboard access\par
+\pard\fs24\par
+\pard\b Objectives\b0\par
+\pard\li360\fs24\bullet\tab Confirm role-based access control (RBAC) behaves as expected.\par
+\pard\li360\fs24\bullet\tab Validate primary end-to-end workflows for each role.\par
+\pard\li360\fs24\bullet\tab Record results and defects for follow-up before wider rollout.\par
+\pard\fs24\par
+\pard\b Exit criteria\b0\par
+\pard\li360\fs24\bullet\tab No critical severity defects in authentication, authorization, or core workflows.\par
+\pard\li360\fs24\bullet\tab All high-priority test cases pass (or have an approved mitigation).\par
+
+\page
+
+\pard\b\f1\fs32 2. Test Environment\b0\f0\fs24\par
+\pard\b Environments used\b0\par
+\pard\li360\fs24\bullet\tab Local development environment (developer workstation)\par
+\pard\li360\fs24\bullet\tab Beta server environment (DigitalOcean droplet / containerized deployment)\par
+\pard\fs24\par
+\pard\b Test data\b0\par
+\pard\li360\fs24\bullet\tab Admin accounts for: Superadmin, Association Manager, Club Manager\par
+\pard\li360\fs24\bullet\tab Player accounts for: OTP/password login (as configured)\par
+\pard\li360\fs24\bullet\tab Representative entities: association(s), club(s), competitions/matches (where applicable)\par
+\pard\fs24\par
+\pard\b Tools\b0\par
+\pard\li360\fs24\bullet\tab Web browser (Chromium-based)\par
+\pard\li360\fs24\bullet\tab Server logs: Nginx + container logs\par
+\pard\li360\fs24\bullet\tab Database inspection (read-only) as needed to validate writes\par
+
+\page
+
+\pard\b\f1\fs32 3. Beta Test Coverage \& Results\b0\f0\fs24\par
+\pard\fs24 Note: Results are captured as \b Pass / Fail / Not Tested\b0 with optional notes. Defects discovered should be logged with severity (Critical/High/Medium/Low) and reproduction steps.\par
+\pard\fs24\par
+
+\pard\b\f1\fs28 3.1 Superadmin \u8212? User Roles \& Permissions\b0\f0\fs24\par
+\pard\b Scope\b0\par
+\pard\li360\fs24\bullet\tab Roles management (create/edit)\par
+\pard\li360\fs24\bullet\tab Permissions assignment by group\par
+\pard\li360\fs24\bullet\tab Admin creation and role assignment\par
+\pard\li360\fs24\bullet\tab Validation of RBAC impact on sidebar navigation and route access\par
+\pard\fs24\par
+\pard\b Test cases\b0\par
+\pard\li360\fs24\bullet\tab Create a new role and assign a permission group (e.g., dashboard.view).\tab Result: ________\par
+\pard\li360\fs24\bullet\tab Edit an existing role; toggle permissions on/off; verify saved.\tab Result: ________\par
+\pard\li360\fs24\bullet\tab Create admin user; assign role; confirm login and menu visibility.\tab Result: ________\par
+\pard\li360\fs24\bullet\tab Remove permission from a role; confirm restricted page returns 403.\tab Result: ________\par
+\pard\li360\fs24\bullet\tab Verify superadmin can access management pages (admins/roles).\tab Result: ________\par
+\pard\fs24\par
+\pard\b Expected outcomes\b0\par
+\pard\li360\fs24\bullet\tab Role changes immediately affect authorization (after permission cache refresh).\par
+\pard\li360\fs24\bullet\tab Unauthorized routes are blocked (403) and UI navigation hides restricted items.\par
+\pard\fs24\par
+
+\pard\b\f1\fs28 3.2 Association Manager Functions\b0\f0\fs24\par
+\pard\b Scope\b0\par
+\pard\li360\fs24\bullet\tab Association dashboard access\par
+\pard\li360\fs24\bullet\tab Association-scoped admin/user management (where allowed)\par
+\pard\li360\fs24\bullet\tab Competition creation/management and invitations (as configured)\par
+\pard\li360\fs24\bullet\tab Club visibility and access limited to association scope\par
+\pard\fs24\par
+\pard\b Test cases\b0\par
+\pard\li360\fs24\bullet\tab Login as Association Manager; dashboard renders association context.\tab Result: ________\par
+\pard\li360\fs24\bullet\tab View competitions list; verify only association competitions shown.\tab Result: ________\par
+\pard\li360\fs24\bullet\tab Create/update competition (if enabled); verify persisted.\tab Result: ________\par
+\pard\li360\fs24\bullet\tab Manage competition invitations; approve/reject flow.\tab Result: ________\par
+\pard\li360\fs24\bullet\tab Create Club Manager (or allowed roles) under association and link to club.\tab Result: ________\par
+\pard\li360\fs24\bullet\tab Attempt to access out-of-scope association data; expect 403/hidden.\tab Result: ________\par
+\pard\fs24\par
+\pard\b Expected outcomes\b0\par
+\pard\li360\fs24\bullet\tab Data and actions are constrained to the manager\u8217?s association.\par
+\pard\li360\fs24\bullet\tab Unauthorized cross-association access is blocked.\par
+\pard\fs24\par
+
+\pard\b\f1\fs28 3.3 Club Manager Functions\b0\f0\fs24\par
+\pard\b Scope\b0\par
+\pard\li360\fs24\bullet\tab Club dashboard access and club context display\par
+\pard\li360\fs24\bullet\tab Club profile/edit access (if permitted)\par
+\pard\li360\fs24\bullet\tab Club-level workflows: players list/invite/bulk upload (as configured)\par
+\pard\li360\fs24\bullet\tab Club operational pages: training management, match/lineup flows (as configured)\par
+\pard\li360\fs24\bullet\tab Budget \& expenses page: CRUD, filters, sorting, club scoping\par
+\pard\fs24\par
+\pard\b Test cases\b0\par
+\pard\li360\fs24\bullet\tab Login as Club Manager; club dashboard loads with correct club name/logo.\tab Result: ________\par
+\pard\li360\fs24\bullet\tab Edit club profile (if enabled); verify updates persist.\tab Result: ________\par
+\pard\li360\fs24\bullet\tab Players: view list; invite/add; ensure club scoping.\tab Result: ________\par
+\pard\li360\fs24\bullet\tab Training: view attributes/training pages; add/update flows.\tab Result: ________\par
+\pard\li360\fs24\bullet\tab Matches: view fixtures; access match check-in/lineup (if enabled).\tab Result: ________\par
+\pard\li360\fs24\bullet\tab Budget \& expenses: add item; edit item; delete item.\tab Result: ________\par
+\pard\li360\fs24\bullet\tab Budget \& expenses: filter by year/month; sort by amount/name.\tab Result: ________\par
+\pard\li360\fs24\bullet\tab Verify club manager cannot access global clubs/matches pages if restricted.\tab Result: ________\par
+\pard\fs24\par
+\pard\b Expected outcomes\b0\par
+\pard\li360\fs24\bullet\tab Club Manager sees only club-scoped data.\par
+\pard\li360\fs24\bullet\tab Pages not permitted by role are hidden and blocked server-side.\par
+
+\page
+
+\pard\b\f1\fs32 4. Player Login Functions\b0\f0\fs24\par
+\pard\b Scope\b0\par
+\pard\li360\fs24\bullet\tab Player login page access\par
+\pard\li360\fs24\bullet\tab OTP/password flow (as configured)\par
+\pard\li360\fs24\bullet\tab Player dashboard access and session handling\par
+\pard\li360\fs24\bullet\tab Logout and re-login behavior\par
+\pard\fs24\par
+\pard\b Test cases\b0\par
+\pard\li360\fs24\bullet\tab Navigate to player login; page renders.\tab Result: ________\par
+\pard\li360\fs24\bullet\tab Submit valid player credentials/OTP; login successful.\tab Result: ________\par
+\pard\li360\fs24\bullet\tab Submit invalid OTP/credentials; appropriate error shown.\tab Result: ________\par
+\pard\li360\fs24\bullet\tab Access player dashboard; verify correct identity/profile displayed.\tab Result: ________\par
+\pard\li360\fs24\bullet\tab Session timeout/refresh: verify expected behavior.\tab Result: ________\par
+\pard\li360\fs24\bullet\tab Logout and confirm protected player routes are inaccessible.\tab Result: ________\par
+\pard\fs24\par
+\pard\b Expected outcomes\b0\par
+\pard\li360\fs24\bullet\tab Successful authentication routes the player to the correct dashboard.\par
+\pard\li360\fs24\bullet\tab Invalid authentication does not create a session.\par
+\pard\li360\fs24\bullet\tab Protected routes require an active player session.\par
+
+\page
+
+\pard\b\f1\fs32 5. Defect Log (Beta)\b0\f0\fs24\par
+\pard\fs24 Record defects discovered during beta testing. Add rows as needed.\par
+\pard\fs24\par
+\pard\b Defect template\b0\par
+\pard\li360\fs24\bullet\tab ID:\tab ________\par
+\pard\li360\fs24\bullet\tab Title:\tab ________\par
+\pard\li360\fs24\bullet\tab Severity (Critical/High/Medium/Low):\tab ________\par
+\pard\li360\fs24\bullet\tab Role(s) affected:\tab ________\par
+\pard\li360\fs24\bullet\tab Environment (Local/Beta server):\tab ________\par
+\pard\li360\fs24\bullet\tab Steps to reproduce:\tab ________\par
+\pard\li360\fs24\bullet\tab Expected result:\tab ________\par
+\pard\li360\fs24\bullet\tab Actual result:\tab ________\par
+\pard\li360\fs24\bullet\tab Notes / screenshots:\tab ________\par
+\pard\fs24\par
+\pard\b Sign-off\b0\par
+\pard\fs24 Prepared by:\tab ____________________\par
+\pard\fs24 Reviewed by:\tab ____________________\par
+\pard\fs24 Approved by:\tab ____________________\par
+
+}

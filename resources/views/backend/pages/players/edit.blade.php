@@ -46,7 +46,7 @@ Player Edit - Admin Panel
     $clubsForTermination = $clubsForTermination ?? collect();
     $transferFromClubs = $transferFromClubs ?? collect();
     $transferNewClubs = $transferNewClubs ?? collect();
-    $showAssociationTransfer = auth()->user()->hasRole('Association Manager')
+    $showPlayerTransfer = (auth()->user()->hasRole('Association Manager') || auth()->user()->can('association.view'))
         && ($transferFromClubs->isNotEmpty() || $transferNewClubs->isNotEmpty());
 @endphp
 
@@ -312,10 +312,10 @@ Player Edit - Admin Panel
                     </div>
                     @endif
 
-                    @if ($showAssociationTransfer)
+                    @if ($showPlayerTransfer)
                     <hr class="my-4">
                     <h5 class="mb-3">{{ __('Transfer player') }}</h5>
-                    <p class="text-muted small mb-3">{{ __('End the contract with a club you manage, then optionally assign the player to another club in your association or leave them without a club.') }}</p>
+                    <p class="text-muted small mb-3">{{ __('End the contract with a club, then optionally assign the player to another club or leave them without a club.') }}</p>
                     <form id="association-transfer-form" action="{{ route('admin.players.association-transfer', $player->id) }}" method="POST" class="border rounded p-3 bg-light">
                         @csrf
                         @if ($transferFromClubs->isNotEmpty())
@@ -437,7 +437,7 @@ Player Edit - Admin Panel
         });
     });
 </script>
-@if ($showAssociationTransfer)
+@if ($showPlayerTransfer)
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 (function () {

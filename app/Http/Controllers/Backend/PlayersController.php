@@ -50,6 +50,34 @@ class PlayersController extends Controller
     }
 
     /**
+     * Association-wide admins and Association Managers may transfer players between clubs.
+     */
+    private function adminMayTransferPlayer(): bool
+    {
+        $user = auth()->user();
+
+        return $user && ($user->hasRole('Association Manager') || $user->can('association.view'));
+    }
+
+    /**
+     * Club IDs the current admin may use in player transfer (terminate / assign).
+     *
+     * @return array<int>
+     */
+    private function allowedClubIdsForPlayerTransfer(Admin $admin): array
+    {
+        if (auth()->user()->can('association.view')) {
+            return Club::query()
+                ->pluck('id')
+                ->map(fn ($id) => (int) $id)
+                ->values()
+                ->all();
+        }
+
+        return $this->allowedClubIdsForPlayersList($admin) ?? [];
+    }
+
+    /**
      * Club IDs used to scope the admin players list (association clubs, else assigned clubs; null = no restriction).
      *
      * @return array<int>|null
@@ -172,6 +200,41 @@ class PlayersController extends Controller
         }
 
         return $raw;
+    }
+
+    /**
+     * Apply name / IC / phone / username search on a players list query (IC matches with or without dashes).
+     */
+    private function applyPlayerListSearch($query, string $search): void
+    {
+        $search = trim($search);
+        if ($search === '') {
+            return;
+        }
+
+        $normalizedIc = $this->normalizeMalaysiaIcNumber($search);
+        $digitsOnly = preg_replace('/\D/', '', $search);
+        $lower = mb_strtolower($search, 'UTF-8');
+
+        $query->where(function ($q) use ($search, $normalizedIc, $digitsOnly, $lower) {
+            $q->where('name', 'LIKE', "%{$search}%")
+                ->orWhere('username', 'LIKE', "%{$search}%")
+                ->orWhere('phone', 'LIKE', "%{$search}%")
+                ->orWhere('identity_number', 'LIKE', "%{$search}%");
+
+            if ($normalizedIc !== $search) {
+                $q->orWhere('identity_number', 'LIKE', "%{$normalizedIc}%");
+            }
+
+            if ($digitsOnly !== '') {
+                $q->orWhereRaw(
+                    "REPLACE(REPLACE(REPLACE(REPLACE(COALESCE(identity_number,''), '-', ''), ' ', ''), '.', ''), CHAR(9), '') LIKE ?",
+                    ['%'.$digitsOnly.'%']
+                );
+            }
+
+            $q->orWhere(DB::raw('LOWER(identity_number)'), 'LIKE', "%{$lower}%");
+        });
     }
 
     /**
@@ -605,7 +668,7 @@ class PlayersController extends Controller
         }
 
         $admin = Admin::findOrFail(auth()->user()->id);
-        $allowedClubIds = $this->allowedClubIdsForPlayersList($admin) ?? [];
+        $allowedClubIds = $this->allowedClubIdsForPlayerTransfer($admin);
         $transferFromClubs = $player->clubs
             ->filter(fn (Club $c) => in_array((int) $c->id, $allowedClubIds, true))
             ->values();
@@ -623,11 +686,11 @@ class PlayersController extends Controller
     }
 
     /**
-     * Association Manager: leave one current club (terminate) and optionally join another club in scope (or no club).
+     * Association Manager / superadmin: leave one current club (terminate) and optionally join another club in scope (or no club).
      */
     public function associationTransferPlayer(Request $request, int $player): RedirectResponse
     {
-        if (! auth()->user()->hasRole('Association Manager')) {
+        if (! $this->adminMayTransferPlayer()) {
             abort(403);
         }
 
@@ -637,9 +700,9 @@ class PlayersController extends Controller
         }
 
         $admin = Admin::findOrFail(auth()->user()->id);
-        $allowedClubIds = $this->allowedClubIdsForPlayersList($admin) ?? [];
+        $allowedClubIds = $this->allowedClubIdsForPlayerTransfer($admin);
         if (count($allowedClubIds) === 0) {
-            return back()->with('error', __('You have no clubs in your association scope to use for transfers.'));
+            return back()->with('error', __('You have no clubs available to use for transfers.'));
         }
 
         $playerClubIds = $playerModel->clubs->pluck('id')->map(fn ($id) => (int) $id)->all();
@@ -1855,24 +1918,41 @@ class PlayersController extends Controller
             : Club::whereIn('id', $allowedClubIds)->orderBy('name')->get();
 
         $selectedClubId = $request->input('club_id');
-        if ($selectedClubId !== null && $selectedClubId !== '' && $allowedClubIds !== null) {
+        $filterNoClub = $selectedClubId === 'none';
+
+        if (! $filterNoClub && $selectedClubId !== null && $selectedClubId !== '' && $allowedClubIds !== null) {
             if (! in_array((int) $selectedClubId, $allowedClubIds, true)) {
                 $selectedClubId = null;
             }
         }
+
+        $searchTerm = trim((string) $request->input('search', ''));
+        $hasSearch = $searchTerm !== '';
 
         // Query players
         $query = Player::with(['clubs', 'contracts' => function ($q) {
             $q->where('status', 'active')->latest();
         }]);
 
-        // Only players linked to clubs this admin may see (association / assigned clubs); super admin => no base filter
-        if ($allowedClubIds !== null) {
+        if ($filterNoClub) {
+            $query->whereDoesntHave('clubs');
+        } elseif ($allowedClubIds !== null) {
+            // Association scope: players in managed clubs; when searching, also include clubless players (e.g. after transfer).
             $scopeClubIds = $selectedClubId
                 ? [(int) $selectedClubId]
                 : $allowedClubIds;
             if (count($scopeClubIds) === 0) {
-                $query->whereRaw('0 = 1');
+                if ($hasSearch) {
+                    $query->whereDoesntHave('clubs');
+                } else {
+                    $query->whereRaw('0 = 1');
+                }
+            } elseif ($hasSearch && ! $selectedClubId) {
+                $query->where(function ($q) use ($scopeClubIds) {
+                    $q->whereHas('clubs', function ($clubQuery) use ($scopeClubIds) {
+                        $clubQuery->whereIn('club.id', $scopeClubIds);
+                    })->orWhereDoesntHave('clubs');
+                });
             } else {
                 $query->whereHas('clubs', function ($q) use ($scopeClubIds) {
                     // Qualify to avoid ambiguity with player_club.id
@@ -1885,15 +1965,8 @@ class PlayersController extends Controller
             });
         }
 
-        // Search functionality
-        if ($request->has('search') && ! empty($request->search)) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'LIKE', "%{$search}%")
-                    ->orWhere('identity_number', 'LIKE', "%{$search}%")
-                    ->orWhere('phone', 'LIKE', "%{$search}%")
-                    ->orWhere('username', 'LIKE', "%{$search}%");
-            });
+        if ($hasSearch) {
+            $this->applyPlayerListSearch($query, $searchTerm);
         }
 
         // Filter by position
